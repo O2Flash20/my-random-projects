@@ -1,0 +1,5 @@
+pick random point
+find two closest
+make a triangle between these three
+for each of the two closest, find the two closest that arent part of the last triangle
+depth?

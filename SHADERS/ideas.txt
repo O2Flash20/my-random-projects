@@ -1,0 +1,5 @@
+3d noise in rgb
+motion blur
+gaussian-like blur
+bloom
+infinite seamless pattern of a canvas (like particles)

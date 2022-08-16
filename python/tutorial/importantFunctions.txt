@@ -1,0 +1,63 @@
+pygame.init()
+
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Name")
+
+clock = pygame.time.Clock()
+clock.tick(60) //in loop
+
+pygame.display.update() //in loop
+
+font = pygame.font.Font(URL, size??)
+
+imageSurface = pygame.image.load(URL).convert_alpha()
+blankSurface = pygame.Surface((x, y))
+textSurface = font.render(text, aa, color)
+blankSurface.fill(color)
+rect = surface.getRect(location = (x, y))
+rect = pygame.Rect(left, top, width, height)
+
+for event in pygame.event.get():
+
+color = (r, g, b) //or hexadecimal
+
+screen.blit(surface, (x, y))
+screen.blit(surface, rect)
+
+rect.colliderect(rect) //0 or 1
+rect.collidepoint((x, y))
+
+pygame.mouse
+    .get_pos()
+    .get_pressed()
+        (True, False, True) //three mouse buttons
+if event.type == pygame.MOUSEBUTTONDOWN:
+
+event loop is a general thing, get_ is good for classes
+
+pygame.key.get_pressed() //an object of all the buttons, 0 and 1
+if event.type == pygame.KEYDOWN: if event.key == key:
+
+pygame.time.get_ticks()
+    milliseconds since game started
+
+f' hello {number}'
+    convert to string
+
+pygame.transform.rotozoom(Surface, angle, scale)
+
+timer = pygame.USEREVENT + 1
+    why need idk
+pygame.time.set_timer(timer, interval)
+
+use global var1, var2 to make things in functions global
+
+sound = pygame.mixer.Sound(URL)
+sound.set_volume(0-1)
+sound.play(loops=x)
+    -1 is forever
+
+pygame.quit()
+exit()
+
+ADD SPRITES AND GROUPS

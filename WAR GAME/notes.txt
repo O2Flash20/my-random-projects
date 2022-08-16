@@ -1,0 +1,19 @@
+legion class
+fortress class
+barracks class
+
+when a legion is close to something, their numbers subtract from each other
+legions can meet mid-way
+
+path finding around obstacles?
+	perpendicular to obstacle (if its close), toward target
+	make a legion's target another legions?
+		so that they don't miss each other when you want them to hit
+hardcoded when making the map?
+no obstacles?
+
+"split in half"
+
+preset for legions automatically going to a target
+
+create your own fortresses and barracks

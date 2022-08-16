@@ -1,0 +1,5 @@
+biome map
+trees
+lighting
+save player location on block DESYNCS, PLAYER STOPS MOVING SOMETIMES
+    screen location saved (might help)

@@ -1,0 +1,5 @@
+2d texture "entity"
+sky fog color
+texture on walls
+mouse head turn
+no going through boundaries

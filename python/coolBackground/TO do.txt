@@ -1,0 +1,2 @@
+make drawing the first triangle a function
+figure out recessiveness

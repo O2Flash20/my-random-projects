@@ -1,0 +1,7 @@
+collision with walls
+    check in particle.move function
+
+2d overlays for hud and stuff
+
+figure out whats up with texture widths
+    figure out whats up with entities changing facing

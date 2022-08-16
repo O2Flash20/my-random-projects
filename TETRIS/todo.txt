@@ -1,0 +1,4 @@
+hard drop
+ghost piece
+points
+faster with time

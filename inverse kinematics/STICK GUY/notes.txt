@@ -1,0 +1,10 @@
+object of all body parts
+each part notes its children, an array of references to the object
+updating: goes through the object from start to end, each segment updating all of its children
+    some segments might be affected multiple times unnecessarily but whatever
+
+self-righting
+    torso tries to be straight and a bit off the ground (standing)
+    head tries to be straight
+
+points of a segment need vel pos acc and force

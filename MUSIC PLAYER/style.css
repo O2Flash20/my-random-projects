@@ -1,0 +1,18 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  color: white;
+}
+
+canvas {
+  display: block;
+}
+
+.p5Canvas {
+  position: fixed;
+  top: 0px;
+  z-index: -1;
+  width: 1vw;
+  height: 1vh;
+}

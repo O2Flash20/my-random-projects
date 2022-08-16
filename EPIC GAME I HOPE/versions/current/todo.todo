@@ -1,0 +1,15 @@
+2d texture "entity" / "sprite"
+    also needs a ton of work
+sky fog color (kinda)
+texture on walls
+    needs a LOT of work
+    STORE THE INDEX AND THE TEXTURE OF THE COLLISION AND FIND THE PIXELS LATER
+collision with walls
+    check in particle.move function
+
+for some reason the texture width is halved or something
+
+
+boundaries get passed in a number for a texture
+texture come preloaded into their strips
+when a ray hits a wall, it passes back the number of texture and the number of the strip, then the preloaded strip is found and rendered
