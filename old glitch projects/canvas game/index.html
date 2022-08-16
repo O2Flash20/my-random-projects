@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://cdn.glitch.com/147bdf54-5025-4d0b-b7c5-21eee677613b%2Fman.png?v=1630624588719" />
+
+    <title>epic gamening</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- import the webpage's javascript file -->
+    <script src="script.js" defer></script>
+
+    <!-- cloud stuff -->
+    <script src="https://kihtrak.com/cloud_variable/cloudify.min.js"></script>
+</head>
+
+<body>
+    <input id="size" type="range" max="1000" val="500">
+    <input id="iterations" type="range" val="5" max="10">
+    <input id="multiplicationFactor" type="range" val="10" max="20">
+    <button id="reset"
+        onclick="createPerlin(document.getElementById('size').value, document.getElementById('size').value, document.getElementById('iterations').value, document.getElementById('multiplicationFactor').value)">refresh</button>
+</body>
+
+</html>

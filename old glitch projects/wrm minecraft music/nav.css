@@ -1,0 +1,50 @@
+.navBar * {
+  font-family: mojangles;
+  font-size: 100%;
+  text-decoration: none;
+  color: #000000;
+}
+
+@media only screen and (){
+  
+}
+
+.container {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 0px;
+  left: -3px;
+  text-align: center;
+  box-shadow: 5px 10px 10px black;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  background-color: #a5acb8;
+  font-size: 105%;
+  vertical-align: center;
+}
+
+.item1, .item2, .item3, .item4 {
+  display: inline;
+  flex-grow: 4;
+  flex-shrink: 2;
+  transition: background-color 600ms;
+}
+
+li:hover {
+  background-color: #8b8e94;
+}
+
+@media only screen and (max-width: 350px) {
+  li {
+    padding: 5px;
+  }
+}
+
+@media only screen and (min-width: 350px) {
+  li {
+    padding: 1em;
+  }
+}

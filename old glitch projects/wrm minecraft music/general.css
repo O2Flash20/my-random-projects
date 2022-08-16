@@ -1,0 +1,99 @@
+@font-face {
+  font-family: mojangles;
+  src: url(https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2F1_Minecraft-Regular.ttf?v=1612373591803);
+}
+
+body {
+  font-family: mojangles, arial;
+}
+
+button {
+  font-family: mojangles, arial;
+}
+
+.customButton {
+  cursor: pointer;
+  border: 3px solid black;
+}
+
+.customButton:hover {
+  font-size: 200%;
+  transform: scale(1.25);
+  transition-duration: 750ms;
+}
+
+a {
+  text-decoration: none;
+}
+
+.hidden {
+  display: none;
+}
+  
+
+/*for showing borders on everything
+
+* {
+  border: solid 3px blue;
+}
+
+*/
+
+/*shaking animation*/
+.shek {
+	-webkit-animation: shek 0.3s linear infinite both;
+	        animation: shek 0.3s linear infinite both;
+}
+
+@-webkit-keyframes shek {
+  0% {
+    -webkit-transform: translate(0);
+            transform: translate(0);
+  }
+  20% {
+    -webkit-transform: translate(2px, -2px);
+            transform: translate(2px, -2px);
+  }
+  40% {
+    -webkit-transform: translate(2px, 2px);
+            transform: translate(2px, 2px);
+  }
+  60% {
+    -webkit-transform: translate(-2px, 2px);
+            transform: translate(-2px, 2px);
+  }
+  80% {
+    -webkit-transform: translate(-2px, -2px);
+            transform: translate(-2px, -2px);
+  }
+  100% {
+    -webkit-transform: translate(0);
+            transform: translate(0);
+  }
+}
+@keyframes shek {
+  0% {
+    -webkit-transform: translate(0);
+            transform: translate(0);
+  }
+  20% {
+    -webkit-transform: translate(2px, -2px);
+            transform: translate(2px, -2px);
+  }
+  40% {
+    -webkit-transform: translate(2px, 2px);
+            transform: translate(2px, 2px);
+  }
+  60% {
+    -webkit-transform: translate(-2px, 2px);
+            transform: translate(-2px, 2px);
+  }
+  80% {
+    -webkit-transform: translate(-2px, -2px);
+            transform: translate(-2px, -2px);
+  }
+  100% {
+    -webkit-transform: translate(0);
+            transform: translate(0);
+  }
+}

@@ -1,0 +1,86 @@
+html {
+   background-image: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FBackground.png?v=1622740032686);
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 99%
+}
+
+
+
+body {
+  /*border: 5px solid orange;*/
+  margin: 1em 1em 0 1em;
+  padding: 10em 0 0 0;
+  /*background-color: #160000;*/
+  opacity: 100%;
+  font-family: mojangles;
+}
+
+.text {
+  font-size: 450%; color: #1FD8CB
+}
+
+ /* div {
+  border: 5px solid red;
+} */
+
+.control {
+  display: flex; justify-content: center; width: 50%; margin: 2em auto;
+}
+
+button {
+  margin: 0 2em; padding: 1em 2.5em; border-radius: 5%; background: radial-gradient(#1BB9E1, #25FFDF); border: 3px solid black; font-size: 150%;
+  transition: box-shadow 500ms;
+  font-family: mojangles;
+}
+
+.back {
+  display: flex; justify-content: center; width: 50%; margin: 2em auto; padding: 4% 
+}
+
+button:hover {
+  text-decoration: underline; box-shadow: 10px 5px 5px #30EBC7; cursor: pointer; filter: brightness(90%)
+}
+
+@font-face {
+  font-family: mojangles;
+  src: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FMojangles.ttf?v=1622735981749);
+}
+
+.spans {
+  margin-top: 3em
+}
+
+.dropdown {
+  color: #1FD8CB; font-weight: bold; position: absolute; width: 23%; cursor: pointer;
+  right: 3%; top: 3%; text-align: center;
+  border: 5px solid black;
+  border-bottom: 5px dashed black;
+  background-color: #3D0000;
+}
+
+.dropdownContent {
+  display: none;
+}
+
+.dropdown:hover .dropdownContent {
+  display: block; box-shadow: 0px 8px 16px 0px rgb(0,0,0,2); z-index: 10;
+
+}
+
+.songSelection {
+  display: block; padding: 2% 10%; font-size: 120%; font-weight: bold;
+  background-color: #3D0000; text-transform: lowercase;
+}
+
+.songSelection:hover {
+  background-color: #240101; text-transform: uppercase; font-size: 150%; padding: 5% 10%; 
+}
+
+p {
+  font-size: 120%;
+}
+
+span a {
+  text-decoration: none; color: #1FD8CB;
+}

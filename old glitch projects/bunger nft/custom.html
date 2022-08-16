@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+
+    <title>Bunger NFT</title>
+
+    <link rel="canonical" href="https://glitch-hello-website.glitch.me/" />
+    <meta name="description" content="A simple website, built with Glitch. Remix it to get your own." />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:title" content="Hello World!" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://glitch-hello-website.glitch.me/" />
+    <meta property="og:description" content="A simple website, built with Glitch. Remix it to get your own." />
+    <meta property="og:image"
+        content="https://cdn.glitch.com/605e2a51-d45f-4d87-a285-9410ad350515%2Fhello-website-social.png?v=1616712748147" />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- Import the webpage's stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Import the webpage's javascript file -->
+    <script src="custom.js" defer></script>
+</head>
+
+<body>
+    <h1>Make your own bunger!</h1>
+    <canvas id="bungerDisplay" style="width:300px; height:300px;"></canvas>
+    <br>
+    <span>Radius:</span>
+    <input type="range" min="1" max="50" value="5" class="slider" id="spacingSlider">
+    <br>
+    <span>Number of layers:</span>
+    <input type="range" min="2" max="17" value="5" class="slider" id="repeatsSlider">
+
+    <button id="saveButton">Save Bunger</button>
+    <button onclick="closeBunger()">Close the bunger</button>
+
+    <br>
+
+    <canvas id="scaledUp"></canvas>
+</body>
+
+</html>

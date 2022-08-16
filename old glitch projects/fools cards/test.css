@@ -1,0 +1,15 @@
+.card-template {
+  width: 5em;
+  height: 7.8em;
+  display: grid;
+  text-align: center;
+  border: solid 3px lime;
+}
+
+.card-template > div {
+  font-size: 17px;
+}
+
+#cardHolder {
+  border: solid 3px yellow;
+}

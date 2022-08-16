@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>GAME</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon"
+        href="https://cdn.glitch.com/f4c71718-9108-45ed-ac15-096b13468b3a%2FScreenshot%202021-06-05%205.59.05%20PM.png?v=1622930353889">
+    <script src="script.js"></script>
+</head>
+
+<body>
+
+    <!-- content shown -->
+
+    <!--.....................................................................................................................-->
+    <!-- buttons -->
+    <div class="buttons">
+
+        <button class="button1" id="button1" onclick="start()">Start</button>
+        <button class="button1" onclick="randomColourTest()">seizure </button>
+
+    </div>
+
+    <!--.....................................................................................................................-->
+
+    <br>
+    <br>
+
+    <!--.....................................................................................................................-->
+    <!-- stats -->
+    <div class="stats">
+
+        <div id="player1Stats" class="hidden">
+
+            <span>Player 1 Health Stat:</span>
+            <span id="healthP1"></span>
+
+            <br>
+
+            <span>Player 1 Attack Stat:</span>
+            <span id="attackP1"></span>
+
+            <br>
+
+            <span>Player 1 Defense Stat:</span>
+            <span id="defenseP1"></span>
+
+            <br>
+
+            <span>Player 1 Special Attack Stat:</span>
+            <span id="specialP1"></span>
+
+        </div>
+
+        <div id="player2Stats" class="hidden">
+
+            <span>Player 2 Health Stat:</span>
+            <span id="healthP2"></span>
+
+            <br>
+
+            <span>Player 2 Attack Stat:</span>
+            <span id="attackP2"></span>
+
+            <br>
+
+            <span>Player 2 Defense Stat:</span>
+            <span id="defenseP2"></span>
+
+            <br>
+
+            <span>Player 2 Special Attack Stat:</span>
+            <span id="specialP2"></span>
+
+        </div>
+
+    </div>
+
+    <!--.....................................................................................................................-->
+
+    <br>
+
+    <!--.....................................................................................................................-->
+    <!-- graphics -->
+    <div id="graphics">
+
+        <div class="healthbars">
+
+            <div id="healthbar1">
+
+                <div id="healthbarDisplay1" class="healthbar">
+                    <p id="healthDisplayP1">0</p>
+                </div>
+
+            </div>
+
+            <div id="healthbar2">
+
+                <div id="healthbarDisplay2" class="healthbar">
+                    <p id="healthDisplayP2">0</p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <br>
+        <br>
+
+        <img src="https://cdn.glitch.com/f4c71718-9108-45ed-ac15-096b13468b3a%2F213px-Rejon_Person_Outline_1.svg.png?v=1622914046374"
+            id="man1" style="display:fixed">
+        <img src="https://cdn.glitch.com/f4c71718-9108-45ed-ac15-096b13468b3a%2F213px-Rejon_Person_Outline_1.svg.png?v=1622914046374"
+            id="man2" style="display:fixed">
+
+        <br>
+
+        <span id="damageDisplayP1" style="float:left">--</span>
+
+        <span id="damageDisplayP2" style="float:right">--</span>
+
+        <br>
+        <br>
+
+        <span id="defenseDisplayP1" style="float:left">--</span>
+
+        <span id="defenseDisplayP2" style="float:right">--</span>
+
+        <br>
+        <br>
+
+        <span id="roundNumber">0</span>
+
+        <br>
+
+        <span id="gameOutcome">--</span>
+
+    </div>
+
+    <!--.....................................................................................................................-->
+    <!-- costume bars -->
+    <div class="characterSelectP1" id="characterSelectP1">
+
+        <div class="costumeBarTitle">
+            <h1>Man 1 Costumes</h1>
+        </div>
+        <div class="costume" id="costume1" onclick="setCostume(1, 'amogus')">Amogus</div>
+        <div class="costume" id="costume2" onclick="setCostume(1, 'Run Hes Behind You')">RunHe'sBehindYou</div>
+        <div class="costume" id="costume3" onclick="setCostume(1, 'RGB')">RGB</div>
+        <div class="costume" id="costume4" onclick="setCostume(1, 'custom')">Custom</div>
+
+    </div>
+
+    <div class="characterSelectP2" id="characterSelectP2">
+
+        <div class="costumeBarTitle">
+            <h1>Man 2 Costumes</h1>
+        </div>
+        <div class="p2costume" id="p2Costume1" onclick="setCostume(2, 'amogus')">Amogus</div>
+        <div class="p2costume" id="p2Costume2" onclick="setCostume(2, 'Run Hes Behind You')">RunHe'sBehindYou</div>
+        <div class="p2costume" id="p2Costume3" onclick="setCostume(2, 'RGB')">RGB</div>
+        <div class="p2costume" id="p2Costume4" onclick="setCostume(2, 'custom')">Custom</div>
+
+    </div>
+
+    <div id="customPlayerSelect">
+
+        <h1 id="customPlayerTitle"></h1>
+        <label for="brightnessSlider">Brightness:</label>
+        <input type="range" min="0" max="1000" value="200" id="brightnessSlider">
+
+        <br>
+
+        <label for="hueSlider">Hue:</label>
+        <input type="range" min="0" max="360" value="0" id="hueSlider">
+
+        <br>
+
+        <button onclick="closeCustomUI()">Confirm</button>
+
+    </div>
+
+    <!--.....................................................................................................................-->
+    <!-- minigames -->
+    <div id="minigames">
+
+        <div id="scriptsHolder"></div>
+
+        <div id="clickSpeedTest">
+
+            <button onclick="cpsTest()">Start game</button>
+            <div id="clickBox" onclick="registerClick()"></div>
+            <p id="cpsDisplay"></p>
+
+        </div>
+
+        <div id="combo">
+
+            <button onclick="startComboGame()">Start game</button>
+            <div id="comboCanvas">
+                <img src="https://cdn.glitch.com/f4c71718-9108-45ed-ac15-096b13468b3a%2Fcrosshair.png?v=1623078561517"
+                    id="comboCrosshair" style="right:-240px;top:110px;">
+                <div id="comboEnemy" style="right:-50px;top:-30px"></div>
+            </div>
+            <div id="scoreDisplay">---</div>
+            <div id="LOSE" style="visibility:hidden;">HUGE L FOR YOU</div>
+        </div>
+
+    </div>
+    <!--.....................................................................................................................-->
+
+    <!--<iframe src="https://classic.minecraft.net/" style="width:500px;height:300px;"></iframe>>
+  <!--end of content -->
+</body>
+
+</html>

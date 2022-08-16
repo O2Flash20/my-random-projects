@@ -1,0 +1,61 @@
+forest colors:
+
+  dark oak forest:
+    #1B150D: black chocolate
+    #203014: kombu green
+    #D2BEAB: khaki web
+    #1E170D: black chocolate
+    #0C1A08: dark jungle green
+  
+  oak forest:
+    #372B1D: bistro
+    #253F1B: forest green traditional
+    #335121: hunter green
+    #C1D7FC: light steel blue
+    #44311C: cafe noir
+  
+  birch forest:
+    #32312B: black olive
+    #ABACA9: silver chalice
+    #4E6C38: dark olive green
+    #232F13: kombu green
+    #3D5126: army green
+
+  savanna: 
+    #544E14: antique bronze
+    #AA5B31: rust
+    #4C4740: gray
+    #423E10: army green
+    #6A4C14: field drab
+    
+nether:
+
+  warped forest:
+    #49181A: dark sienna
+    #295447: brunswick green
+    #086F68: pine green
+    #451518: dark sienna
+    #261529: dark purple
+    
+  bastion:
+    #420D0A: dark red
+    #1F1515: smoky black
+    #554F45: davys grey
+    #180C10: xiketic (dark purple red yes)
+    #251819: raisin black
+
+other: 
+  
+  desert temple:
+    #CFB888: (sand)
+    #7F431D: russet (orange terracotta)
+    #A5936D: (darker sand)
+    #664F2B: field drab
+    #D7CDA1: dutch white
+    
+  ocean monument:
+    #33635B: myrtle green
+    #315D66: deep place sparkle
+    #253C4F: charcoal blue
+    #3D7165: hookers green (excuse me, what kind of name is that) do be the hooker's green
+    #68ADA0: green sheen

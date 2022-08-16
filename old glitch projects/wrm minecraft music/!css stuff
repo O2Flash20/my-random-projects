@@ -1,0 +1,134 @@
+all the css animations
+
+#a1 {
+  background-color: red;
+  width: 50px; height: 50px;
+  animation: a1 5s infinite ease;
+}
+
+/* keyframe changes for animation 1*/
+@keyframes a1 {
+  0% {transform: translate(0,0) rotate(0deg); background-color: red;}
+  
+  16.6% {border-radius: 50%; background-color:
+    orange; transform: translate(-200px, 0) rotate(-360deg);}
+  
+  33.2%{border-radius: 0%; background-color: yellow;
+    transform: translate(-200px, 200px) rotate(0deg);}
+  
+  49.8%{border-radius: 50%; background-color: green;
+    transform: translate(0, 200px) rotate(-360deg);}
+  
+  66.4%{border-radius: 0%; background-color: blue;
+    transform: translate(200px,200px) rotate(0deg);}
+  
+  83%{border-radius: 50%; background-color: purple;
+    transform: translate(200px,0) rotate(-360deg);}
+  
+  100%{border-radius: 0%; background-color: red;
+    transform: translate(0,0) rotate(0deg);}
+}
+
+/*how the second animation box will look and the animation properties*/
+#a2 {
+  width: 50px; height: 50px;
+  background: linear-gradient(270deg, #fc1403, #ff9f40, #0e6ba1, #a624bd);
+  background-size: 400% 400%;
+  animation: a2 5s infinite ease;
+}
+
+/* keyframe changes for animation 2*/
+@keyframes a2 {
+  0% {background-position: 0% 50%; transform: scale(1) rotate(0deg);
+    border-radius: 0%; box-shadow: 0px 5px 30px black; filter: brightness(100%)}
+  
+  25% {background-position: 100% 50%; transform: scale(1.5) rotate(-270deg);
+    border-radius: 25%; box-shadow: 0px 10px 60px black; filter: brightness(150%)}
+  
+  50% {background-position: 0% 50%; transform: scale(2) rotate(270deg);
+    border-radius: 50%; box-shadow: 0px 10px 60px black; filter: brightness(200%)}
+  
+  75% {background-position: 100% 50%; transform: scale(1.5) rotate(-360deg);
+    border-radius: 25%;  box-shadow: 0px 10px 60px black; filter: brightness(150%)}
+  
+  100% {background-position: 0% 50%; transform: scale(1) rotate(0deg); filter: brightness(100%);  
+    border-radius: 0%;}
+}
+
+/*how the third animation box will look and the animation properties*/
+#a3 {
+  background: linear-gradient(45deg, blue, red);
+  width: 50px;
+  height: 50px;
+  background-size: 400% 400%;
+  animation: a3 5s infinite ease;
+}
+
+/* keyframe changes for animation 3*/
+@keyframes a3 {
+  0% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  25% {background-position: 100% 100%;
+    transform: rotate(360deg) translate(150px, 150px) scale(1.5);
+    filter: brightness(300%); border-radius: 50%;}
+  50% {background-position: 100% 0%; filter: brightness(400%) hue-rotate(40deg);
+    transform: rotate(270deg) scale(2) translate(-100px, -100px);}
+  75% {background-position: 50% 100%; filter: brightness(200%) hue-rotate(70deg); transform: rotate(90deg) scale(1.25) translate(20px, 50px);}
+  100% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  
+}
+
+/*how the fourth animation box will look and the animation properties*/
+#a4 {
+  background: radial-gradient(red, blue);
+  animation: a4 5s ease infinite;
+  background-size: 800% 800%;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+/* keyframe changes for animation 4*/
+@keyframes a4 {
+  0% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+  12.5%  {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(150px, 150px);
+    filter: brightness(200%);
+  }
+  25% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(150px, 150px);
+    filter: brightness(400%);
+  }
+  37.5% {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(150px, 150px);
+    filter: brightness(600%); 
+}
+  50% {
+    background-position: 0% 0%; filter: brightness(800%);
+    transform: rotate(360deg) scale(.1) translate(0, 0);
+  }
+    62.5%  {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(150px, 150px);
+    filter: brightness(600%);
+  }
+  75% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(150px, 150px);
+    filter: brightness(400%);
+  }
+  87.5% {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(150px, 150px);
+    filter: brightness(200%); 
+}
+  100% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+}

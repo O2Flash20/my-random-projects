@@ -1,0 +1,29 @@
+body {
+  font-family: helvetica, arial, sans-serif;
+  margin: 2em;
+  background-color: #05080f;
+  color: #b79acf;
+  font-size: 18px;
+}
+
+button {
+  background-color: #b79acf; 
+  border: none;
+  color: #05080f;
+  padding: 10px 17px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-family: helvetica, arial, sans-serif;
+}
+
+input[type=text]{
+  background-color: #05080f;
+  color: #b79acf;
+  border: none;
+  border-bottom: 2px solid #b79acf;
+}
+
+#output{
+  
+}

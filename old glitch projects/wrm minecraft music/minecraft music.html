@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <title>miecraft therpy musck</title>
+
+    <link rel="icon"
+        href="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FJukeBoxNew.png?v=1611192802650">
+
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="minecraft music.css" />
+    <link rel="stylesheet" href="general.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="rwd.css">
+
+
+    <!-- import the webpage's javascript file -->
+    <script src="minecraft music.js" defer></script>
+</head>
+
+<body>
+    <h1>
+        Minecraft Music
+    </h1>
+    <br><br><br>
+    <img src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fjukedics%202.gif?v=1612368218629"
+        class="shek" onclick="clickJukebox()" id="jukeDics">
+
+    <br>
+
+    <p id="volumeDisplay">
+        Loading...
+    </p>
+
+    <input type="range" min="0" max="100" value="100" class="slider" id="volumeSlider">
+
+    <div id="songList" class="hidden">
+        <div id="songListFlex" class="hidden">
+
+            <button class="songbutton" onclick="playKeyButton()">
+                play "key"
+            </button>
+
+            <button class="songbutton" onclick="playDoorButton()">
+                play "door"
+            </button>
+
+            <button class="songbutton" onclick="playSubwooferLullabyButton()">
+                play "subwoofer lullaby"
+            </button>
+
+            <button class="songbutton" onclick="playLivingMiceButton()">
+                play "living mice"
+            </button>
+
+            <button class="songbutton" onclick="playMoogCityButton()">
+                play "moog city"
+            </button>
+
+            <button class="songbutton" onclick="playHaggstromButton()">
+                play "haggstrom"
+            </button>
+
+            <button class="songbutton" onclick="playOxygeneButton()">
+                play "oxygene"
+            </button>
+
+            <button class="songbutton" onclick="playEquinoxeButton()">
+                play "equinoxe"
+            </button>
+
+            <button class="songbutton" onclick="playMiceOnVenusButton()">
+                play "mice on venus"
+            </button>
+
+            <button class="songbutton" onclick="playDryHandsButton()">
+                play "dry hands"
+            </button>
+
+            <button class="songbutton" onclick="playClarkButton()">
+                play "clark"
+            </button>
+
+            <button class="songbutton" onclick="playSwedenButton()">
+                play "sweden"
+            </button>
+
+            <button class="songbutton" onclick="playBeginningButton()">
+                play "beginning"
+            </button>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <img class="playPause" onclick="startAutoplayButton()"
+        src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fautoplay%20play.png?v=1611884421975"
+        width="50">
+
+    <img class="playPause" onclick="stopAutoplayButton()"
+        src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fstop.png?v=1611884424070" width="50">
+
+    <img class="playPause" onclick="nextAutoplay()"
+        src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fnext.png?v=1611884426794" width="50">
+
+    <p id="playing">
+        Loading...
+    </p>
+
+    <p id="currentTime">
+        Loading...
+    </p>
+
+
+    <img class="animationbutton" onclick="animationsAppear()"
+        src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fanimation.png?v=1612920726391" width="50">
+
+
+    <div class="clock">
+        <div id="hourHand">
+        </div>
+        <div id="minuteHand">
+        </div>
+        <div id="secondHand">
+        </div>
+        <div class="centerCircle">
+        </div>
+    </div>
+
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FKey.mp3?v=1611170450894" id="key">glitch
+        sucks</audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FDoor.mp3?v=1611170464537" id="door">glitch
+        do be glitching</audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FSubwoofer%20Lullaby.mp3?v=1611170469146"
+        id="subwooferLullaby"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FLiving%20Mice.mp3?v=1611170475973"
+        id="livingMice"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FMoog%20City.mp3?v=1611170484870"
+        id="moogCity"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FHaggstrom.mp3?v=1611170492592"
+        id="haggstrom"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FOxyg%C3%A8ne.mp3?v=1611170499531"
+        id="oxygene"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2F%C3%89quinoxe.mp3?v=1611170506341"
+        id="equinoxe"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FMice%20On%20Venus.mp3?v=1611170557341"
+        id="miceOnVenus"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FDry%20Hands.mp3?v=1611170564197"
+        id="dryHands"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FClark.mp3?v=1611170572382"
+        id="clark"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FSweden.mp3?v=1611170579783"
+        id="sweden"></audio>
+    <audio src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FBeginning.mp3?v=1611170585347"
+        id="beginning"></audio>
+
+
+    <div id="animationsContainerContainer" class="hidden">
+
+        <div id="screenBlur"></div>
+        <img src="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FX.png?v=1612911404202" id="xButton"
+            onclick="animationsDisappear()">
+        <div id="animationsContainer">
+            <div id="a1"></div>
+            <div id="a2"></div>
+            <div id="a3"></div>
+            <div id="a4"></div>
+        </div>
+
+    </div>
+
+
+
+    <div class="navBar">
+        <ul class="container">
+            <li class="item1"><a href="index.html">Home</a></li>
+            <li class="item2"><a href="minecraft music.html">Music</a></li>
+            <li class="item4"><a href="therpy talk.html">Talk</a></li>
+        </ul>
+    </div>
+
+</body>
+
+</html>

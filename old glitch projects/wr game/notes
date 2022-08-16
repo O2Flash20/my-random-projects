@@ -1,0 +1,32 @@
+this is where (the fun begins) the game ideas go
+
+
+two players
+
+player stats: 
+  Health, attack stat, defense, special 
+  
+initial rolls (rolls at the beginging of the game to determine player stats, they are completly random)
+health: 175-200
+attack: 5-10 - 11-20
+defense: 10-20% absorbed
+special attack: 20-30
+
+
+game rules: 
+
+player 1 rolls for stats
+player 2 rolls for stats
+
+
+unlimited rounds are allowed
+every 3 rounds special attack is used
+both take damage at the same time
+first to 0 or under loses
+If both players are under 0, whichever has less health loses
+
+player 1 roles for attack -> player 2 rolls for attack
+player 1 roles for defense -> player 2 rolls for defense
+fight
+
+damage taken calculation: player health - (opponent damge - (opponent damage/player defense))

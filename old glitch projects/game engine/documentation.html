@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Game Engine Demo Test Thing Yes</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="documentation.css">
+
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <h1>Setup</h1>
+    <p>
+        Link or paste in the game engine script.
+        Add a div with the id "gameHolder". It is in here where all the elements for the game will be held.
+        Add the function setup(); to your code. This is required for it all to run.
+    </p>
+
+    <h3>
+        createCanvas(size);
+    </h3>
+    <p>
+        Creates the background canvas on which your game will be displayed. There is a set aspect ratio of (3:2). The
+        "size" input can be set to any value or decimal you wish. Size 1 is 300 pixels by 200 pixels. Sizes and values
+        are always treated like they are on a size 3 canvas and converted later, meaning that games are completely
+        scalable.
+    </p>
+
+    <h3>
+        createSprite(name, width, height)
+    </h3>
+    <p>
+        Creates a new sprite with an identifier of "name", a width of "width", and a height of "height". The sprite gets
+        added to the canvas at (0,0).
+    </p>
+
+    <h3>
+        goTo(name, x, y)
+    </h3>
+    <p>
+        Moves the sprite with the identifier "name" to ("x","y"). **The bottom-left corner is (-450, -300) and the
+        top-right corner is (450, 300). (0,0) centers the sprite in the canvas**.
+    </p>
+
+    <h3>
+        move(name, x, y)
+    </h3>
+    <p>
+        Moves the sprite "name" by "x" and by "y".
+    </p>
+
+    <h3>
+        onKeyPressed(key, result);
+    </h3>
+    <p>
+        When "key" is clicked, the function "result" happens.
+    </p>
+
+    <h3>
+        posX(name);
+    </h3>
+    <p>
+        Gets the unscaled X position of a sprite (0 is centered on the middle of the canvas).
+    </p>
+
+    <h3>
+        posY(name);
+    </h3>
+    <p>
+        Gets the unscaled Y position of a sprite (0 is centered on the middle of the canvas).
+    </p>
+
+    <h3>
+        touchingBorder(name, direction);
+    </h3>
+    <p>
+        Returns true if the sprite is touching a border. "Direction" can be "x" or "y". If it is "x", it returns true
+        only if the sprite is touching a vertical border. If it is "y", it returns true only if the sprite is touching a
+        horizontal border.
+    </p>
+
+
+
+    <h3>
+        setBackground(url);
+    </h3>
+    <p>
+        Sets the background image of the canvas.
+    </p>
+
+    <h3>
+        setCostume(name, url, removeHitbox);
+    </h3>
+    <p>
+        Sets the image which represents the sprite "name". If you enter removeHitbox "true", it will make the red box
+        which marks the sprite's borders.
+    </p>
+
+    <h3>
+        show(name);
+    </h3>
+    <p>
+        Shows a sprite (makes it opaque).
+    </p>
+
+    <h3>
+        hide(name);
+    </h3>
+    <p>
+        Hides a sprite (makes it transparent).
+    </p>
+
+    <h3>
+        showVar(name, round);
+    </h3>
+    <p>
+        Displays the variable "name" under your game. This is meant to make it easier to visualize your game as you are
+        making it. If you want it to round the number of a variable, enter true as "round."
+    </p>
+
+    <h3>
+        playSound(url);
+    </h3>
+    <p>
+        Plays the audio "url".
+    </p>
+
+    <h2>
+        Behind the scenes
+    </h2>
+
+    <h3>
+        scale(input);
+    </h3>
+    <p>
+        Scales a number according to the canvas size.
+    </p>
+
+    <h3>
+        unscale(input);
+    </h3>
+    <p>
+        Unscales a number according to the canvas size.
+    </p>
+
+    <h3>
+        getOffset(name);
+    </h3>
+    <p>
+        Gets the offset of a sprite as a scaled integer.
+    </p>
+
+    <h3>
+        cornersList(name);
+    </h3>
+    <p>
+        Returns two arrays. They each contain the x, then y coordinates of the top left, then bottom right coordinates.
+    </p>
+
+    <div class="glitchButton" style="position:fixed;top:20px;right:20px;"></div>
+    <script src="https://button.glitch.me/button.js" defer></script>
+</body>
+
+</html>

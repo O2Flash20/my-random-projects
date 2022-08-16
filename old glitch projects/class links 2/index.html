@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+
+    <title>Schedule and Agenda</title>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <canvas id="backCanvas"></canvas>
+    <div class="table">
+        <table>
+            <tbody id="table">
+                <tr>
+                    <th>
+                        <h5 id="time">Loading Clock...</h5>
+                    </th>
+                    <th>Day 1</th>
+                    <th>Day 2</th>
+                    <th>Day 3</th>
+                    <th>Day 4</th>
+                    <th>Day 5</th>
+                    <th>Day 6</th>
+                </tr>
+                <tr>
+                    <th>9:05-10:00</th>
+                    <td><a id="1-1">-</a></td>
+                    <td><a id="1-2">-</a></td>
+                    <td><a id="1-3">-</a></td>
+                    <td><a id="1-4">-</a></td>
+                    <td><a id="1-5">-</a></td>
+                    <td><a id="1-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>10:05-10:55</th>
+                    <td><a id="2-1">-</a></td>
+                    <td><a id="2-2">-</a></td>
+                    <td><a id="2-3">-</a></td>
+                    <td><a id="2-4">-</a></td>
+                    <td><a id="2-5">-</a></td>
+                    <td><a id="2-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>10:55-11:10</th>
+                    <td><a id="3-1">-</a></td>
+                    <td><a id="3-2">-</a></td>
+                    <td><a id="3-3">-</a></td>
+                    <td><a id="3-4">-</a></td>
+                    <td><a id="3-5">-</a></td>
+                    <td><a id="3-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>11:10-12:00</th>
+                    <td><a id="4-1">-</a></td>
+                    <td><a id="4-2">-</a></td>
+                    <td><a id="4-3">-</a></td>
+                    <td><a id="4-4">-</a></td>
+                    <td><a id="4-5">-</a></td>
+                    <td><a id="4-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>12:05-12:55</th>
+                    <td><a id="5-1">-</a></td>
+                    <td><a id="5-2">-</a></td>
+                    <td><a id="5-3">-</a></td>
+                    <td><a id="5-4">-</a></td>
+                    <td><a id="5-5">-</a></td>
+                    <td><a id="5-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>12:55-1:45</th>
+                    <td><a id="6-1">-</a></td>
+                    <td><a id="6-2">-</a></td>
+                    <td><a id="6-3">-</a></td>
+                    <td><a id="6-4">-</a></td>
+                    <td><a id="6-5">-</a></td>
+                    <td><a id="6-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>1:50-2:40</th>
+                    <td><a id="7-1">-</a></td>
+                    <td><a id="7-2">-</a></td>
+                    <td><a id="7-3">-</a></td>
+                    <td><a id="7-4">-</a></td>
+                    <td><a id="7-5">-</a></td>
+                    <td><a id="7-6">-</a></td>
+                </tr>
+                <tr>
+                    <th>2:45-3:35</th>
+                    <td><a id="8-1">-</a></td>
+                    <td><a id="8-2">-</a></td>
+                    <td><a id="8-3">-</a></td>
+                    <td><a id="8-4">-</a></td>
+                    <td><a id="8-5">-</a></td>
+                    <td><a id="8-6">-</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p id="timeUntil"></p>
+    <h2>Notes Area</h2>
+    <textarea id="notes"></textarea>
+
+    <audio src="https://cdn.glitch.global/447a9293-6643-4394-8427-69beed6e8b16/vine-boom.mp3?v=1641567557332"
+        id="alarm"></audio>
+
+    <div id="classAdder" style="visibility:hidden;">
+        <h1>Add a class</h1>
+        <span>Name: </span>
+        <input id="name">
+        <span>Link: </span>
+        <input id="link">
+        <span>Period: </span>
+        <input id="row">
+        <span>Day: </span>
+        <input id="column">
+        <button
+            onclick="addClass(document.getElementById('name').value, document.getElementById('link').value, document.getElementById('row').value, document.getElementById('column').value)">Input</button>
+    </div>
+
+    <div class="options">
+        <div class="header">
+            <p>
+                Options:
+            </p>
+        </div>
+        <div class="item">
+            <span>Add Class:</span>
+            <input type="checkbox" onclick="toggleHidden('classAdder')">
+        </div>
+        <div class="item">
+            <span>Disable Alarm:</span>
+            <input type="checkbox" onclick="alarmToggle()">
+        </div>
+        <div class="item">
+            <span>Enable Particles:</span>
+            <input type="checkbox" onclick="toggleParticles()">
+        </div>
+    </div>
+
+    <div id="themePicker">
+        <h1>Custom Theme</h1>
+        <span>Main:</span>
+        <input id="mainColor" type="color" onchange="setMain(document.getElementById('mainColor').value)">
+        <span>Background:</span>
+        <input id="backgroundColor" type="color"
+            onchange="setBackground(document.getElementById('backgroundColor').value)">
+
+        <h2>Save Theme:</h2>
+        <span>Name:</span>
+        <input id="themeName">
+        <button
+            onclick="addTheme(document.getElementById('themeName').value, rs.getPropertyValue('--main'), rs.getPropertyValue('--second'))">Enter</button>
+
+        <h2>Remove Theme:</h2>
+        <span>Name:</span>
+        <input id="themeRemove">
+        <button onclick="removeTheme(document.getElementById('themeRemove').value)">Enter</button>
+
+        <h2>Apply Theme:</h2>
+        <ul id="themeList"></ul>
+    </div>
+
+    <!-- <div class="flip-card">
+  <div class="flip-card-inner">
+    <div class="flip-card-front">
+      <p>
+        guess what
+      </p>
+    </div>
+    
+    <div class="flip-card-back">
+      <p>
+        yo mum gay
+      </p>
+    </div>
+  </div>
+</div> -->
+
+</body>
+
+</html>

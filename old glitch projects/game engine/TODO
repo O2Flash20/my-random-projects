@@ -1,0 +1,31 @@
+put a prefix on my variables so that they dont mess up the user's
+
+all the css stuff for the engine should go in the styles div in the DOM
+
+
+
+let a sprite pass through another if it is hidden (opacity: 0)
+takes into account css scale
+
+change rotation istead of adding a new one
+also the same for scale
+
+x and y to rotation
+rotation to x and y
+
+set sprite and background colour (not only as images)
+
+option to not overlap sounds
+option to loop sounds
+
+touching
+fix thing where when only the right or left are touching under the other sprite, it thinks its touching
+
+scale sprites
+
+set rotation maybe
+make it so that is changes the existing rotation istead of adding a new one
+
+hide/show
+
+move forwards or backwards z index

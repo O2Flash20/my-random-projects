@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>The Library</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- import the webpage's javascript file -->
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <h1>Search by location</h1>
+
+    <p>Insert room name (can include numbers):</p>
+    <input type="text" maxlength="300" id="roomInput">
+
+    <br>
+    <br>
+
+    <p>Insert wall number:</p>
+    <input type="number" min="1" max="4" id="wallInput">
+
+    <br>
+    <br>
+
+    <p>Insert shelf number:</p>
+    <input type="number" min="1" max="5" id="shelfInput">
+
+    <br>
+    <br>
+
+    <p>Book number:</p>
+    <input type="number" min="1" max="32" id="bookInput">
+
+    <br>
+    <br>
+
+    <button onclick="findBook()">Submit</button>
+
+</body>
+
+</html>

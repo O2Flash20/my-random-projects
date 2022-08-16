@@ -1,0 +1,16 @@
+body {
+  font-family: helvetica, arial, sans-serif;
+  margin: 2em;
+}
+
+.sprite{
+  position: relative;
+  background-color: red;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+#canvas{
+  overflow: hidden;
+}

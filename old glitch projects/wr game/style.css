@@ -1,0 +1,337 @@
+/*general stuff*/
+
+* {
+    font-family: cursive;
+}
+
+html {
+    /*background: linear-gradient(blue, green)*/
+}
+
+/*where main content is displayed*/
+body {
+    padding: 2%;
+    margin: 0 10em;
+}
+
+
+div {
+    display: inline-block;
+}
+
+.hidden {
+    display: none;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*button stuff*/
+
+/*div for centering button*/
+.buttons {
+    display: flex;
+    justify-content: center;
+}
+
+/*button 1's general look*/
+.button1 {
+    width: 200px;
+    height: 50px;
+    border-radius: 10%;
+    cursor: pointer;
+    transition: box-shadow 400ms;
+    margin: 0 1em
+}
+
+/*button 1's appearance when hovered over*/
+.button1:hover {
+    box-shadow: 5px 5px 3px black;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*stat box stuff*/
+
+/*div for centering stat boxes*/
+.stats {
+    display: flex;
+    justify-content: space-around;
+}
+
+/*player 1's stats*/
+#player1Stats {
+    font-size: 120%;
+    color: yellow;
+    background-color: black;
+    display: hidden;
+    border: 3px solid orange;
+}
+
+/*player 2's stats*/
+#player2Stats {
+    font-size: 120%;
+    color: lightblue;
+    background-color: black;
+    display: hidden;
+    border: 3px solid blue;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*graphic stuff*/
+
+/*div for holding all graphics*/
+#graphics {
+    display: block;
+    text-align: center;
+    padding: 50px 0;
+}
+
+/*container for all healthbars (centers divs)*/
+.healthbars {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+/*total healthbar(background red)*/
+
+#healthbar1,
+#healthbar2 {
+    height: 55px;
+    width: 300px;
+    background: red;
+    border: 5px solid black;
+    overflow: hidden;
+
+}
+
+/*current health number*/
+
+#healthbar1 p,
+#healthbar2 p {
+    font-weight: bold;
+    text-shadow: 3px 2px 5px black;
+    position: relative;
+    left: 0px;
+
+}
+
+/*current healthbar (background green)*/
+
+#healthbarDisplay1,
+#healthbarDisplay2 {
+    display: inline-block;
+    position: relative;
+    right: 0px;
+    background-color: #0FFF00;
+    height: 55px;
+    width: 300px;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*player character appearance stuff*/
+
+/*player 1's appearance*/
+#man1 {
+    margin: 0 16% 0 0;
+    width: 125px;
+    filter: hue-rotate(0deg) brightness(0%);
+    transform: scaleX(-1);
+    position: relative;
+}
+
+/*player 2's appearance*/
+#man2 {
+    margin: 0 0 0 16%;
+    width: 125px;
+    filter: hue-rotate(0deg) brightness(0%);
+    position: relative;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*costume bar stuff*/
+
+/*costume select bar for p1 (on left)*/
+.characterSelectP1 {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    border: 5px solid black;
+    height: 95%;
+    width: 10%;
+    visibility: hidden;
+}
+
+/*costume select bar for p2 (on right)*/
+.characterSelectP2 {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    border: 5px solid black;
+    height: 95%;
+    width: 10%;
+    visibility: hidden;
+}
+
+/*box shadow for costume bar*/
+.characterSelectP1:hover {
+    box-shadow: 5px 5px 5px black;
+}
+
+/*box shadow for costume bar*/
+.characterSelectP2:hover {
+    box-shadow: -5px 5px 5px black;
+}
+
+/*style for title text on bar*/
+.costumeBarTitle {
+    width: 100%;
+    padding: 15% 0;
+    border: 2px solid #525252;
+}
+
+/*content on bar*/
+.costume {
+    width: 100%;
+    padding: 10% 0;
+    font-size: 200%;
+    text-overflow: ellipsis;
+    whitespace: nowrap;
+    overflow: hidden;
+    margin: 5% 0;
+    text-align: center;
+    background-color: white;
+    border: 2px solid #525252;
+    transition: width 1s, border-left 500ms;
+}
+
+/*properties gained when hovered over*/
+.costume:hover {
+    border-left: 15px solid #525252;
+    width: 200%;
+    cursor: pointer;
+}
+
+/*content on bar 2*/
+.p2costume {
+    width: 100%;
+    padding: 10% 0;
+    font-size: 200%;
+    text-overflow: ellipsis;
+    whitespace: nowrap;
+    overflow: hidden;
+    margin: 5% 0;
+    text-align: center;
+    background-color: white;
+    border: 2px solid #525252;
+    transition: width 1s, border-right 500ms;
+    float: right;
+}
+
+/*properties gained when hovered over*/
+.p2costume:hover {
+    border-right: 15px solid #525252;
+    width: 200%;
+    cursor: pointer;
+}
+
+/*div shown when choosing custom character*/
+#customPlayerSelect {
+    visibility: hidden;
+    background-color: silver;
+    width: 500px;
+    height: 200px;
+    position: absolute;
+    margin-left: auto;
+    margin-right: auto;
+    left: 37%;
+    top: 10%;
+    box-shadow: 5px 10px black;
+    border: 1px solid;
+    color: black;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*minigame stuff*/
+
+#minigames {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+#clickBox {
+    background-color: red;
+    width: 250px;
+    height: 150px;
+}
+
+#comboCanvas {
+    width: 800px;
+    height: 600px;
+    border: 2px solid #525252;
+    overflow: hidden;
+}
+
+#comboEnemy {
+    width: 50px;
+    height: 100px;
+    background-color: blue;
+    position: relative;
+}
+
+#comboCrosshair {
+    transform: scale(0.1);
+    position: relative;
+    z-index: 1;
+    filter: brightness(1000000) saturate(0);
+}
+
+#scoreDisplay {
+    position: absolute;
+    right: 65%;
+    top: 110%;
+}
+
+#LOSE {
+    position: relative;
+    top: -450px;
+    right: -200px;
+    font-size: 100px;
+}
+
+/*------------------------------------------------------------------------------------*/
+
+/*Responsive web design here, normal css goes on top of this*/
+
+@media only screen and (max-width: 1360px) {
+    #healthbar2 {
+        height: 55px;
+        width: 300px;
+        margin-left: 0px;
+    }
+
+    #healthbar1 {
+        height: 55px;
+        width: 300px;
+        margin-right: 0px
+    }
+
+    @media only screen and (max-width: 1000px) {
+        #healthbar2 {
+            height: 55px;
+            width: 200px;
+            margin-left: 0px;
+        }
+
+        #healthbar1 {
+            height: 55px;
+            width: 200px;
+            margin-right: 0px
+        }
+    }
+
+    /*------------------------------------------------------------------------------------*/

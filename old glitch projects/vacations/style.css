@@ -1,0 +1,18 @@
+/* CSS files add styling rules to your content */
+
+@font-face {
+  font-family: myFirstFont;
+  src: url(https://cdn.glitch.com/f8bd9c6b-5236-4602-b260-7fceae0ce029%2FArchitectsDaughter-Regular.ttf?v=1610475364796);
+}
+
+body {
+  font-family: myFirstFont, helvetica, arial, sans-serif;
+  margin: 2em;
+  background-image: url(https://cdn.glitch.com/f8bd9c6b-5236-4602-b260-7fceae0ce029%2Freinecke_paper.jpg?v=1610474985761);
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  background-color: #ffffff
+}

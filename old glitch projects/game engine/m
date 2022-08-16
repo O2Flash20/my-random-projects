@@ -1,0 +1,54 @@
+console.log("r")
+
+var rect1 = sprite1.getBoundingClientRect()
+var rect2 = sprite2.getBoundingClientRect()
+
+if (rect1.bottom == rect2.top || rect1.bottom == rect2.left || rect1.bottom == rect2.right || rect1.bottom == rect2.bottom || rect1.top == rect2.top || rect1.top == rect2.left || rect1.top == rect2.right || rect1.top == rect2.bottom || rect1.left == rect2.top || rect1.left == rect2.left || rect1.left == rect2.right || rect1.left == rect2.bottom || rect1.right == rect2.top || rect1.right == rect2.left || rect1.right == rect2.right || rect1.right == rect2.bottom || rect1.top == rect2.top || rect1.top == rect2.left || rect1.top == rect2.right || rect1.top == rect2.bottom) {
+    console.log("eeeeeeee")
+}
+
+
+
+
+var a = document.getElementById(sprite1)
+var b = document.getElementById(sprite2)
+
+var aRect = a.getBoundingClientRect()
+var bRect = a.getBoundingClientRect()
+
+return !(
+    ((aRect.top + aRect.height) < (bRect.top)) ||
+    (aRect.top > (bRect.top + bRect.height)) ||
+    ((aRect.left + aRect.width) < bRect.left) ||
+    (aRect.left > (bRect.left + bRect.width))
+)
+
+
+var s1 = document.getElementById(sprite1)
+var s2 = document.getElementById(sprite2)
+
+var s1x1 = cornersList(sprite1)[0][0]
+var s1x2 = cornersList(sprite1)[0][1]
+
+var s1y1 = cornersList(sprite1)[1][1]
+var s1y2 = cornersList(sprite1)[0][1]
+
+var s2x1 = cornersList(sprite2)[0][0]
+var s2x2 = cornersList(sprite2)[0][1]
+
+var s2y1 = cornersList(sprite1)[1][1]
+var s2y2 = cornersList(sprite2)[0][1]
+
+///(if the leftmost side of 1 is between the x of 2 and/or the rightmost side is between the x of 2) and ()
+if ((((s1x1 >= s2x1) && (s1x1 <= s2x2)) || ((s1x2 >= s2x1) && (s1x2 <= s2x2))) && (((s1y1 >= s2y1) && (s1y1 <= s2y2)) || ((s1y2 >= s2y1) && (s1y2 <= s2y2)))) {
+    return true
+}
+
+if ((((s2x1 >= s1x1) && (s2x1 <= s1x2)) || ((s2x2 >= s1x1) && (s2x2 <= s1x2))) && (((s2y1 >= s1y1) && (s2y1 <= s1y2)) || ((s2y2 >= s1y1) && (s2y2 <= s1y2)))) {
+    return true
+}
+
+else {
+    return false
+}
+

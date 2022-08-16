@@ -1,0 +1,60 @@
+/** {
+  border: 5px solid black;
+}
+
+h3 {
+  border: 5px solid blue;
+}
+*/
+html {
+  background-image: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FBackground.png?v=1622740032686);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body * {
+  margin: 1em 3em; text-align: center; font-family: mojangles;
+}
+
+.backdrop a {
+  color: white; text-decoration: none; font-size: 200%; opacity: 100%;
+}
+
+.backdrop a:hover {
+  text-decoration: underline; color: orange; transition: color 500ms, transform 200ms;
+}
+
+.backdrop {
+  background: linear-gradient(45deg, #4D0002, #05E9FF);
+  background-size: 200%, 200%;
+  box-shadow: 10px 5px 5px black;
+  opacity: 75%; 
+  padding: 15em 5em 12em 5em;
+  animation: backdrop 5s ease-in-out infinite;
+  
+}
+
+@keyframes backdrop {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.title {
+ font-size: 500%;
+  color: #1FD8CB;
+  margin: 10px 0 0 0;
+  background-size: 400% 400%;
+}
+
+
+@font-face {
+  font-family: mojangles;
+  src: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FMojangles.ttf?v=1622735981749);
+}

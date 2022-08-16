@@ -1,0 +1,90 @@
+in the code, the first player is 0
+to the user it is 1
+for the number of players, use the variable and not the gamestate item
+
+per player:
+  Hand
+  Board
+    Strength
+    Resilience
+    Special
+    Attacking or defending
+    Card Health
+    Card Fighting
+      Player that the card is fighting
+      Card Number fighting ("none" if none)
+    Card tapped
+  On board but not paired
+  Deck
+  Health
+  Factory cards
+  # of Jokers in play
+  
+global:
+Player whose turn it is
+Round
+Player attacked(same as player taking turn if none)
+Player currently on the step of joining the battle(same player as player taking turn if none)
+Number of players (always last)
+
+
+JS FUNCTION ORDER
+
+Global variables
+
+startFromURL()
+  setting up the game using the url automatically
+  
+log()
+  console.log but shorter (not really that good)
+  
+randomNumber(min, max)
+  quick random number
+  
+id(id)
+  quicker document.getElementById
+  
+urlParameters()
+  returns the part of the url used to give game data
+
+alphabet
+  used for encode and decode
+  
+encodeGameState()
+  turning gameState into url to send
+  
+decodeURLParameters()
+  turning url into gameState
+  
+copyLink(message)
+  creates the url to send along with a message and copies it to clipboard
+  
+startup(players, online)
+  sets up gameState and html divs to be changed by other functions
+
+damageAsset(player, cardNumber, damage)
+  deals "damage" to "players" card "cardNumber"
+
+damagePlayer(player, amount)
+  damages "player" "amount"
+  
+removeDeadAssets(player)
+  removes from the game all assets with health lower than 1 for "player"
+
+drawCard(player, numberOfCards)
+  yes
+
+nextSpectatedPlayer()
+  changes the player you're spectating
+
+endTurn()
+  changing whose turn it is
+  
+setDrawLimit()
+  setting the limit of cards you can draw depending on the round
+
+enterCard(player, cardNumber)
+  "player" enter the card in the hand "cardNumber"
+
+createAsset(strength, resilience, special)
+  creates an asset with the entered cards with an index of "strength", "resilience", "special"

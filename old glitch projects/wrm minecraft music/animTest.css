@@ -1,0 +1,107 @@
+body {
+  background-image: url('https://lh3.googleusercontent.com/proxy/Ncfi-XY37O6YfBnwoH3gWFIZAcKtF340_UbY-eORIs_rNxFy-wR8xVBsIu0U7QiIQ6N2cbw5dX4die1QePWG6V6ZzeUY96oWl1pONbwp32KMbN3aLbNZlRKcig=s0-d');
+  background-size: cover;
+  background-repeat: repeat;
+}
+
+
+#jsTestContainer{
+  position: relative;
+  background: yellow;
+  margin: 1em auto;
+  z-index: -0;
+}
+
+#jsTest{
+  width: 12.5%;
+  height: 12.5%;
+  position: absolute;
+  background-color: red; 
+  margin: 0;
+  z-index: -0;
+}
+
+.jsAnimations {
+  width: 50%;
+  margin: 0 auto 2em auto;
+  padding-bottom: 2em;
+}
+
+.cssAnimations {
+  margin: 0 auto 3em auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cssAnimations button {
+  flex-grow: 1;
+}
+
+#a1, #a2, #a3, #a4 {
+    margin: auto;
+    position: absolute;
+    left: 50%;
+    align-self: center;
+}
+
+.animationSpace {
+  width: 90%;
+  height: 75%;
+  margin: 5em auto 3em auto;
+  display: flex;
+}
+
+.animationbutton {
+  background: linear-gradient(#d4f6ff, #9ccad6);
+  border: solid 2px #acb9bd;
+  border-radius: 5px;
+  transition-property: transform, filter;
+  transition-duration: 200ms;
+  margin-bottom: 5px;
+  }
+
+.animationbutton:hover {
+  transform: scale(1.25); filter: brightness(200%); z-index: 3;
+}
+
+#testRange {
+  display: block;
+}
+
+.jsButtons {
+  margin: 1em auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.jsButtons button {
+  flex-grow: 4;
+}
+
+input {
+  margin: auto
+}
+
+#a2 {
+  background: linear-gradient(270deg, #fc1403, #ff9f40, #0e6ba1, #a624bd);
+  background-size: 400% 400%;
+  animation: a2 5s infinite ease;
+}
+
+@keyframes a2 {
+  0% {background-position: 0% 50%; transform: scale(1) rotate(0deg);
+    border-radius: 0%; box-shadow: 0px 5px 30px black; filter: brightness(100%)}
+  
+  25% {background-position: 100% 50%; transform: scale(1.5) rotate(-270deg);
+    border-radius: 25%; box-shadow: 0px 10px 60px black; filter: brightness(150%)}
+  
+  50% {background-position: 0% 50%; transform: scale(2) rotate(270deg);
+    border-radius: 50%; box-shadow: 0px 10px 60px black; filter: brightness(200%)}
+  
+  75% {background-position: 100% 50%; transform: scale(1.5) rotate(-360deg);
+    border-radius: 25%;  box-shadow: 0px 10px 60px black; filter: brightness(150%)}
+  
+  100% {background-position: 0% 50%; transform: scale(1) rotate(0deg); filter: brightness(100%);  
+    border-radius: 0%;}
+}

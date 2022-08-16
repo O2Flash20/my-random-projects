@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Hello!</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- import the webpage's javascript file -->
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <button onclick="openUI()">Add Element</button>
+
+    <button onclick="openRemoveUI()">Remove Element</button>
+
+    <button onclick="openIDUI()">Show all Ids</button>
+
+    <div id="uiHolder" class="hidden ui">
+
+        <label for="type">Element type:</label>
+        <input id="type">
+
+        <br>
+
+        <label for="text">Element text:</label>
+        <input id="text">
+
+        <br>
+
+        <label for="id">Element id:</label>
+        <input id="id">
+
+        <br>
+
+        <label for="class">Element class:</label>
+        <input id="class">
+
+        <br>
+
+        <label for="src">Element src:</label>
+        <input id="src">
+
+        <br>
+
+        <label for="href">Element href:</label>
+        <input id="href">
+
+        <br>
+
+        <button onclick="creeteElement()">Create</button>
+
+        <button onclick="closeUI()">Close</button>
+    </div>
+
+    <div id="removeUiHolder" class="hidden ui">
+        <label for="removeId">Element id:</label>
+        <input id="removeId">
+
+        <br>
+
+        <button onclick="removeElement()">Remove</button>
+
+        <button onclick="closeRemoveUI()">Close</button>
+    </div>
+
+    <div id="idListHolder" class="hidden ui">
+        <p id="IDlist"></p>
+
+        <br>
+
+        <button onclick="closeIDUI()">Close</button>
+    </div>
+
+    <div id="custom"></div>
+
+    <div class="glitchButton" style="position:fixed;top:20px;right:20px;"></div>
+    <script src="https://button.glitch.me/button.js" defer></script>
+</body>
+
+</html>

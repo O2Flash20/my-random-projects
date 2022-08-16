@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+
+    <title>Hello World!</title>
+
+    <link rel="stylesheet" href="style.css" />
+
+</head>
+
+<body>
+    <span class="forb-text">
+
+        <h1>The Fool’s cards Official Rule Book</h1>
+        <b>What to play with: </b><span>Preferably, each player should start with a regular deck of 54 playing cards,
+            including the jokers. If you do not have a full deck for each player, you can split a deck evenly between
+            players. To avoid confusion, it is better if all players have different-looking cards.</span>
+        <br><br>
+        <b>Who to play with: </b><span>This game can be played with two or more players.</span>
+        <br><br>
+        <b>Player health: </b><span>Each player starts at 30 health. The objective to win the game is to bring your
+            opponent’s health to 0.</span>
+        <br><br>
+        <b>Turns: </b><span>This is a turn-based game. Choose a player to go first and choose an order in which players
+            take their turns so that each player gets their turn. Do this however you see fit.</span>
+        <br><br>
+        <b>Drawing cards: </b><span>“Drawing” means putting the top card of your previously shuffled and front-down deck
+            into your hand (the cards that you can see and use, but haven’t been used yet). At the beginning of the
+            game, each player draws 10 cards, then chooses 7, shuffling the rest back into their deck. On their first
+            turn, each player draws one card. On their second turn, each player draws two cards, and so on. The maximum
+            amount of cards that you can draw per turn is 5.</span>
+        <br><br>
+        <b>Factory cards: </b><span>On each of your turns, you are able to put one card of your choice from your hand
+            onto the board face down. The amount of these cards that you have on the board is the number of numbered
+            (not King, Queen or Jack, and aces are “1”s) cards you can place on the board each turn. </span>
+        <br><br>
+        <b>Putting numbered cards on the board: </b><span>When you place a numbered card on the board, it goes into a
+            face-down pile that only you can look through. </span>
+        <br><br>
+        <b>Creating assets: </b><span>At any point in the game, you can choose two of those cards and put them together,
+            creating an asset. Once this asset is created, it leaves this pile and goes face-up so that anyone can see
+            it. It cannot be changed until it dies.</span>
+        <br><br>
+        <b>Asset cards: </b><span>Asset cards are what you use to deal damage to your enemy and protect yourself. Asset
+            cards appear in groups of two (although it is easier to consider them as one asset). The first one will
+            represent the amount of damage that the asset does (strength). The second one represents the amount of
+            damage that the asset can take before dying (resilience). At the beginning of every turn, this value resets
+            (if it was 5 and the asset takes 3 damage, it will not die and at the beginning of the next turn, it’s
+            resilience will be back up to 5 and not 2).</span>
+        <br><br>
+        <b>Using assets to attack and defend: </b><span>At any time during your turn, you can start an attack. To do
+            this, you choose a player to attack and choose assets to attack with (you can create assets out of your
+            hidden pile to use). Once this is done, the attacked player chooses assets that they control (again, they
+            can also create a new asset at this point), these assets will be used to defend. The attacked player then
+            decides which of their assets will defend against which of the attacking player’s assets. Once this is
+            decided, the blocked assets will do damage equal to their strength to their blocker. At the same time,
+            blocking assets do damage equal to their strength to the asset they’re blocking. If the damage done to an
+            asset is greater than or equal to their resilience, they die and both cards making them up leave the game.
+            If an asset is not blocked, it deals damage equal to its strength to the player it’s attacking. Once the
+            asset is done attacking and if it survived it taps, meaning that it cant defend until it untaps after one
+            cycle of the game.</span>
+        <br><br>
+        <b>Other playing joining an attack or defence: </b><span>If one player declares an attack on another, any other
+            player is allowed to join in, either attacking or defending. All rules still apply.</span>
+        <br><br>
+        <b>Blocking with factories: </b><span>If damage would be dealt to you, you can divert some of that damage by
+            destroying a factory card. The number on the front of the card is equal to the amount of damage it diverts.
+        </span>
+        <br><br>
+        <b>Kings, Queens, Jacks, and Jokers: </b><span>These cards have different uses from the others. They can be
+            played at any time from your hidden pile. Kings are attached to an asset and give it the ability that after
+            attacking, they do not tap. Queens puts your player’s health up by 5. Jacks are attached to an asset and
+            give it the ability that they do damage before they take it. If the opposing asset(s) are killed, they
+            cannot do their damage. Jokers cancel all damage during the turn that they were played. If only one joker is
+            played at a time, your cards tap as if they all attacked. If two jokers are played at a time, they do not
+            tap. For every joker that your opponents play in the same step, it acts as if you placed one joker
+            less.</span>
+        <br><br>
+        <b>Order of steps: </b><span>This game has specific steps. You can only do certain actions of their
+            corresponding steps. All steps are optional: you don’t need to do an action on each step.</span>
+        <br><br>
+        <b>Running out of cards: </b><span>If you run out of cards in your deck, you will be unable to draw cards and
+            will have to try to win using the cards that you still have on the board.</span>
+        <h2>Steps:</h2>
+        <ol>
+            <li>Draw</li>
+            <li>Place cards on the board</li>
+            <li>Create assets</li>
+            <li>Fight
+                <ol>
+                    <li>Choose assets to attack with</li>
+                    <li>Choose which player to attack</li>
+                    <li>Attacked player creates assets</li>
+                    <li>Attacked player chooses assets to block with</li>
+                    <li>Other players join the attack</li>
+                    <li>Other players join the defence</li>
+                    <li>Defending and attacked players choose which assets to block with which assets (multiple assets
+                        can block one asset)</li>
+                    <li>Damage is dealt</li>
+                    <li>All players remove all surviving assets that took part in the fight from the game, choosing one
+                        card of each asset and putting it in the hidden pile</li>
+                </ol>
+            </li>
+            <li>Create assets</li>
+            <li>Place cards on the board</li>
+            <li>Create assets</li>
+            <li>End turn</li>
+        </ol>
+        <br>
+        <a href="index.html">Back to Game</a>
+    </span>
+
+</body>
+
+</html>

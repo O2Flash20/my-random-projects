@@ -1,0 +1,214 @@
+:root {
+  --color: white;
+  --color1: white;
+  --color2: white;
+}
+
+/*gotta organize from the beggining this time... haha NAH*/
+body {
+  font-size:20px;
+  margin: 4%;
+  background-color: black;
+}
+
+#actionMenu {
+  border: 3px solid var(--color1); float: left; width: 30%; text-align: center; display: none; position: fixed; top: 0%; left: 0%
+}
+
+.action {
+  display: none; font-size: 125%; padding: 0.5em 0;
+  font-size: 20px;
+}
+
+.action:hover {
+  cursor: pointer;
+}
+
+#actionMenu:hover .action {
+  display: block;
+}
+
+*{
+  font-family:monospace; font-size:15px;
+}
+
+#copyText{
+  position:fixed;
+  bottom:0;
+  right:0;
+}
+
+div, input, .copy-text, .submit, .card, .asset-cards.container > p{
+  background-size: 100%; background-repeat: repeat;  
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; 
+  -moz-background-clip: text;
+  -moz-text-fill-color: transparent;
+  background-image: var(--color);
+}
+
+#buttons {
+  text-align: center;
+}
+
+#textBox {
+  border: 3px solid var(--color1); width: 35%; position: fixed; top: 0%; right: 0%; display: none; overflow: scroll; height: 129.3px; padding-left: 5px; scroll-behavior: smooth; animation: coloe 5s ease infinite;overflow-x:hidden;
+}
+
+#textBox > p {
+ color: var(--color1); animation: colue 5s ease infinite;
+}
+
+@keyframes colue {
+  from {
+    color: var(--color1)
+  }
+  50% {
+    color: var(--color2)
+  }
+  to {
+    color: var(--color1)
+  }
+}
+@keyframes coloe {
+  from {
+    border: 3px solid var(--color2)
+  }
+  50% {
+    border: 3px solid var(--color1)
+  }
+  to {
+    border: 3px solid var(--color2)
+  }
+}
+
+#gameStateTracker {
+  display: none; text-align: right;
+}
+
+.forb {
+  text-decoration: none; color: black; font-size: 120%; display: inline-block;
+}
+
+.forb:active {
+  color: blue; font-size: 130%; 
+}
+
+.forb-text {
+  color: var(--color);
+}
+
+#graphics {
+  margin-top: 5%; display: flex; justify-content: center;
+}
+
+#graphics span {
+  flex-basis: 100%; text-align: center; padding: 3%;
+}
+
+#roundDisplay {
+  display: none; margin-top: 5%; position: absolute; z-index: -1; bottom: 5%; right: 2%; text-align: right;
+}
+
+.card {
+  width: 3em; height: 4.7em; font-size: 13px; border: solid 2px var(--color1); display: inline-block; padding: 2px; margin: 4px 8px 0 0; border-radius: 6px; transition: 200ms;box-shadow:0px 0px 10px var(--color1);
+}
+
+.card:hover {
+  margin: 4px 15px 0 0; transform: scale(1.5); box-shadow:0px 0px 50px var(--color1);
+}
+
+.asset-cards-container > .card:hover {
+    margin: 4px 15px 20px 0; transform: scale(1.5); box-shadow:0px 0px 50px var(--color1);
+}
+
+.asset {
+  width: 5em; height: 7.8em; font-size: 10px; border: solid 2px var(--color1); display: inline-block; margin: 0 4px; border-radius: 9px; transition: 200ms;box-shadow:0px 0px 10px var(--color1);
+}
+
+.highlight {
+  border: solid 3px var(--color2);
+}
+
+.enemy-asset {
+    width: 5em; height: 7.8em; font-size: 10px; border: solid 2px var(--color1); display: inline-block; margin: 0 4px 20px 4px; border-radius: 9px; transition: 200ms;box-shadow:0px 0px 10px var(--color1);
+}
+
+.asset:hover {
+  transform: scale(1.5);box-shadow:0px 0px 50px var(--color1);
+}
+
+.asset-text {
+  height: 0.5em; text-align: center; margin-top: 0.45em;
+}
+
+.tapped{
+  transform:rotate(90deg);
+  margin-right: 20px;
+  margin-left: 20px;
+}
+
+.attacking {
+  box-shadow: 0px 0px 10px red; animation: attacking 2.5s ease infinite;
+}
+
+@keyframes attacking {
+  from {
+    box-shadow: 0px 0px 15px 5px red
+  }
+  50% {
+    box-shadow: 0px 0px 18px 8px red
+  }
+  to {
+    box-shadow: 0px 0px 15px 5px red
+  }
+}
+
+.deck-container, .hand-container, .asset-cards-container {
+  display: flex; justify-content: center;
+}
+
+.hand-container > .card, .entered-cards-container > .card, .asset-cards-container > .asset, .asset-cards-container > span {
+  margin-bottom: 20px;
+}
+
+.asset-cards-container > p {
+  -webkit-text-fill-color: initial;
+  left: 4%;
+  width: 14%;
+  color: var(--color1);
+  position: absolute;
+  animation: colue 5s ease infinite;
+}
+
+.color-button {
+position: fixed; color: red; bottom: 0%; left: 0%; animation: color 4s ease infinite; font-size: 160%; background-color: black;
+}
+
+.color-button:hover {
+  animation: color 2s ease-in-out infinite;
+}
+
+@keyframes color{
+  from {
+    color: red
+  }
+  20% {
+    color: orange
+  }  
+  40% {
+    color: yellow
+  }  
+  60% {
+    color: green
+  }  
+  80% {
+    color: blue
+  }  
+  100% {
+    color: purple
+  }
+  to {
+    color: red
+  }
+}

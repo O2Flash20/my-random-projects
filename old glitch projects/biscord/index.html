@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://cdn.glitch.com/38603394-83d3-4dac-b0de-a64e546dd6b4%2Flogo2.png?v=1627520056827" />
+
+    <title>Biscord</title>
+    <!-- Import the webpage's stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Import the webpage's javascript file -->
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <script src="https://kihtrak.com/cloud_variable/cloudify.min.js"></script>
+
+    <div id="send">
+        <input id="sendInput" style="width:300%; height:50px;">
+        <button id="sendButton" onclick="sendMessage()">Send Message</button>
+        <br>
+        <button onclick="openImageUI()">Create Image</button>
+    </div>
+
+    <div id="createImageUI" style="visibility:hidden">
+        <div id="setImageDimensions">
+            <span>Width:</span>
+            <input id="width">
+            <br>
+            <span>Height:</span>
+            <input id="height">
+            <button onclick="createImageMaker()">Confirm</button>
+        </div>
+        <div id="imageMaker">
+            <button onclick="display(imgWidth, imgHeight, imageFromMaker())">Send</button>
+        </div>
+    </div>
+
+    <div id="user">
+        <input id="usernameInput">
+        <button id="usernameButton" onclick="usernameApply()">Apply Username</button>
+    </div>
+    <p id="userList"></p>
+    <div id="image"></div>
+</body>
+
+</html>

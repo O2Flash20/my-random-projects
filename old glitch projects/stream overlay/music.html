@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>02Flash20 custom streaming bits</title>
+
+    <link rel="icon"
+        href="https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2FJukeBoxNew.png?v=1611192802650">
+    <link rel="stylesheet" href="music.css">
+    <link rel="stylesheet" href="navBar.css">
+
+    <script src="music.js"></script>
+</head>
+
+<body>
+
+    <div class="spans">
+        <span class="text">Currently playing: </span><span class="text" id="songPlaying">None</span>
+        <br>
+        <span class="text" id="currentTime">---</span><span class="text">/</span><span class="text"
+            id="totalTime">---</span>
+    </div>
+
+    <div class="control">
+
+        <button onclick="songControl('startButton')">Start</button>
+        <button onclick="songControl('stop')">Stop</button>
+
+    </div>
+
+    <div class="back">
+
+    </div>
+
+    <div class="dropdown">
+
+        <p>Songs</p>
+        <div class="dropdownContent">
+            <span class="songSelection" onmousedown="playSong('11')">11</span>
+            <span class="songSelection" onmousedown="playSong('Beginning')">Beginning</span>
+            <span class="songSelection" onmousedown="playSong('Clark')">Clark</span>
+            <span class="songSelection" onmousedown="playSong('Door')">Door</span>
+            <span class="songSelection" onmousedown="playSong('Dry Hands')">Dry Hands</span>
+            <span class="songSelection" onmousedown="playSong('Equinoxe')">Equinoxe</span>
+            <span class="songSelection" onmousedown="playSong('Haggstrom')">Haggstrom</span>
+            <span class="songSelection" onmousedown="playSong('Key')">Key</span>
+            <span class="songSelection" onmousedown="playSong('Living Mice')">Living Mice</span>
+            <span class="songSelection" onmousedown="playSong('Mall')">Mall</span>
+            <span class="songSelection" onmousedown="playSong('Mice On Venus')">Mice On Venus</span>
+            <span class="songSelection" onmousedown="playSong('Moog City')">Moog City</span>
+            <span class="songSelection" onmousedown="playSong('Oxygene')">Oxygène</span>
+            <span class="songSelection" onmousedown="playSong('Pigstep')">Pigstep</span>
+            <span class="songSelection" onmousedown="playSong('Stal')">Stal</span>
+            <span class="songSelection" onmousedown="playSong('Strad')">Strad</span>
+            <span class="songSelection" onmousedown="playSong('Subwoofer Lullaby')">Subwoofer Lullaby</span>
+            <span class="songSelection" onmousedown="playSong('Sweden')">Sweden</span>
+            <span class="songSelection" onmousedown="playSong('Wait')">Wait</span>
+        </div>
+
+
+    </div>
+
+
+    <div class="navbar">
+        <div class="navigation">
+            <a href="index.html">Home</a>
+        </div>
+        <div class="navigation">
+            <a href="streak.html">Streak</a>
+        </div>
+        <div class="navigation">
+            <a href="streamTime.html">Stream Time</a>
+        </div>
+    </div>
+
+
+</body>
+
+</html>

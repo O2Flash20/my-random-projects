@@ -1,0 +1,84 @@
+.hidden {
+    visibility: hidden;
+}
+
+#title {
+    text-align: center;
+}
+
+#logo {
+    width: 200px;
+    border-radius: 45px;
+    border: 10px solid #86ba985;
+}
+
+.moduleBox {
+    margin: 5px;
+    border-radius: 25px;
+    border: 4px solid #86ba98;
+    padding: 20px;
+    /*   width:200px; */
+    height: 200px;
+    cursor: pointer;
+    background-color: #7CECD6;
+}
+
+.themeBorder {
+    border: 4px solid #86ba98;
+    border-radius: 5px;
+    background-color: #7CECD6;
+    padding: 5px;
+}
+
+.moduleBox img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+    width: 50px;
+    height: 50px;
+}
+
+#configSave {
+    margin: 15px;
+    width: 75vw;
+    height: 12vw;
+    margin-left: auto;
+    margin-right: auto;
+    border: 4px solid #86ba98;
+    text-align: center;
+    font-size: 5vw;
+    cursor: pointer;
+    background-color: #7CECD6;
+    border-radius: 10px;
+}
+
+.selected {
+    background-color: #3eda79;
+}
+
+#modulesArea {
+    padding: 20px;
+    border-radius: 25px;
+    border: 4px solid #86ba98;
+    background-color: #48b59f;
+}
+
+#selectedModulesArea {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 25px;
+    border: 4px solid #86ba98;
+    background-color: #48b59f;
+}
+
+#selectedModules {
+    font-size: 20px
+}
+
+body {
+    background-color: #444444;
+    color: #000000;
+    font-family: arial;
+    font-size: 20px;
+}

@@ -1,0 +1,32 @@
+*{
+  background-color:#36393f;
+  color:white;
+  font-family:Helvetica;
+}
+
+#send{
+  bottom:10px;
+  position:absolute;
+}
+
+.black{
+  background-color:black;
+  display:inline-block;
+}
+
+.white{
+  background-color:white;
+  display:inline-block;
+}
+
+#image{
+  font-size:0;
+}
+
+#createImageUI{
+  position: fixed;
+  background:red;
+  width:50%;
+  height:50%;
+  right:30%;
+}

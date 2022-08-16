@@ -1,0 +1,84 @@
+<!DOCTYPE>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>animations</title>
+    <link rel="stylesheet" href="animTest.css">
+    <script src="animations.js" defer></script>
+    <link rel="stylesheet" href="general.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="rwd.css">
+</head>
+
+<body>
+
+    <div class="animationSpace">
+
+        <div id="a1"></div>
+        <div id="a2"></div>
+        <div id="a3"></div>
+        <div id="a4"></div>
+
+    </div>
+
+    <div class="cssAnimations">
+        <button class="animationbutton" onclick="playAnimation1()">
+            play animation 1
+        </button>
+        <button class="animationbutton" onclick="playAnimation2()">
+            play animation 2
+        </button>
+        <button class="animationbutton" onclick="playAnimation3()">
+            play animation 3
+        </button>
+        <button class="animationbutton" onclick="playAnimation4()">
+            play animation 4
+        </button>
+    </div>
+
+    <div class="jsAnimations">
+
+        <div id="jsTestContainer">
+            <div id="jsTest">ye</div>
+        </div>
+
+
+        <div class="jsButtons">
+            <button class="animationbutton" onclick="testAnimationRight()">
+                move right
+            </button>
+            <button class="animationbutton" onclick="testAnimationLeft()">
+                move left
+            </button>
+            <button class="animationbutton" onclick="testAnimationLeave()">
+                leave
+            </button>
+
+            <button class="animationbutton" onclick="testAnimationStartRandomMove()">
+                start random movement
+            </button>
+            <button class="animationbutton" onclick="testAnimationStopRandomMove()">
+                stop random movement
+            </button>
+
+
+        </div>
+
+        <input type="range" min="0" max="720" value="0" class="slider" id="testRange">
+
+    </div>
+
+    <div class="navBar">
+        <ul class="container">
+            <li class="item1"><a href="index.html">Home</a></li>
+            <li class="item2"><a href="minecraft music.html">Music</a></li>
+            <li class="item4"><a href="therpy talk.html">Talk</a></li>
+        </ul>
+    </div>
+
+</body>
+
+</html>

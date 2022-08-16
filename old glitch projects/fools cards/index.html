@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+
+    <title>Fool's Cards</title>
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="game.css" />
+
+    <script src="scriptTast.js" defer></script>
+
+</head>
+
+<body>
+    <div>
+
+        <a class="forb" href="forb.html">FORB</a>
+        <div id="buttons">
+            <span>How many players? &#128563;</span>
+            <input id="playersInput" style="background-color: black">
+            <br>
+            <span>Online?</span>
+            <input id="online" type="checkbox" style="background-color: black">
+            <br>
+            <button class="submit"
+                onclick="startup(parseInt(document.getElementById('playersInput').value), document.getElementById('online').checked)"
+                style="background-color: black">
+                Submit
+            </button>
+        </div>
+    </div>
+    <div id="gameStateTracker" class="gameStateTracker">
+
+        <span>Hand: </span><span id="handDisplay"></span>
+        <br>
+        <span>Cards' Strength: </span><span id="strengthDisplay"></span>
+        <br>
+        <span>Cards' Resilience: </span><span id="resilienceDisplay"></span>
+        <br>
+        <span>Cards' Special Characteristics: </span><span id="specialDisplay"></span>
+        <br>
+        <span>Cards' Attack or Defense Status: </span><span id="cardStatusDisplay"></span>
+        <br>
+        <span>Cards' Health: </span><span id="cardHealthDisplay"></span>
+        <br>
+        <span>Cards In Play but not Assets: </span><span id="enteredDisplay"></span>
+        <br>
+        <span>Deck: </span><span id="deckDisplay"></span>
+        <br>
+        <span>Health: </span><span id="healthDisplay"></span>
+        <br>
+        <span>Factory Cards: </span><span id="factoryDisplay"></span>
+    </div>
+
+    <div id="actionMenu">
+        <p>Player: <span id="playerView"></span></p>
+        <p>Action Menu</p>
+        <span class="action" onmousedown="endTurn()">End Turn</span>
+    </div>
+
+    <div id="boardDisplay"></div>
+    <div id="roundDisplay">
+        <p>
+            rounds increase when each player has had a turn
+        </p>
+        <span id="turns">--</span>
+        <span id="rounds">--</span>
+    </div>
+    <span id="textBox"></span>
+    <div id="selectionButtons"></div>
+    <button id="THING" onclick="setColor()" class="color-button">
+        COLOR
+    </button>
+    <div id="copyText">
+        <input type="text" value="" id="copyTextInput" style="background-color:black; transform:scale(0.001);">
+    </div>
+</body>
+
+</html>

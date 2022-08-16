@@ -1,0 +1,50 @@
+html {
+  background-image: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FBackground.png?v=1622740032686);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body {
+  text-align: center;
+    font-family: mojangles;
+}
+
+h2 {
+  color: #1FD8CB; font-size: 300%
+}
+
+span {
+  color: #1FD8CB; font-size: 300%
+}
+
+/* * {
+  border: 5px solid blue
+} */
+
+button {
+  padding: 1em 2.5em; border-radius: 5%; background: radial-gradient(#1BB9E1, #25FFDF); border: 3px solid black; font-size: 150%; 
+  width: 200px; text-align: center; margin-bottom: 26%;
+  font-family: mojangles;
+}
+
+button:hover {
+  cursor: pointer; filter: brightness(90%)
+}
+
+.backButton {
+  width: 200px; transition: box-shadow 500ms;
+}
+
+.backButton:hover {
+  box-shadow: 10px 5px 5px #30EBC7; 
+}
+
+@font-face {
+  font-family: mojangles;
+  src: url(https://cdn.glitch.com/a1a270d9-1b94-4153-9f65-7ca31dd8d876%2FMojangles.ttf?v=1622735981749);
+}
+
+#texts{
+  text-align: center;
+  font-size: 45px;
+}

@@ -1,0 +1,355 @@
+/*Responsive Web Design (rwd) css file, for proper styling on all devices*/
+
+
+/* Devices with screens with more than 800px width*/
+@media only screen and (min-width: 800px) {
+  
+#startButton {
+  width: 40%;
+}
+    .main {
+    height: 690px;
+}
+
+  }
+
+/* Devices with screens with less than 800px width*/
+@media only screen and (max-width: 800px) {
+  
+#startButton {
+  width: 85%;
+}
+   .main {
+    height: 450px;
+}
+  
+  }
+
+/* Devices with screens with more than 700px width*/
+@media only screen and (min-width: 700px) {
+  
+  .clock {
+  background: url(https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fclock%20back.png?1611854474256);
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 300px;
+  height: 300px;
+  margin: auto;
+  margin-top: 5%;
+  margin-bottom: 10%;
+  border: solid 3px black;
+  border-radius: 50%;
+  filter: hue-rotate(290deg) brightness(140%) grayscale(50%) saturate(200%);
+}
+  .centerCircle {
+  margin: auto;
+  vertical-align: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  position: relative;
+  top: 48%;
+  background-color: black;
+  z-index: 100;
+}
+  #songList {
+  width: 30%;
+  margin: auto;
+}
+  #animationsContainerContainer {
+  height: 100%;  
+}
+  
+  }
+
+/* Devices with screens with less than 700px width*/
+@media only screen and (max-width: 700px) {
+  
+  .clock {
+  background: url(https://cdn.glitch.com/41f71cf5-cf89-4508-a91f-4f06e97989e1%2Fclock%20back.png?1611854474256);
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 150px;
+  height: 150px;
+  margin: auto;
+  margin-top: 5%;
+  margin-bottom: 20%;
+  border: solid 3px black;
+  border-radius: 50%;
+  filter: hue-rotate(290deg) brightness(140%) grayscale(50%) saturate(200%);
+}
+  .centerCircle {
+  margin: auto;
+  vertical-align: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  position: relative;
+  top: 47%;
+  left: 2%;
+  background-color: black;
+  z-index: 100;
+} 
+  #songList {
+  width: 60%;
+  margin: auto;
+}
+  #animationsContainerContainer {
+  height: 100%;  
+}
+  }
+
+/* Devices with screens with less than 400px width*/
+  @media only screen and (max-width: 400px) {
+    
+  #songList {
+  width: 90%;
+  margin: auto;    
+}
+      .main {
+    height: 450px;
+}
+    
+  }
+
+/* Devices with screens with less than 390px width*/
+@media only screen and (max-width: 390px) {
+  
+  .main {
+    height: 450px;
+}
+  }
+
+@media only screen and (min-width: 700px) {
+  #jsTestContainer {
+  width: 360px;
+  height: 360px; 
+  }
+  #a1, #a2, #a3, #a4 {
+    width: 100px; height: 100px;
+    margin-left: -50px;
+    box-shadow: 0px 3.33px 20px black;
+  }
+  .jsButtons {
+    width: 25%
+  }
+  .cssAnimations {
+    width: 15%
+  }
+  #a1 {
+  background-color: red;
+  animation: a1 5s infinite ease;
+}
+
+@keyframes a1 {
+  0% {transform: translate(0,0) rotate(0deg); background-color: red;}
+  
+  16.6% {border-radius: 50%; background-color:
+    orange; transform: translate(-200px, 0) rotate(-360deg);}
+  
+  33.2%{border-radius: 0%; background-color: yellow;
+    transform: translate(-200px, 200px) rotate(0deg);}
+  
+  49.8%{border-radius: 50%; background-color: green;
+    transform: translate(0, 200px) rotate(-360deg);}
+  
+  66.4%{border-radius: 0%; background-color: blue;
+    transform: translate(200px,200px) rotate(0deg);}
+  
+  83%{border-radius: 50%; background-color: purple;
+    transform: translate(200px,0) rotate(-360deg);}
+  
+  100%{border-radius: 0%; background-color: red;
+    transform: translate(0,0) rotate(0deg);}
+}
+  #a3 {
+  background: linear-gradient(45deg, blue, red);
+  background-size: 400% 400%;
+  animation: a3 5s infinite ease;
+}
+
+@keyframes a3 {
+  0% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  25% {background-position: 100% 100%;
+    transform: rotate(360deg) translate(150px, 150px) scale(1.5);
+    filter: brightness(300%); border-radius: 50%;}
+  50% {background-position: 100% 0%; filter: brightness(400%) hue-rotate(40deg);
+    transform: rotate(270deg) scale(2) translate(-100px, -100px);}
+  75% {background-position: 50% 100%; filter: brightness(200%) hue-rotate(70deg); transform: rotate(90deg) scale(1.25) translate(20px, 50px);}
+  100% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  
+}
+  #a4 {
+  background: radial-gradient(red, blue);
+  animation: a4 5s ease infinite;
+  background-size: 800% 800%;
+  border-radius: 50%;
+}
+
+@keyframes a4 {
+  0% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+  12.5%  {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(150px, 150px);
+    filter: brightness(200%);
+  }
+  25% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(150px, 150px);
+    filter: brightness(400%);
+  }
+  37.5% {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(150px, 150px);
+    filter: brightness(600%); 
+}
+  50% {
+    background-position: 0% 0%; filter: brightness(800%);
+    transform: rotate(360deg) scale(.1) translate(0, 0);
+  }
+    62.5%  {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(150px, 150px);
+    filter: brightness(600%);
+  }
+  75% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(150px, 150px);
+    filter: brightness(400%);
+  }
+  87.5% {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(150px, 150px);
+    filter: brightness(200%); 
+}
+  100% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+}
+}
+
+
+
+
+
+@media only screen and (max-width: 700px) {
+  #jsTestContainer {
+  width: 125px;
+  height: 125px; 
+  }
+  
+  #jsTest {
+    font-size: 75%;
+  }
+  #a1, #a2, #a3, #a4 {
+    width: 37.59px; height: 37.59px;
+    margin-left: -18.79px;
+    box-shadow: 0px 1.25px 7.51px black;
+  }
+  .jsButtons {
+    width: 90%
+  }
+    .cssAnimations {
+    width: 20%
+  }
+    #a1 {
+  background-color: red;
+  animation: a1 5s infinite ease;
+}
+
+@keyframes a1 {
+  0% {transform: translate(0,0) rotate(0deg); background-color: red;}
+  
+  16.6% {border-radius: 50%; background-color:
+    orange; transform: translate(-75.18px, 0) rotate(-360deg);}
+  
+  33.2%{border-radius: 0%; background-color: yellow;
+    transform: translate(-75.18px, 75.18px) rotate(0deg);}
+  
+  49.8%{border-radius: 50%; background-color: green;
+    transform: translate(0, 75.18px) rotate(-360deg);}
+  
+  66.4%{border-radius: 0%; background-color: blue;
+    transform: translate(75.18px,75.18px) rotate(0deg);}
+  
+  83%{border-radius: 50%; background-color: purple;
+    transform: translate(75.18px,0) rotate(-360deg);}
+  
+  100%{border-radius: 0%; background-color: red;
+    transform: translate(0,0) rotate(0deg);}
+}
+  #a3 {
+  background: linear-gradient(45deg, blue, red);
+  background-size: 400% 400%;
+  animation: a3 5s infinite ease;
+}
+
+@keyframes a3 {
+  0% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  25% {background-position: 100% 100%;
+    transform: rotate(360deg) translate(56.39px, 56.39px) scale(1.5);
+    filter: brightness(300%); border-radius: 50%;}
+  50% {background-position: 100% 0%; filter: brightness(400%) hue-rotate(40deg);
+    transform: rotate(270deg) scale(2) translate(-37.59px, -37.59px);}
+  75% {background-position: 50% 100%; filter: brightness(200%) hue-rotate(70deg); transform: rotate(90deg) scale(1.25) translate(20px, 50px);}
+  100% {background-position: 0% 50%; transform: rotate(0deg) translate(0, 0)}
+  
+}
+  #a4 {
+  background: radial-gradient(red, blue);
+  animation: a4 5s ease infinite;
+  background-size: 800% 800%;
+  border-radius: 50%;
+}
+
+@keyframes a4 {
+  0% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+  12.5%  {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(56.39px, 56.39px);
+    filter: brightness(200%);
+  }
+  25% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(56.39px, 56.39px);
+    filter: brightness(400%);
+  }
+  37.5% {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(56.39px, 56.39px);
+    filter: brightness(600%); 
+}
+  50% {
+    background-position: 0% 0%; filter: brightness(800%);
+    transform: rotate(360deg) scale(.1) translate(0, 0);
+  }
+    62.5%  {
+     background-position: 0% 100%;
+    transform: rotate(270deg) scale(0.25) translate(56.39px, 56.39px);
+    filter: brightness(600%);
+  }
+  75% {
+    background-position: 0% 100%;
+    transform: rotate(180deg) scale(0.5) translate(56.39px, 56.39px);
+    filter: brightness(400%);
+  }
+  87.5% {
+     background-position: 0% 100%;
+    transform: rotate(90deg) scale(0.75) translate(56.39px, 56.39px);
+    filter: brightness(200%); 
+}
+  100% {
+    background-position: 0% 0%;
+    transform: rotate(0deg) scale(1) translate(0, 0);
+  }
+}
+}
+
+
