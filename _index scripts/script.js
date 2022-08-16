@@ -41,7 +41,7 @@ function getProjectDetails() {
             projectWindow.eval("console.log(location)")
             console.log(projectWindow.location.origin)
             for (let j = 0; j < project.head.querySelectorAll("script").length; j++) {
-                if (project.head.querySelectorAll("script")[j].src == "./libraries/p5.min.js") {
+                if (project.head.querySelectorAll("script")[j].src == "libraries/p5.min.js") {
                     console.log("does")
                 }
             }

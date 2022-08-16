@@ -53,7 +53,7 @@ function draw() {
 
 
 
-    img(textures.scene2, 0, 0, width, height)
+    img(textures.flowers, 0, 0, width, height)
 
     shader(threeDShader)
     rect(0, 0, width, height)
@@ -70,9 +70,3 @@ function img(image, x, y, w, h) {
     colorLayer.image(image.color, x, y, w, h)
     depthLayer.image(image.depth, x, y, w, h)
 }
-
-/*
-NOTES
-
-additional shader to turn the image into cyan/red
-*/

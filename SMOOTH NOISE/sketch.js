@@ -11,7 +11,7 @@ function setup() {
         if (i == 0) {
             layers.push(createGraphics(width, height))
         } else {
-            layers.push(createGraphics(width / (2 ** (i + 2)), height / (2 ** (i + 2))))
+            layers.push(createGraphics(width / (2 ** i), height / (2 ** i)))
         }
 
         layers[i].noStroke()
