@@ -2,6 +2,14 @@ const width = 1920
 const height = 1080
 
 // IMAGE OF GRADIENT UNDER THE TRIANGLES
+// NOISE SHADER FOR MORE "DETAIL"
+
+let bg
+let noise
+function preload() {
+    bg = loadImage("bg.png")
+    noise = loadImage("noise.png")
+}
 
 function setup() {
     createCanvas(width, height)
@@ -11,7 +19,14 @@ function setup() {
 
 function draw() {
     background(25)
+
+    blendMode(BLEND)
+    image(bg, 0, 0, width, height)
+
     getTriangles()
+
+    blendMode(EXCLUSION)
+    image(noise, 0, 0, width, height)
 
     for (let i = 0; i < points.length; i++) {
         points[i].add(pVel[i])
@@ -128,7 +143,7 @@ function HSVtoRGB(h, s, v) {
     p = v * (1 - s)
     q = v * (1 - f * s)
     t = v * (1 - (1 - f) * s)
-    // bro what is a switch function
+    // bro what is a switch function lol
     switch (i % 6) {
         case 0: r = v, g = t, b = p; break
         case 1: r = q, g = v, b = p; break
