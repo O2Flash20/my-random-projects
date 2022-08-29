@@ -8,3 +8,38 @@
     /* height: 500px; */
     border-radius: 35px;
 }
+
+iframe {
+    visibility: hidden;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+canvas {
+    display: block !important;
+    position: absolute;
+    margin: 0;
+    filter: drop-shadow(-10px 0px 14px #000000) brightness(0.5);
+}
+
+
+/* .shaderCanvas{
+
+}
+ */
+
+#defaultCanvas0 {
+    width: 75% !important;
+    height: 100vh !important
+}
+
+#shaderCanvas {
+    width: 25% !important;
+    height: 100vh !important;
+    left: 75%;
+    filter: drop-shadow(-10px 0px 14px #000000) brightness(0.7);
+    /* box-shadow: -5px 0px #888888; */
+}
