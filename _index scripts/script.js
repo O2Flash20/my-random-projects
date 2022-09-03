@@ -59,6 +59,7 @@ function search(keyword) {
 }
 
 function loadProjectsSide(order) {
+    document.getElementById("projects").innerHTML = ''
     if (!order) {
         order = []
         for (let i = 0; i < projects.length; i++) { order.push(i) }
@@ -66,15 +67,59 @@ function loadProjectsSide(order) {
 
     for (let i = 0; i < order.length; i++) {
         let div = document.createElement("div")
+        div.classList.add("projectCell")
         document.getElementById("projects").append(div)
+
         let name = document.createElement("p")
         name.innerText = projects[order[i]].title
         div.append(name)
+
+        let desc = document.createElement("p")
+        desc.classList.add("projectDesc")
+        desc.innerText = projects[order[i]].description
+        div.append(desc)
+
+        let link = document.createElement("a")
+        link.href = projects[order[i]].url
+        link.innerText = "Go to"
+        div.append(link)
     }
+}
+setTimeout(loadProjectsSide, 1000)
+// loadProjectsSide()
+
+function slideUp() {
+    let i = 0
+    const interval = setInterval(function () {
+        i++
+        if (projectDivTop < 65) {
+            projectDivTop += 50 - 5 * i
+            document.getElementById("projects").style.top = projectDivTop + "px"
+        }
+    }, 100)
+    setTimeout(function () { clearInterval(interval) }, 1000)
+}
+function slideDown() {
+    let i = 0
+    const interval = setInterval(function () {
+        i++
+        if (projectDivTop > -720) {
+            projectDivTop -= 50 - 5 * i
+            document.getElementById("projects").style.top = projectDivTop + "px"
+        }
+    }, 100)
+    setTimeout(function () { clearInterval(interval) }, 1000)
 }
 
 document.getElementById("searchKey").addEventListener("change", function () {
     search(document.getElementById("searchKey").value)
+})
+let projectDivTop = 65
+document.getElementById("upButton").addEventListener("click", function () {
+    slideUp()
+})
+document.getElementById("downButton").addEventListener("click", function () {
+    slideDown()
 })
 
 // --------------------------------------------
