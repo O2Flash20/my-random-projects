@@ -69,7 +69,7 @@ void main() {
     float s = 1.;
     float v = 1.;
 
-    vec2 mouseUV = vec2((uMousePos) / uRes);
+    vec2 mouseUV = vec2((uMousePos - uCanvasPos) / uRes);
 
     // float val = 3720. * (-((mouseUV.x - uv.x) * (mouseUV.x - uv.x)) - ((mouseUV.y - uv.y) * (mouseUV.y - uv.y))) + 270.;
     float val = 30. - distance(mouseUV, uv) * 100.;

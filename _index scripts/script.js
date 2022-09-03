@@ -1,121 +1,81 @@
-function include(url, hide) {
-    let div = document.createElement("div")
-    div.classList.add("projectBox")
-    document.getElementById("projects").append(div)
-
-    let iFrame = document.createElement("iframe")
-    iFrame.src = url
-
-    if (hide) { iFrame.classList.add("remove") }
-
-    div.append(iFrame)
-
-    div.innerHTML = `${div.innerHTML} <br> <a href="${url}">To Page</a>`
-
-    particles.push({ pos: [Math.random() * window.innerWidth, Math.random() * window.innerHeight], vel: [Math.random() * 10 - 5, Math.random() * 10 - 5] })
-
-    done.push(false)
-}
-
-let done = []
-function getProjectDetails() {
-    for (let i = 0; i < document.getElementById("projects").children.length; i++) {
-        let project = document.getElementById("projects").children[i].querySelector("iframe").contentWindow.document
-        let projectWindow = document.getElementById("projects").children[i].querySelector("iframe").contentWindow
-
-        if (project.body == null) {
-            setTimeout(getProjectDetails, 1000)
-            break
-        } else if (project.body.innerHTML == "") {
-            setTimeout(getProjectDetails, 1000)
-            break
-        }
-
-        if (!done[i]) {
-
-            document.getElementById("projects").children[i].innerHTML = `<h2>${project.head.querySelector("title").innerText}</h2>${document.getElementById("projects").children[i].innerHTML}`
-
-            // doesnt work because needs full file path
-            // using window.location.origin?
-            // projectWindow.eval("document.head.classList.add(location.origin)")
-            // projectWindow.eval("console.log(location)")
-            // console.log(projectWindow.location.origin)
-            for (let j = 0; j < project.head.querySelectorAll("script").length; j++) {
-                if (project.head.querySelectorAll("script")[j].src == "libraries/p5.min.js") {
-                    // console.log("does")
-                }
-            }
-            for (let j = 0; j < project.body.querySelectorAll("script").length; j++) {
-                if (project.body.querySelectorAll("script")[j].src !== "") {
-                    document.getElementById("projects").children[i].append(document.createElement("br"))
-                    let link = document.createElement("a")
-                    link.href = project.body.querySelectorAll("script")[j].src
-                    link.innerText = "View script"
-                    document.getElementById("projects").children[i].append(link)
-                }
-            }
-
-            for (let j = 0; j < project.head.querySelectorAll("meta").length; j++) {
-                if (project.head.querySelectorAll("meta")[j].name == "description") {
-                    let p = document.createElement("p")
-                    p.innerText = project.head.querySelectorAll("meta")[j].content
-                    document.getElementById("projects").children[i].append(p)
-                }
-            }
-
-            if (document.getElementById("projects").children[i].querySelector("iframe").classList.contains("remove")) {
-                document.getElementById("projects").children[i].querySelector("iframe").remove()
-            }
-
-            done[i] = true
-        }
-    }
-}
-
-let particles = []
-setInterval(function () {
-    for (let i = 0; i < particles.length; i++) {
-        document.getElementById("projects").children[i].style.top = particles[i].pos[1] + "px"
-        document.getElementById("projects").children[i].style.right = particles[i].pos[0] + "px"
-
-        particles[i].pos[0] += particles[i].vel[0]
-        particles[i].pos[1] += particles[i].vel[1]
-
-        const xPos = particles[i].pos[0]
-        const yPos = particles[i].pos[1]
-        if (xPos < 0) {
-            particles[i].pos[0] = 1
-            particles[i].vel[0] *= -1
-        }
-        if (xPos > window.innerWidth) {
-            particles[i].pos[0] = window.innerWidth - 1
-            particles[i].vel[0] *= -1
-        }
-        if (yPos < 0) {
-            particles[i].pos[1] = 1
-            particles[i].vel[1] *= -1
-        }
-        if (yPos > window.innerHeight) {
-            particles[i].pos[1] = window.innerHeight - 1
-            particles[i].vel[1] *= -1
-        }
-
-    }
-}, 100)
-
 let projects = []
 function get(url) {
     const iframe = document.createElement("iframe")
-    iframe.src = url
-
-    document.body.append(iframe)
-
-    setTimeout(function e() {
+    iframe.addEventListener('load', function () {
         projects.push(new Project(iframe.contentWindow))
 
         iframe.remove()
-    }, 1000)
+    })
+    iframe.src = url
+
+    document.body.append(iframe)
 }
+
+
+// let words = ["Among Us", "Funny", "Haha"]
+let scores = []
+function search(keyword) {
+    scores = []
+    // each word
+    for (let i = 0; i < projects.length; i++) {
+        const word = projects[i].title + projects[i].description
+        scores.push(0)
+        // each letter
+        for (let j = 0; j < word.length; j++) {
+            // each letter in the keyword
+            const offset = 0.01 * j
+            for (let k = 0; k < keyword.length; k++) {
+                if (word[j + k] && keyword[k]) {
+                    if (word[j + k].toLowerCase() == keyword[k].toLowerCase()) {
+                        scores[i] += (1 - offset)
+                    }
+                }
+            }
+        }
+    }
+    // scores in corresponding index -> list of indices from highest to lowest scores -> load projects in that order
+
+    let scoresOrdered = []
+    let cap = Infinity
+    for (let i = 0; i < scores.length; i++) {
+        let bestScore = -1
+        let bestScoreI = -1
+        for (let i = 0; i < scores.length; i++) {
+            if (scores[i] > bestScore && scores[i] < cap) {
+                bestScoreI = i
+                bestScore = scores[i]
+            }
+        }
+
+        scoresOrdered.push(bestScoreI)
+        cap = scores[bestScoreI]
+        // scores.splice(bestScoreI, 1)
+    }
+
+    console.log(scoresOrdered)
+    loadProjectsSide(scoresOrdered)
+    return scoresOrdered
+
+}
+
+function loadProjectsSide(order) {
+    if (!order) {
+        order = []
+        for (let i = 0; i < projects.length; i++) { order.push(i) }
+    }
+
+    for (let i = 0; i < order.length; i++) {
+        let div = document.createElement("div")
+        document.getElementById("projects").append(div)
+        let name = document.createElement("p")
+        name.innerText = projects[order[i]].title
+        div.append(name)
+    }
+}
+
+document.getElementById("searchKey").addEventListener("change", function () {
+    search(document.getElementById("searchKey").value)
+})
 
 // --------------------------------------------
 // --------------------------------------------
@@ -159,6 +119,8 @@ function draw() {
     blendMode(EXCLUSION)
     image(noise, 0, 0, width, height)
 
+    shaderCanvas.width = innerWidth / 4
+
     for (let i = 0; i < points.length; i++) {
         points[i].add(pVel[i])
 
@@ -169,7 +131,8 @@ function draw() {
     }
 
     gradientShader.setUniform("uRes", [shaderCanvas.width, shaderCanvas.height])
-    gradientShader.setUniform("uMousePos", [mouseX, mouseY])
+    gradientShader.setUniform("uCanvasPos", [innerWidth * (3 / 4), 0])
+    gradientShader.setUniform("uMousePos", [mouseX * (innerWidth / 2560), mouseY])
 
     shaderCanvas.shader(gradientShader)
     shaderCanvas.rect(0, 0, 10, 10)
@@ -305,7 +268,7 @@ get function
     description
     link
 
-button to open link in now tab
+button to open link in new tab
 
 search: concat title and description
 
@@ -313,4 +276,6 @@ when you click to see a certain project, it brings you to a page (same for all o
     this page then loads an iframe of the desired project, a back button to the index, a link to each script, and the title becomes the project's title
 
 gifs floating around in front of the triangulation which get bigger when clicked?
+
+LOADING SCREEN
 */
