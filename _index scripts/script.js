@@ -285,7 +285,7 @@ function HSVtoRGB(h, s, v) {
     }
 }
 
-alert("Under construction :)")
+// alert("Under construction :)")
 // -----------</triangles>
 
 
