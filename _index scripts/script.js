@@ -11,6 +11,15 @@ function get(url) {
     document.body.append(iframe)
 }
 
+// to do it manually
+function addProject(url, title, description) {
+    projects.push({
+        url,
+        title,
+        description
+    })
+}
+
 
 // let words = ["Among Us", "Funny", "Haha"]
 let scores = []
@@ -55,8 +64,8 @@ function search(keyword) {
     console.log(scoresOrdered)
     loadProjectsSide(scoresOrdered)
     return scoresOrdered
-
 }
+// search("")
 
 function loadProjectsSide(order) {
     document.getElementById("projects").innerHTML = ''
@@ -88,39 +97,10 @@ function loadProjectsSide(order) {
 setTimeout(loadProjectsSide, 1000)
 // loadProjectsSide()
 
-function slideUp() {
-    let i = 0
-    const interval = setInterval(function () {
-        i++
-        if (projectDivTop < 65) {
-            projectDivTop += 50 - 5 * i
-            document.getElementById("projects").style.top = projectDivTop + "px"
-        }
-    }, 100)
-    setTimeout(function () { clearInterval(interval) }, 1000)
-}
-function slideDown() {
-    let i = 0
-    const interval = setInterval(function () {
-        i++
-        if (projectDivTop > -720) {
-            projectDivTop -= 50 - 5 * i
-            document.getElementById("projects").style.top = projectDivTop + "px"
-        }
-    }, 100)
-    setTimeout(function () { clearInterval(interval) }, 1000)
-}
-
 document.getElementById("searchKey").addEventListener("change", function () {
     search(document.getElementById("searchKey").value)
 })
-let projectDivTop = 65
-document.getElementById("upButton").addEventListener("click", function () {
-    slideUp()
-})
-document.getElementById("downButton").addEventListener("click", function () {
-    slideDown()
-})
+
 
 // --------------------------------------------
 // --------------------------------------------
@@ -187,7 +167,7 @@ function draw() {
 let points = []
 let pVel = []
 function addPoints() {
-    for (let i = 0; i < 75; i++) {
+    for (let i = 0; i < 50; i++) {
         points.push(createVector(random(-300, width + 300), random(-300, height + 300)))
         ellipse(points[i].x, points[i].y, 1, 1)
         pVel.push(createVector(random(-1, 1), random(-1, 1)))

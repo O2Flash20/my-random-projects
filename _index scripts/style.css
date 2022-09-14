@@ -16,7 +16,6 @@ iframe {
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
 }
 
 canvas {
@@ -24,6 +23,7 @@ canvas {
     position: absolute;
     margin: 0;
     filter: drop-shadow(-10px 0px 14px #000000) brightness(0.5);
+    position: fixed;
 }
 
 #searchBox {
@@ -45,7 +45,7 @@ canvas {
 
 #defaultCanvas0 {
     width: 75% !important;
-    height: 100vh !important
+    height: 100vh !important;
 }
 
 #shaderCanvas {
@@ -60,36 +60,14 @@ canvas {
     font-size: 12px;
 }
 
-.customButton {
-    background-color: rgb(0, 255, 191);
-    border-radius: 10px;
-    padding: 5px;
-    text-align: center;
-    position: absolute;
-    cursor: pointer;
-    user-select: none;
-    margin: auto;
-}
-
-#sideControls {
-    z-index: 3;
-    left: 75%;
-    top: 65px;
-    position: absolute;
-    width: 100px;
-}
-
-#upButton {
-    top: 0px;
-}
-
-#downButton {
-    top: 80vh;
-}
-
 .projectCell {
-    background-color: #00d9ff31;
+    background-color: #002a318e;
+    color: white;
     margin: 5px;
     padding: 3px;
     border-radius: 5px;
+}
+
+a {
+    color: silver;
 }
