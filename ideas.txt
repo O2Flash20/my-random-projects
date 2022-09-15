@@ -1,4 +1,10 @@
-dithering
+dithering shader
+box blur shader
+drawing with math stuff
+3d noise in rgb
+motion blur
+bloom
+
 fix raycast game~
 ragdoll stickman (use parent and child instead of array needed i think)
 play with the sound library
