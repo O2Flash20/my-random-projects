@@ -12,24 +12,24 @@ function preload() {
 
     textures = {
         sphere: {
-            color: loadImage("assets/sphereC.png"),
-            depth: loadImage("assets/sphereD.png")
+            color: loadImage("assets/goobaC.png"),
+            depth: loadImage("assets/goobaD.png")
         },
         scene1: {
-            color: loadImage("assets/scene1C.png"),
-            depth: loadImage("assets/scene1D.png")
+            color: loadImage("assets/goobaC.png"),
+            depth: loadImage("assets/goobaD.png")
         },
         scene2: {
-            color: loadImage("assets/scene2C.png"),
-            depth: loadImage("assets/scene2D.png")
+            color: loadImage("assets/goobaC.png"),
+            depth: loadImage("assets/goobaD.png")
         },
         flowers: {
-            color: loadImage("assets/flowersC.png"),
-            depth: loadImage("assets/flowersD.png")
+            color: loadImage("assets/goobaC.png"),
+            depth: loadImage("assets/goobaD.png")
         },
         game: {
-            color: loadImage("assets/gameC.png"),
-            depth: loadImage("assets/gameD.png")
+            color: loadImage("assets/goobaC.png"),
+            depth: loadImage("assets/goobaD.png")
         }
     }
 }
