@@ -1,16 +1,3 @@
-// get("color guesser/index.html")
-// get("fake word generator/index.html")
-// get("graphing calculator/index.html")
-// get("inverse kinematics/forward/index.html")
-// get("inverse kinematics/inverse/index.html")
-// get("particle system/index.html", true)
-// get("review website/index.html")
-// get("sprite system/index.html", true)
-// get("trails/index.html", true)
-// get("triangle thing/index.html", true)
-// get("triangle thing 2 electric boogaloo/index.html", true)
-// get("VTUBER2", true)
-
 addProject("color guesser/index.html", "Color Guesser", "Get a random color and try to guess its rgb value. I made this on a plane so its not that amazing.")
 addProject("cyoobcast background/index.html", "CyoobCast background", "A cool little graphic for something I was doing on Youtube.")
 addProject("fake word generator/index.html", "Word Generator", "Generates 1000 random combinations of letters which imitate real english words. Pretty useful if you want to make a unique name or language.")
@@ -46,15 +33,13 @@ addProject("old glitch projects/bunger nft/index.html", "Bunger NFT", "The best 
 addProject("old glitch projects/canvas game/index.html", "Perlin Noise World Generation", "Something that looks like Minecraft world generation using perlin noise. This used to be an attempt to make a game library with vanilla js.")
 addProject("old glitch projects/class links 2/index.html", "Schedule and Agenda", "A schedule and agenda I made for school that works on cookies.")
 addProject("old glitch projects/discord big text/index.html", "Discord Emoji Text", "Converts text to emojis for Discord.")
-// display filters missing
-// FOOLS CARDS NOT WORKING (avengers level threat)
+addProject("old glitch projects/display filters/index.html", "Display RGB Shift", "A (not shader) which gives your display the RGB shift effect.")
 addProject("old glitch projects/game engine/index.html", "Game Library but Not Canvas", "A terrible effort at a game library that uses not a canvas, but the power of *divs moving around*.")
-// stopped at "particle" (not gonna include it)
-addProject("old glitch projects//index.html", "", "")
-addProject("old glitch projects//index.html", "", "")
-
-addProject("old glitch projects//index.html", "", "")
+// FOOLS CARDS NOT WORKING (avengers level threat)
+// pixel game also not working
+// AND wallpaper
+addProject("old glitch projects/website learns to write/index.html", "Writing Text Effect", "A text effect.")
+addProject("old glitch projects/wr game/index.html", "Silly Game", "What a fun and not boring game.")
+addProject("old glitch projects/wrm minecraft music/index.html", "Minecraft Music Player", "A music player for Minecraft music. It's the first big javascript project I ever made.")
 
 // addProject("/index.html", "", "")
-
-// get old glitch projects in there
