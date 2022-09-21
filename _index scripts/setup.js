@@ -37,6 +37,23 @@ addProject("triangle thing/index.html", "Triangle Thing", "I tried to get some e
 addProject("triangle thing 2 electric boogaloo/index.html", "Triangle Thing 2: Electric Boogaloo", "Still not what I wanted, but very very cool and very close.")
 addProject("triangle thing 3 epic boogalee/index.html", "Triangle Thing 3: The Good One", "Triangulation using the Bowyer-Watson algorithm")
 addProject("vtuber2/index.html", "VTuber", "A little VTuber model which uses AI and uses image files.")
+addProject("SHADERS/motion blur/index.html", "Motion Blur", "A motion blur shader that uses a motion detection mask and box blur. Using camera right now for testing.")
+addProject("SHADERS/metaballs/index.html", "Metaballs", "A metaballs shader using SDFs.")
+addProject("old glitch projects/ascii post processing/index.html", "ASCII Display", "A (not shader) tool that captures your display and turns it to ascii art.")
+addProject("old glitch projects/biscord/index.html", "Biscord", "A Discord clone that I made a while ago and no longer works(messages don't actually send). I also had some fun with hacking using it by sending script tags through.")
+addProject("old glitch projects/break the cycle/index.html", "BEREMKF THE CYECLE", "A joke site I made for a school project (Break the Cycle).")
+addProject("old glitch projects/bunger nft/index.html", "Bunger NFT", "The best unfinished NFT parody you've ever seen.")
+addProject("old glitch projects/canvas game/index.html", "Perlin Noise World Generation", "Something that looks like Minecraft world generation using perlin noise. This used to be an attempt to make a game library with vanilla js.")
+addProject("old glitch projects/class links 2/index.html", "Schedule and Agenda", "A schedule and agenda I made for school that works on cookies.")
+addProject("old glitch projects/discord big text/index.html", "Discord Emoji Text", "Converts text to emojis for Discord.")
+// display filters missing
+// FOOLS CARDS NOT WORKING (avengers level threat)
+addProject("old glitch projects/game engine/index.html", "Game Library but Not Canvas", "A terrible effort at a game library that uses not a canvas, but the power of *divs moving around*.")
+// stopped at "particle" (not gonna include it)
+addProject("old glitch projects//index.html", "", "")
+addProject("old glitch projects//index.html", "", "")
+
+addProject("old glitch projects//index.html", "", "")
 
 // addProject("/index.html", "", "")
 
