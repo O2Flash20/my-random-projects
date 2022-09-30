@@ -29,19 +29,26 @@ float boxSDF(vec3 p, vec3 pos, vec3 radii, float rounding) {
     vec3 q = abs(p) - radii;
     return length(max(q, 0.)) + min(max(q.x, max(q.y, q.z)), 0.) - rounding;
 }
+
+float segmentSDF(vec3 p, vec3 a, vec3 b, float r) {
+    float h = min(1.0, max(0.0, dot(p - a, b - a) / dot(b - a, b - a)));
+
+    return length(p - a - (b - a) * h) - r;
+}
+
+float elongatedSDF(vec3 p, float l) {
+    p.y -= min(l, max(0.0, p.y));
+
+    // replace with another sdf
+    return boxSDF(p, vec3(0.), vec3(1.), 0.5);
+}
 // ___________________
 
 float sceneSDF(vec3 p) {
-    // float d1 = boxSDF(p, vec3(0, 0.75, 0), vec3(1., 0.2, 0.5), 0.3);
-    // float d2 = sphereSDF(p, vec3(0), 0.5);
-    // float d3 = boxSDF(p, vec3(0, 1.75, 0), vec3(.5, 1., .5), 0.05);
-    // return smin(smin(d1, d2, 1.), d3, 1.);
+    float d1 = p.y;
+    float d2 = boxSDF(p, vec3(0., sin(uTime) * 3., 0.), vec3(1.), 0.5);
 
-    p = mod(p, 10.);
-    float d1 = boxSDF(p, vec3(5.), vec3(1., 0.5, 1.), 0.5);
-    float d2 = boxSDF(p, vec3(5., 6., 5.), vec3(0.5, 0.3, 0.5), 0.2);
-
-    return smin(d1, d2, 0.5);
+    return smin(d1, d2, 1.);
 }
 
 // eye: origin of the ray
@@ -157,15 +164,43 @@ mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
     return mat4(vec4(s, 0.0), vec4(u, 0.0), vec4(-f, 0.0), vec4(0.0, 0.0, 0.0, 1));
 }
 
+// direct illumination
+float softshadow(in vec3 rayOrigin, in vec3 marchDirection, float sharpness) {
+    float res = 1.0;
+    float prevDistToSDF = 1e20;
+
+    float depth = MinDist;
+    for (int i = 0; i < 10000000; i++) {
+        if (depth > MaxDist) {
+            break;
+        }
+
+        float distToSDF = sceneSDF(rayOrigin + marchDirection * depth);
+
+        if (distToSDF < Epsilon) {
+            return 0.0;
+        }
+
+        float y = distToSDF * distToSDF / (2.0 * prevDistToSDF);
+        float d = sqrt(distToSDF * distToSDF - y * y);
+
+        res = min(res, sharpness * d / max(0.0, depth - y));
+        prevDistToSDF = distToSDF;
+        depth += distToSDF;
+    }
+    return res;
+}
+
+const vec3 Light = vec3(0., 3., 10.);
 void main() {
     vec2 uv = vTexCoord;
 
     // set fov
     vec3 viewDir = getRayDirection(45., uRes, uv);
     // camera position
-    vec3 eye = vec3(sin(uTime) * 10., sin(uTime) * 10., cos(uTime) * 10.);
+    vec3 eye = vec3(sin(uTime) * 10., sin(uTime) + 5., cos(uTime) * 10.);
     // direction looking "center"
-    mat4 viewToWorld = viewMatrix(eye, vec3(0., 0., 0.), vec3(0., 1., 1.));
+    mat4 viewToWorld = viewMatrix(eye, vec3(0., 0., 0.), vec3(0., 1., 0.));
 
     vec3 worldDir = (viewToWorld * vec4(viewDir, 0.)).xyz;
     float dist = getDistToSurface(eye, worldDir, MinDist, MaxDist);
@@ -179,15 +214,23 @@ void main() {
     // hit something, find that point
     vec3 p = eye + dist * worldDir;
 
-    // ambient color
-    vec3 K_a = vec3(0.1, 0.1, 0.1);
-    // diffuse color
-    vec3 K_d = vec3(0.2, 0.7, 0.7);
-    // specular color
-    vec3 K_s = vec3(0.5, 1.0, 1.0);
-    float shininess = 10.0;
+    // // ambient color
+    // vec3 K_a = vec3(0.2, 0.2, 0.2);
+    // // diffuse color
+    // vec3 K_d = vec3(0.2, 0.8, 0.8);
+    // // specular color
+    // vec3 K_s = vec3(0.7, 1.0, 1.0);
+    // float shininess = 5.0;
 
-    vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye);
+    // vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye);
+
+    vec3 toLight = normalize(Light - p);
+    float brightness = softshadow(p + estimateNormal(p) / 100., toLight, 1.);
+
+    vec3 color = estimateNormal(p) * max(brightness, 0.1);
 
     gl_FragColor = vec4(color, 1.0);
 }
+
+// glow using the number of steps
+// raytracing reflections
