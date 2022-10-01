@@ -6,12 +6,15 @@ varying vec2 vTexCoord;
 
 uniform vec2 uRes;
 uniform float uTime;
+uniform sampler2D uSkyTex;
 
 // CONTROLS
 const int MaxMarchingSteps = 255;
 const float MinDist = 0.0;
 const float MaxDist = 1000.0;
 const float Epsilon = 0.0001; //the distance needed to be considered "hitting"
+
+const float pi = 3.1415926535897932384226;
 
 // polynomial smooth min 2 (k=0.1)
 float smin(float a, float b, float k) {
@@ -46,9 +49,8 @@ float elongatedSDF(vec3 p, float l) {
 
 float sceneSDF(vec3 p) {
     float d1 = p.y;
-    float d2 = boxSDF(p, vec3(0., sin(uTime) * 3., 0.), vec3(1.), 0.5);
-
-    return smin(d1, d2, 1.);
+    float d2 = boxSDF(p, vec3(0.), vec3(1., 3., 1.), 0.2);
+    return smin(d1, d2, 0.1);
 }
 
 // eye: origin of the ray
@@ -165,13 +167,13 @@ mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
 }
 
 // direct illumination
-float softshadow(in vec3 rayOrigin, in vec3 marchDirection, float sharpness) {
+float softshadow(in vec3 rayOrigin, in vec3 marchDirection, vec3 light, float sharpness) {
     float res = 1.0;
     float prevDistToSDF = 1e20;
 
     float depth = MinDist;
     for (int i = 0; i < 10000000; i++) {
-        if (depth > MaxDist) {
+        if (depth > distance(rayOrigin, light)) {
             break;
         }
 
@@ -191,23 +193,27 @@ float softshadow(in vec3 rayOrigin, in vec3 marchDirection, float sharpness) {
     return res;
 }
 
-const vec3 Light = vec3(0., 3., 10.);
 void main() {
     vec2 uv = vTexCoord;
 
     // set fov
     vec3 viewDir = getRayDirection(45., uRes, uv);
+
     // camera position
-    vec3 eye = vec3(sin(uTime) * 10., sin(uTime) + 5., cos(uTime) * 10.);
+    vec3 eye = vec3(10., 4., 10.);
+
     // direction looking "center"
-    mat4 viewToWorld = viewMatrix(eye, vec3(0., 0., 0.), vec3(0., 1., 0.));
+    mat4 viewToWorld = viewMatrix(eye, vec3(0., 5., 0.), vec3(0., 1., 0.));
 
     vec3 worldDir = (viewToWorld * vec4(viewDir, 0.)).xyz;
     float dist = getDistToSurface(eye, worldDir, MinDist, MaxDist);
 
     if (dist > MaxDist - Epsilon) {
-        // didn't hit anything
-        gl_FragColor = vec4(0.);
+        // didn't hit anything (sky)
+        float u = 0.5 + atan(worldDir.x, worldDir.z) / (2. * pi);
+        float v = 0.5 + (asin(worldDir.y) / pi);
+
+        gl_FragColor = texture2D(uSkyTex, vec2(u, v));
         return;
     }
 
@@ -224,8 +230,10 @@ void main() {
 
     // vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye);
 
+    vec3 Light = vec3(sin(-uTime) * 3., 1., cos(uTime) * 3.);
+
     vec3 toLight = normalize(Light - p);
-    float brightness = softshadow(p + estimateNormal(p) / 100., toLight, 1.);
+    float brightness = softshadow(p + estimateNormal(p) / 100., toLight, Light, 5.);
 
     vec3 color = estimateNormal(p) * max(brightness, 0.1);
 
@@ -234,3 +242,5 @@ void main() {
 
 // glow using the number of steps
 // raytracing reflections
+// colors
+// then biplanar mapping (textures)
