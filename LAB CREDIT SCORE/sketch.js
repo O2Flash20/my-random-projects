@@ -8,6 +8,8 @@ function setup() {
 }
 
 function draw() {
+    frameRate(1)
+
     background(255)
 
     strokeWeight(6)
@@ -38,19 +40,18 @@ function draw() {
     drawPoints()
 }
 
-function daysSinceEpoch() {
-    return Math.floor(new Date() / 8.64e7)
-}
-
+// Date.now() but faster
 function now() {
     return Date.now()
 }
 
+// adds a data point to the graph
 function addData(person, score, days) {
     Data[person].push([score, days])
     saveData()
 }
 
+// saves the data locally
 function saveData() {
     storeItem("Data", Data)
 }
@@ -106,6 +107,11 @@ function drawScales() {
             line(graphMargins, yPos, width - graphMargins, yPos)
         }
     }
+    const yPos = graphMargins
+    stroke(0)
+    text(mostPoints, graphMargins - 15, yPos)
+    stroke(125)
+    line(graphMargins, yPos, width - graphMargins, yPos)
 }
 
 // draws the points and lines of the graph
@@ -123,14 +129,14 @@ function drawPoints() {
             const y = map(point[0], 0, getDeltaScore(), height - graphMargins, graphMargins)
 
             vertex(x, y)
-            ellipse(x, y, 10, 10)
+            ellipse(x, y, 5, 5)
         }
         // extend the graph to "now"
         const nowX = width - graphMargins
         const lastScore = Data[i][Data[i].length - 1][0]
         const nowY = map(lastScore, 0, getDeltaScore(), height - graphMargins, graphMargins)
         vertex(nowX, nowY)
-        ellipse(nowX, nowY, 10, 10)
+        ellipse(nowX, nowY, 5, 5)
 
         noFill()
         endShape()
@@ -149,6 +155,7 @@ let Data = [
     []
 ]
 
+// enters a point, used in the ui
 function matthewEnter() {
     let scoreValue = eval(document.getElementById("matthewInput").value)
     scoreValue += Data[0][Data[0].length - 1][0]
