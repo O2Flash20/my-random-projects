@@ -5,6 +5,8 @@ const graphMargins = 50
 function setup() {
     createCanvas(600, 400)
     Data = getItem("Data")
+
+    if (!Data) { Data = [[], [], []] }
 }
 
 function draw() {
