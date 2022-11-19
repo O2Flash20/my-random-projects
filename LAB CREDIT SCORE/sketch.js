@@ -6,7 +6,7 @@ function setup() {
     createCanvas(600, 400)
     Data = getItem("Data")
 
-    if (!Data) { Data = [[], [], []] }
+    if (!Data) { Data = [[[0, now()]], [[0, now()]], [[0, now()]]] }
 }
 
 function draw() {
