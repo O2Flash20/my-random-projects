@@ -26,6 +26,7 @@ addProject("triangle thing 3 epic boogalee/index.html", "Triangle Thing 3: The G
 addProject("vtuber2/index.html", "VTuber", "A little VTuber model which uses AI and uses image files.")
 addProject("SHADERS/motion blur/index.html", "Motion Blur", "A motion blur shader that uses a motion detection mask and box blur. Using camera right now for testing.")
 addProject("SHADERS/metaballs/index.html", "Metaballs", "A metaballs shader using SDFs.")
+addProject("LAB CREDIT SCORE/index.html", "Lab Credit Score Graph", "Graphs the credit scores of my friends and I in our science labs. Works over local storage.")
 addProject("old glitch projects/ascii post processing/index.html", "ASCII Display", "A (not shader) tool that captures your display and turns it to ascii art.")
 addProject("old glitch projects/biscord/index.html", "Biscord", "A Discord clone that I made a while ago and no longer works(messages don't actually send). I also had some fun with hacking using it by sending script tags through.")
 addProject("old glitch projects/break the cycle/index.html", "BEREMKF THE CYECLE", "A joke site I made for a school project (Break the Cycle).")
