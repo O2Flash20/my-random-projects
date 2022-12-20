@@ -1,10 +1,9 @@
 dithering shader
-box blur shader
-drawing with math stuff
-3d noise in rgb
-motion blur
-bloom
-
-fix raycast game~
-ragdoll stickman (use parent and child instead of array needed i think)
+fix bloom shader
 play with the sound library
+fix raycast game~
+continue raymarching shader
+3d noise in rgb (i dont remember what that means)
+
+texture creator using noise in code
+    tailored to the raymarching shader (color, bump, reflections?)

@@ -9,7 +9,7 @@ uniform float uTime;
 uniform sampler2D uSkyTex;
 
 // CONTROLS
-const int MaxMarchingSteps = 255;
+const int MaxMarchingSteps = 1000;
 const float MinDist = 0.0;
 const float MaxDist = 1000.0;
 const float Epsilon = 0.0001; //the distance needed to be considered "hitting"
@@ -45,12 +45,30 @@ float elongatedSDF(vec3 p, float l) {
     // replace with another sdf
     return boxSDF(p, vec3(0.), vec3(1.), 0.5);
 }
+
+// 
+vec4 sdIntersect(vec4 a, vec4 b) {
+    return a.w > b.w ? a : b;
+}
+  
+vec4 sdUnion(vec4 a, vec4 b) {
+    return a.w < b.w? a : b;
+}
+ 
+vec4 sdDifference(vec4 a, vec4 b) {
+    return a.w > -b.w? a : vec4(b.rgb,-b.w);
+}
+
 // ___________________
 
 float sceneSDF(vec3 p) {
     float d1 = p.y;
-    float d2 = boxSDF(p, vec3(0.), vec3(1., 3., 1.), 0.2);
-    return smin(d1, d2, 0.1);
+    // float d2 = boxSDF(p, vec3(0.), vec3(1., 3., 1.), 0.1);
+    float d2 = sphereSDF(p, vec3(0., 2., 0.), 2.);
+    float d3 = sphereSDF(p, vec3(2., 4., 0.), 2.);
+    float d0 = smin(d1, d2, 1.);
+
+    return smin(d0, d3, 1.);
 }
 
 // eye: origin of the ray
@@ -200,7 +218,7 @@ void main() {
     vec3 viewDir = getRayDirection(45., uRes, uv);
 
     // camera position
-    vec3 eye = vec3(10., 4., 10.);
+    vec3 eye = vec3(sin(uTime) * 20., 7., cos(uTime) * 20.);
 
     // direction looking "center"
     mat4 viewToWorld = viewMatrix(eye, vec3(0., 5., 0.), vec3(0., 1., 0.));
@@ -230,7 +248,7 @@ void main() {
 
     // vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye);
 
-    vec3 Light = vec3(sin(-uTime) * 3., 1., cos(uTime) * 3.);
+    vec3 Light = vec3(sin(-uTime) * 3., 10., cos(uTime) * 3.);
 
     vec3 toLight = normalize(Light - p);
     float brightness = softshadow(p + estimateNormal(p) / 100., toLight, Light, 5.);
@@ -240,7 +258,8 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }
 
-// glow using the number of steps
 // raytracing reflections
 // colors
-// then biplanar mapping (textures)
+// in sceneSDF, along with the nearest dist, include nearest color and nearest reflectivity
+// vec4.w is dist, .r, .g, .b for the color
+// controls with js
