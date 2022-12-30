@@ -7,6 +7,7 @@ function setup() {
     createCanvas(width, height)
 }
 
+let Test
 function draw() {
     background(0)
     noStroke()
@@ -27,24 +28,49 @@ function draw() {
     //     }
     // }
 
-    let Smooth = new Layer(size, size)
-        .smoothNoise(10, 1, 51)
-        .mapColors(0, 255, [0, 0, 0], [0, 0, 30])
+    // let Smooth = new Layer(size, size)
+    //     .smoothNoise(10, 1, 51)
+    //     .mapColors(0, 255, [0, 0, 0], [0, 0, 30])
 
-    let Voro2 = new Layer(size, size)
-        .cells(10, 6, 1)
-        .invert()
+    // let Voro2 = new Layer(size, size)
+    //     .cells(10, 6, 1)
+    //     .invert()
 
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            blendMode(BLEND)
-            image(Voro2.img, size * i, size * j)
-            blendMode(SCREEN)
-            image(Smooth.img, size * i, size * j)
-        }
-    }
+    // for (let i = 0; i < 3; i++) {
+    //     for (let j = 0; j < 3; j++) {
+    //         blendMode(BLEND)
+    //         image(Voro2.img, size * i, size * j)
+    //         blendMode(SCREEN)
+    //         image(Smooth.img, size * i, size * j)
+    //     }
+    // }
+
+    Test = new Layer(size, size)
+        .sdfShape(function (X, Y) {
+            let rect = (sdf.rectangle(X, Y, 100, 200, 50, 100) - 20) * 200
+            let sphere = (sdf.circle(X, Y, 0, 0, 100) * 200)
+
+            return smoothMin(rect, sphere, 10000)
+        })
+        .drawTiled()
+
+    // let SmoothNoise = new Layer(size, size)
+    //     .smoothNoise(10, 1, 1)
+    //     .drawTiled()
 
     noLoop()
+}
+
+const sdf = {
+    circle(X, Y, posX, posY, radius) {
+        return dist(posX, posY, X, Y) - radius
+    },
+    rectangle(X, Y, posX, posY, width, height) {
+        let dX = Math.max(Math.abs(X - posX) - width, 0)
+        let dY = Math.max(Math.abs(Y - posY) - height, 0)
+        let d = Math.sqrt(dX * dX + dY * dY)
+        return d + Math.min(Math.max(dX, dY), 0)
+    }
 }
 
 class Layer {
@@ -66,6 +92,31 @@ class Layer {
                 image(this.img, this.w * i, this.h * j)
             }
         }
+    }
+
+    sdfShape(sdfCode) {
+        this.img.loadPixels()
+        for (let x = 0; x < this.w; x++) {
+            for (let y = 0; y < this.h; y++) {
+
+                let values = []
+                for (let xi = -1; xi <= 1; xi++) {
+                    for (let yi = -1; yi <= 1; yi++) {
+                        let xj = x + this.w * xi
+                        let yj = y + this.h * yi
+
+                        values.push(sdfCode(xj, yj))
+                    }
+                }
+
+                let brightness = min(values)
+
+                this.img.set(x, y, brightness)
+            }
+        }
+        this.img.updatePixels()
+
+        return this
     }
 
     voronoi(numberOfPoints, seed) {
@@ -294,7 +345,18 @@ class Layer {
     }
 }
 
+function smoothMin(a, b, k) {
+    let h = Math.max(k - Math.abs(a - b), 0) / k
+    return Math.min(a, b) - h * h * k * (1 / 4)
+}
+
 /*
+add the different sdf functions
+make the sdfs not rely on canvas size
+Use uv coordinates?
+
+MAKE SMOOTH NOISE NOT DEPEND ON SIZE
+
 contrast
 
 blur needs to take into account wrap-around
