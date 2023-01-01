@@ -47,10 +47,16 @@ function draw() {
 
     Test = new Layer(size, size)
         .sdfShape(function (X, Y) {
-            let rect = (sdf.rectangle(X, Y, 100, 200, 50, 100) - 20) * 200
-            let sphere = (sdf.circle(X, Y, 0, 0, 100) * 200)
+            let vertices = [
+                [0, 0],
+                [100, 0],
+                [100, 100]
+            ]
+            let polygon = (sdf.polygon(X, Y, vertices) - 10) * 200
 
-            return smoothMin(rect, sphere, 10000)
+            let rect = sdf.rectangle(X, Y, 200, 200, 100, 50) * 200
+
+            return smoothMin(polygon, rect, 30000)
         })
         .drawTiled()
 
@@ -70,6 +76,44 @@ const sdf = {
         let dY = Math.max(Math.abs(Y - posY) - height, 0)
         let d = Math.sqrt(dX * dX + dY * dY)
         return d + Math.min(Math.max(dX, dY), 0)
+    },
+    // vertices in an array of [x, y]
+    // thanks to Inigo Quillez and chatGPT for this
+    // there can be two consecutive identical vertices (this includes first-last), it is some automatically
+    polygon(X, Y, vertices) {
+        function dot(v1, v2) {
+            return v1[0] * v2[0] + v1[1] * v2[1]
+        }
+
+        function sub(v1, v2) {
+            return [v1[0] - v2[0], v1[1] - v2[1]]
+        }
+
+        function mul(v1, n) {
+            return [v1[0] * n, v1[1] * n]
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(value, max))
+        }
+
+        let distanceSquared = dot(sub([X, Y], vertices[0]), sub([X, Y], vertices[0]))
+        let sign = 1.0
+        let j = vertices.length - 1
+        for (let i = 0; i < vertices.length; i++) {
+            let edge = sub(vertices[j], vertices[i])
+            let toPoint = sub([X, Y], vertices[i])
+            let projection = sub(toPoint, mul(edge, clamp(dot(toPoint, edge) / dot(edge, edge), 0.0, 1.0)))
+            // console.log(edge)
+            distanceSquared = Math.min(distanceSquared, dot(projection, projection))
+            let conditions = [Y >= vertices[i][1],
+            Y < vertices[j][1],
+            edge[0] * toPoint[1] > edge[1] * toPoint[0]
+            ]
+            if (conditions.every(x => x) || conditions.every(x => !x)) sign *= -1.0
+            j = i
+        }
+        return sign * Math.sqrt(distanceSquared)
     }
 }
 
@@ -111,7 +155,8 @@ class Layer {
 
                 let brightness = min(values)
 
-                this.img.set(x, y, brightness)
+                if (!brightness) { this.img.set(x, y, color(100, 0, 0)) }
+                else { this.img.set(x, y, brightness) }
             }
         }
         this.img.updatePixels()
