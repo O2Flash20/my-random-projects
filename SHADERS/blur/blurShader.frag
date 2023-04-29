@@ -16,12 +16,12 @@ void main() {
 
     vec4 col = vec4(0.);
 
-    for(int i = 0; i < 1000; i++) {
-        if(i >= int(uMapRes.x)) {
+    for (int i = 0; i < 1000; i++) {
+        if (i >= int(uMapRes.x)) {
             break;
         }
-        for(int j = 0; j < 1000; j++) {
-            if(j >= int(uMapRes.y)) {
+        for (int j = 0; j < 1000; j++) {
+            if (j >= int(uMapRes.y)) {
                 break;
             }
 
