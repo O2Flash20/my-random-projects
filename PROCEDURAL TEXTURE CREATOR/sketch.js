@@ -1,10 +1,13 @@
-const size = 600
+const size = 200
 
 const width = size * 3
 const height = size * 3
 
+let c
 function setup() {
     createCanvas(width, height)
+
+    c = createGraphics(size, size)
 }
 
 let Test
@@ -12,57 +15,29 @@ function draw() {
     background(0)
     noStroke()
 
-    // let Cells = new Layer(16, 16)
-    //     .cells(12, 40, 912)
-    //     .mapColors(0, 255, [0, 95, 20], [0, 95, 75])
-
-    // let Voro = new Layer(16, 16)
-    //     .voronoi(20, 2, 912)
-
-    // for (let i = 0; i < 3; i++) {
-    //     for (let j = 0; j < 3; j++) {
-    //         blendMode(BLEND)
-    //         image(Cells.img, 16 * i, 16 * j)
-    //         blendMode(OVERLAY)
-    //         image(Voro.img, 16 * i, 16 * j)
-    //     }
-    // }
-
-    // let Smooth = new Layer(size, size)
-    //     .smoothNoise(10, 1, 51)
-    //     .mapColors(0, 255, [0, 0, 0], [0, 0, 30])
-
-    // let Voro2 = new Layer(size, size)
-    //     .cells(10, 6, 1)
-    //     .invert()
-
-    // for (let i = 0; i < 3; i++) {
-    //     for (let j = 0; j < 3; j++) {
-    //         blendMode(BLEND)
-    //         image(Voro2.img, size * i, size * j)
-    //         blendMode(SCREEN)
-    //         image(Smooth.img, size * i, size * j)
-    //     }
-    // }
+    // let SdfPrint = new Layer(size, size)
+    //     .sdfShape(function (X, Y) {
+    //         let rect = sdf.rectangle(X, Y, 200, 200, 100, 100) - 20
+    //         let circle = sdf.circle(X, Y, 400, 300, 40)
+    //         let triangle = sdf.polygon(X, Y, [
+    //             [200, 300],
+    //             [300, 400],
+    //             [100, 500]
+    //         ])
+    //         let smin1 = smoothMin(rect, circle, 100)
+    //         return smoothMin(triangle, smin1, 100) * 2
+    //     })
+    //     .drawTiled()
 
     Test = new Layer(size, size)
-        .sdfShape(function (X, Y) {
-            let vertices = [
-                [0, 0],
-                [100, 0],
-                [100, 100]
-            ]
-            let polygon = (sdf.polygon(X, Y, vertices) - 10) * 200
-
-            let rect = sdf.rectangle(X, Y, 200, 200, 100, 50) * 200
-
-            return smoothMin(polygon, rect, 30000)
-        })
+        .voronoi(10, 1)
+        // .smoothNoise(6, 1, 1)
+        // .posterize(10)
+        // .tBlur(10)
+        // .draw()
         .drawTiled()
 
-    // let SmoothNoise = new Layer(size, size)
-    //     .smoothNoise(10, 1, 1)
-    //     .drawTiled()
+    console.log("done")
 
     noLoop()
 }
@@ -79,7 +54,7 @@ const sdf = {
     },
     // vertices in an array of [x, y]
     // thanks to Inigo Quillez and chatGPT for this
-    // there can be two consecutive identical vertices (this includes first-last), it is some automatically
+    // there can not be two consecutive identical vertices (this includes first-last), it is done automatically
     polygon(X, Y, vertices) {
         function dot(v1, v2) {
             return v1[0] * v2[0] + v1[1] * v2[1]
@@ -127,7 +102,9 @@ class Layer {
     }
 
     draw() {
-        image(this.img, 0, 0)
+        c.image(this.img, 0, 0)
+
+        return this
     }
 
     drawTiled() {
@@ -136,6 +113,8 @@ class Layer {
                 image(this.img, this.w * i, this.h * j)
             }
         }
+
+        return this
     }
 
     sdfShape(sdfCode) {
@@ -155,7 +134,7 @@ class Layer {
 
                 let brightness = min(values)
 
-                if (!brightness) { this.img.set(x, y, color(100, 0, 0)) }
+                if (!brightness) { this.img.set(x, y, color(0, 0, 0)) }
                 else { this.img.set(x, y, brightness) }
             }
         }
@@ -230,7 +209,6 @@ class Layer {
             for (let y = 0; y < this.h; y++) {
 
                 let recordDist = Infinity
-                let recordColor = 0
                 // loop over all points
                 for (let i = 0; i < Points.length; i++) {
 
@@ -272,6 +250,7 @@ class Layer {
         return this
     }
 
+    // DETAIL IS FROM 0 TO 1
     smoothNoise(frequency, detail, seed) {
         Math.seedrandom(seed)
 
@@ -384,6 +363,41 @@ class Layer {
         this.img.filter(BLUR, amount)
         return this
     }
+    // !make it not depend on size!
+    // amount * (size/100)
+    tBlur(amount) {
+        amount *= (size / 100)
+
+        this.img.loadPixels()
+
+        for (let x = 0; x < size; x++) {
+            for (let y = 0; y < size; y++) {
+                // each pixel
+                let r = 0
+                let g = 0
+                let b = 0
+
+                for (let i = -amount; i < amount; i++) {
+                    for (let j = -amount; j < amount; j++) {
+                        const thisPixelCol = this.img.get((x + i + size) % size, (y + j + size) % size)
+                        r += thisPixelCol[0]
+                        g += thisPixelCol[1]
+                        b += thisPixelCol[2]
+                    }
+                }
+
+                r /= (amount * 2) ** 2
+                g /= (amount * 2) ** 2
+                b /= (amount * 2) ** 2
+
+                this.img.set(x, y, [r, g, b, 255])
+            }
+        }
+
+        this.img.updatePixels()
+
+        return this
+    }
     threshold(amount) {
         this.img.filter(THRESHOLD, amount)
         return this
@@ -398,7 +412,9 @@ function smoothMin(a, b, k) {
 /*
 add the different sdf functions
 make the sdfs not rely on canvas size
-Use uv coordinates?
+    Use uv coordinates
+
+fix up grain a bit, it's too smooth
 
 MAKE SMOOTH NOISE NOT DEPEND ON SIZE
 
@@ -415,5 +431,6 @@ deformation
 CAN NOW USE Math.seedrandom() to give Math.random a seed
 
 make texture only be able to be squares for simplicity
-*/
 
+bro what https://stackoverflow.com/questions/75489567/how-to-set-canvas-attributes-from-p5-js
+*/
