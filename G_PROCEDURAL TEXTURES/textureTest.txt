@@ -2,4 +2,29 @@
 
 Merge myName overlay
     Layer otherName
-        
+        cells "numberOfPoints" "exposure" seed"
+        blur "amount"
+    Layer thirdName
+        cells "numberOfPoints" "exposure" seed"
+
+
+
+400
+
+Merge myName overlay
+    Layer otherName
+        cells 10 3 1
+        blur 0.2
+    Layer thirdName
+        cells 90, 10, 1
+
+600
+Layer TEst cells 10 2 1 blur 0.2
+Layer test2 cells 900 10 2
+
+
+600
+Merge merg additive {
+    Layer TEst cells 10 2 1 blur 0.2
+    Layer test2 cells 900 10 2
+}
