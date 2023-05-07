@@ -20,40 +20,70 @@ function interpretInstructions(input) {
             }
             currentMerges.push([name, type, []])
 
-            Layers[name] = createGraphics(BuffersSize, BuffersSize)
+            Layers[name] = createLayer(BuffersSize, name)
 
             i++ //skip over opening bracket
         }
+
         else if (input[i] == "}") {
             // a merge is ending. merge the things in it and put it onto the layer
             const thisMerge = currentMerges[currentMerges.length - 1]
-            // debugger
             merge(thisMerge[1], Layers[thisMerge[0]], Layers[thisMerge[2][0]], Layers[thisMerge[2][1]])
 
-            // currentMerges.splice(currentMerges.length - 1, 1)
+            currentMerges.splice(currentMerges.length - 1, 1)
         }
+
         else if (input[i] == "Layer") {
-            i++
+            i++; const name = input[i]
 
             // add to the latest merge
             if (currentMerges.length > 0) {
-                currentMerges[currentMerges.length - 1][2].push(input[i])
+                currentMerges[currentMerges.length - 1][2].push(name)
             }
 
-            currentLayer = input[i]
-            Layers[currentLayer] = createGraphics(BuffersSize, BuffersSize)
+            currentLayer = name
+            Layers[currentLayer] = createLayer(BuffersSize, name)
         }
+
         else if (input[i] == "cells") {
             i++; const numPoints = input[i]
             i++; const exposure = input[i]
             i++; const seed = input[i]
             cells(Layers[currentLayer], numPoints, exposure, seed)
         }
+
         else if (input[i] == "blur") {
             i++; const amount = input[i]
             blur(Layers[currentLayer], amount)
         }
+
+        else if (input[i] == "threshold") {
+            i++; const cutoff = input[i]
+            threshold(Layers[currentLayer], cutoff)
+        }
+
+        else if (input[i] == "invert") {
+            invert(Layers[currentLayer])
+        }
+
+        else if (input[i] == "voronoi") {
+            i++; const numPoints = input[i]
+            i++; const seed = input[i]
+            voronoi(Layers[currentLayer], numPoints, seed)
+        }
     }
+}
+
+function createLayer(size, name) {
+    let c = createGraphics(size, size)
+    c.canvas.id = name
+
+    let la = document.createElement("label")
+    la.for = "name"
+    la.innerText = name
+    document.body.append(la)
+
+    return c
 }
 
 function enter() {
@@ -75,3 +105,15 @@ function extractWordsAndNumbers(input) {
 
     return wordsAndNumbers
 }
+
+
+// automatically separate } from other stuff
+/*
+600
+Merge merge1 additive {
+    Layer voro voronoi 900 2
+    Layer cell cells 900 10 2
+} invert
+
+*make a merge able to be a layer that can be modified
+*/

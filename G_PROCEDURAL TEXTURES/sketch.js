@@ -5,46 +5,32 @@ let Buffers = {}
 
 let Layers = {}
 
-// let TestLayer1
-// let TestLayer2
-// let TestMerge
+const Effects = ["cells", "voronoi", "blur", "threshold", "invert", "merge"]
 
 function preload() {
-    Shaders.cells = loadShader("basic.vert", "cells.frag")
-    Shaders.blur = loadShader("basic.vert", "blur.frag")
-    Shaders.merge = loadShader("basic.vert", "merge.frag")
+    for (const effect of Effects) {
+        Shaders[effect] = loadShader("basic.vert", effect + ".frag")
+        Buffers[effect] = createGraphics(BuffersSize, BuffersSize, WEBGL)
+    }
 }
 
 function setup() {
     createCanvas(BuffersSize, BuffersSize)
 
-    Buffers.cells = createGraphics(BuffersSize, BuffersSize, WEBGL)
-    Buffers.blur = createGraphics(BuffersSize, BuffersSize, WEBGL)
-    Buffers.merge = createGraphics(BuffersSize, BuffersSize, WEBGL)
-
-    // TestLayer1 = createGraphics(size, size)
-    // TestLayer2 = createGraphics(size, size)
-    // TestMerge = createGraphics(size, size)
-
-    inits()
+    // needed for the shader stuff to work properly
+    for (const effect of Effects) {
+        Buffers[effect].shader(Shaders[effect])
+    }
 }
 
 function draw() {
     background(51)
-
     noLoop()
-}
-
-function inits() {
-    Buffers.cells.shader(Shaders.cells)
-    Buffers.blur.shader(Shaders.blur)
-    Buffers.merge.shader(Shaders.merge)
 }
 
 function changeBufferSizes(size) {
     BuffersSize = size
     for (const buffer in Buffers) {
-        // console.log(buffer)
         Buffers[buffer].resizeCanvas(size, size)
     }
     resizeCanvas(size, size)
@@ -61,6 +47,16 @@ function cells(Layer, numberOfPoints, exposure, seed) {
     Layer.image(Buffers.cells.get(), 0, 0)
 }
 
+function voronoi(Layer, numberOfPoints, seed) {
+    Shaders.voronoi.setUniform("uNumberOfPoints", numberOfPoints)
+    Shaders.voronoi.setUniform("uSeed", seed)
+
+    Buffers.voronoi.shader(Shaders.voronoi)
+    Buffers.voronoi.rect()
+
+    Layer.image(Buffers.voronoi.get(), 0, 0)
+}
+
 // amount: 0-1
 function blur(Layer, amount) {
     Shaders.blur.setUniform("uLayer", Layer)
@@ -70,6 +66,23 @@ function blur(Layer, amount) {
     Buffers.blur.rect()
 
     Layer.image(Buffers.blur.get(), 0, 0)
+}
+
+function threshold(Layer, cutoff) {
+    Shaders.threshold.setUniform("uLayer", Layer)
+    Shaders.threshold.setUniform("uCutoff", cutoff)
+
+    Buffers.threshold.shader(Shaders.threshold)
+    Buffers.threshold.rect()
+
+    Layer.image(Buffers.threshold.get(), 0, 0)
+}
+
+function invert(Layer) {
+    Shaders.invert.setUniform("uLayer", Layer)
+    Buffers.invert.shader(Shaders.invert)
+    Buffers.invert.rect()
+    Layer.image(Buffers.invert.get(), 0, 0)
 }
 
 function merge(MergeType, MergeDestination, Layer1, Layer2) {

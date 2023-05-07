@@ -9,22 +9,23 @@ Merge myName overlay
 
 
 
-400
-
-Merge myName overlay
-    Layer otherName
-        cells 10 3 1
-        blur 0.2
-    Layer thirdName
-        cells 90, 10, 1
+600
+Merge merg1 additive {
+    Merge merg2 additive { Layer l1 cells 2 1 1 Layer l2 cells 3 1 1 }
+    Layer l3 cells 900 1 2
+}
 
 600
-Layer TEst cells 10 2 1 blur 0.2
-Layer test2 cells 900 10 2
-
+Layer test cells 900 20 2 threshold 0.5
 
 600
-Merge merg additive {
-    Layer TEst cells 10 2 1 blur 0.2
-    Layer test2 cells 900 10 2
+Layer test cells 900 20 2 invert
+
+600
+Layer voroTest voronoi 10 2
+
+600
+Merge merge1 additive {
+    Layer voro voronoi 900 2 blur 0.2
+    Layer cell cells 900 10 2
 }
