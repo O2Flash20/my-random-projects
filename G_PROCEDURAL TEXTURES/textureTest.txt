@@ -26,6 +26,12 @@ Layer voroTest voronoi 10 2
 
 600
 Merge merge1 additive {
-    Layer voro voronoi 900 2 blur 0.2
+    Layer voro voronoi 900 2
     Layer cell cells 900 10 2
-}
+} blur 0.010
+
+600 
+Merge merg1 additive {
+    Layer v voronoi 900 2
+    Layer n smoothNoise blur 0.01
+} invert

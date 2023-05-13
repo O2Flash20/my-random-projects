@@ -30,6 +30,8 @@ function interpretInstructions(input) {
             const thisMerge = currentMerges[currentMerges.length - 1]
             merge(thisMerge[1], Layers[thisMerge[0]], Layers[thisMerge[2][0]], Layers[thisMerge[2][1]])
 
+            currentLayer = currentMerges[currentMerges.length - 1][0]
+
             currentMerges.splice(currentMerges.length - 1, 1)
         }
 
@@ -52,6 +54,16 @@ function interpretInstructions(input) {
             cells(Layers[currentLayer], numPoints, exposure, seed)
         }
 
+        else if (input[i] == "voronoi") {
+            i++; const numPoints = input[i]
+            i++; const seed = input[i]
+            voronoi(Layers[currentLayer], numPoints, seed)
+        }
+
+        else if (input[i] == "smoothNoise") {
+            smoothNoise(Layers[currentLayer])
+        }
+
         else if (input[i] == "blur") {
             i++; const amount = input[i]
             blur(Layers[currentLayer], amount)
@@ -64,12 +76,6 @@ function interpretInstructions(input) {
 
         else if (input[i] == "invert") {
             invert(Layers[currentLayer])
-        }
-
-        else if (input[i] == "voronoi") {
-            i++; const numPoints = input[i]
-            i++; const seed = input[i]
-            voronoi(Layers[currentLayer], numPoints, seed)
         }
     }
 }
@@ -109,11 +115,4 @@ function extractWordsAndNumbers(input) {
 
 // automatically separate } from other stuff
 /*
-600
-Merge merge1 additive {
-    Layer voro voronoi 900 2
-    Layer cell cells 900 10 2
-} invert
-
-*make a merge able to be a layer that can be modified
 */

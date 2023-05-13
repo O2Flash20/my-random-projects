@@ -7,7 +7,7 @@ varying vec2 vTexCoord;
 uniform sampler2D uLayer;
 uniform float uAmount;
 
-const float interval = 0.005;
+const float interval = 0.001;
 
 void main() {
     vec2 uv = vTexCoord;

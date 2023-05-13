@@ -5,7 +5,7 @@ let Buffers = {}
 
 let Layers = {}
 
-const Effects = ["cells", "voronoi", "blur", "threshold", "invert", "merge"]
+const Effects = ["cells", "voronoi", "smoothNoise", "blur", "threshold", "invert", "merge"]
 
 function preload() {
     for (const effect of Effects) {
@@ -57,6 +57,14 @@ function voronoi(Layer, numberOfPoints, seed) {
     Layer.image(Buffers.voronoi.get(), 0, 0)
 }
 
+function smoothNoise(Layer) {
+    console.log(Layer)
+    Buffers.smoothNoise.shader(Shaders.smoothNoise)
+    Buffers.smoothNoise.rect()
+
+    Layer.image(Buffers.smoothNoise.get(), 0, 0)
+}
+
 // amount: 0-1
 function blur(Layer, amount) {
     Shaders.blur.setUniform("uLayer", Layer)
@@ -100,5 +108,9 @@ function merge(MergeType, MergeDestination, Layer1, Layer2) {
 /*
 also need:
     color mapping on individual layers?
-    final modifications to the full image
+    have a way to set the final image (just the top merge?)
+
+?a "render and switch" function that can be used for all effects to clean up the code?
+
+?better name for smoothNoise?
 */
