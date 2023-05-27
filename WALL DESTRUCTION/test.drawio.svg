@@ -1,0 +1,36 @@
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="351px" height="341px" viewBox="-0.5 -0.5 351 341" content="&lt;mxfile&gt;&lt;diagram id=&quot;KSXSDlYgIS-HzdGGfEPN&quot; name=&quot;Page-1&quot;&gt;vZZNb9swDIZ/ja+DP+I4PWZJtx02oEAO246qzdoCZDNQ6NrZr59c0x+yG8QF0pxCvaIo8aFoxQl2ef1di2P2CxNQju8mtRPsHd/3fG9tfhrl3CpR9NAKqZYJOw3CQf4DFl1WS5nAyXIkREXyaIsxFgXEZGlCa6xstxdU9q5HkcJMOMRCzdXfMqGsVTehO+g/QKZZt7Pn8kwuOmcWTplIsBpJwaMT7DQitVZe70A18Dou7bpvF2b7g2koaNECv13xKlTJyfHB6Nxlq7EsEmgWuE7wtcokweEo4ma2MvU1Wka5MiPPmBwONEF98Uxen6m5IoA5kD4bF17QYeTLEfCwGkhHLGVjyBsWBRc37QMP+RuDEVzAEVzHYVaYewZ3QeG7NotoGYvgFihW11GY23tszBcF9bbpK5M1FAmb+1iJ00nGNhWoJf3hu9TYfxv7S8ijfT2a2p950G4MyawrJxzN4bDUMYyLOWc7ghe+A6/TNChB8tXe8j2ivMMTSnOYvnReZJeuL2UXoj0qrxq36DTQyg60Ce04JHQKNIvzVt8+62UlDz9y+7vixwrL5C7dsLFBrMJFzXCT78J6eTPUqO9CI/AnF+xh/nFYfxaPaMYjF8VFJGWutjG9cWlSluYl/SmeQT3hSZLEwrg8IxHmI4etkmkzQThBhyUpWcCuf9vdG/Gc9Fn/aF/h6Xnhh4Ga4fDGt506/FMKHv8D&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs/>
+    <g>
+        <rect x="0" y="0" width="70" height="180" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <ellipse cx="185" cy="55" rx="35" ry="15" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 149.5 50 L 149.5 60 L 109.5 60 L 109.5 70.5 L 90.5 55 L 109.5 39.5 L 109.5 50 Z" fill="none" stroke="rgb(0, 0, 0)" stroke-linejoin="round" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 47.5 35 C 33.5 35 30 55 41.2 59 C 30 67.8 42.6 87 51.7 79 C 58 95 79 95 86 79 C 100 79 100 63 91.25 55 C 100 39 86 23 73.75 31 C 65 19 51 19 47.5 35 Z" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 270 260 Q 330 260 330 300 Q 330 340 270 340 Q 300 300 270 260 Z" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <ellipse cx="320" cy="84.38" rx="15" ry="14.375" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 320 98.75 L 320 146.67 M 320 108.33 L 290 108.33 M 320 108.33 L 350 108.33 M 320 146.67 L 290 185 M 320 146.67 L 350 185" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 192px; margin-left: 320px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: nowrap;">
+                                man
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="320" y="204" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    man
+                </text>
+            </switch>
+        </g>
+    </g>
+    <switch>
+        <g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"/>
+        <a transform="translate(0,-5)" xlink:href="https://www.diagrams.net/doc/faq/svg-export-text-problems" target="_blank">
+            <text text-anchor="middle" font-size="10px" x="50%" y="100%">
+                Text is not SVG - cannot display
+            </text>
+        </a>
+    </switch>
+</svg>
