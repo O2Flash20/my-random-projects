@@ -7,6 +7,8 @@
 precision mediump float;
 #endif
 
+uniform int uDetail;
+
 varying vec2 vTexCoord;
 
 float Hash(in vec2 p, in float scale) {
@@ -32,7 +34,7 @@ float Noise(in vec2 p, in float scale) {
 float fBm(in vec2 p) {
     float f = 0.0;
 	// Change starting scale to any integer value...
-    float scale = 20.;
+    float scale = float(uDetail);
     p = mod(p, scale);
     float amp = 0.6;
 
@@ -59,8 +61,3 @@ void main() {
 
     gl_FragColor = vec4(col, 1.0);
 }
-
-/*
-*CONTROLS (ADD LATER)
-scale (detail), contrast, amplitude
-*/

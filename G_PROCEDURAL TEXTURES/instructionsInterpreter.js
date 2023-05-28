@@ -1,12 +1,8 @@
 function interpretInstructions(input) {
     input = extractWordsAndNumbers(input)
-    console.log(input)
 
     changeBufferSizes(input[0])
 
-    // currentMerge
-    // currentMerge's Layers
-    // currentMerge is a Layer too
     // currentMerges = [[merge1, additive, [layer1, merge2]], [merge2, additive, [layer2, layer3]]]
     let currentMerges = []
     let currentLayer
@@ -25,13 +21,20 @@ function interpretInstructions(input) {
             i++ //skip over opening bracket
         }
 
+        // a merge is ending. merge the things in it and put it onto the layer
         else if (input[i] == "}") {
-            // a merge is ending. merge the things in it and put it onto the layer
             const thisMerge = currentMerges[currentMerges.length - 1]
-            merge(thisMerge[1], Layers[thisMerge[0]], Layers[thisMerge[2][0]], Layers[thisMerge[2][1]])
+
+            function getLayers() {
+                let output = []
+                for (let i = 0; i < thisMerge[2].length; i++) {
+                    output.push(Layers[thisMerge[2][i]])
+                }
+                return output
+            }
+            merge1(thisMerge[1], Layers[thisMerge[0]], getLayers())
 
             currentLayer = currentMerges[currentMerges.length - 1][0]
-
             currentMerges.splice(currentMerges.length - 1, 1)
         }
 
@@ -60,8 +63,9 @@ function interpretInstructions(input) {
             voronoi(Layers[currentLayer], numPoints, seed)
         }
 
-        else if (input[i] == "smoothNoise") {
-            smoothNoise(Layers[currentLayer])
+        else if (input[i] == "noise") {
+            i++; const detail = input[i]
+            smoothNoise(Layers[currentLayer], detail)
         }
 
         else if (input[i] == "blur") {

@@ -33,5 +33,25 @@ Merge merge1 additive {
 600 
 Merge merg1 additive {
     Layer v voronoi 900 2
-    Layer n smoothNoise blur 0.01
+    Layer n noise 20
 } invert
+
+600 
+Merge merg2 additive {
+    Merge merg1 additive {
+        Layer v voronoi 900 2
+        Layer n noise 20
+    } invert
+    Layer g noise 200
+}
+
+600 
+Merge merg1 additive {
+    Layer 1 cells 1 10 1 invert
+    Layer 2 cells 1 10 2 invert
+    Layer 3 cells 1 10 3 invert
+    Layer 4 cells 1 10 4 invert
+    Layer 5 cells 1 10 5 invert
+    Layer 6 cells 1 10 6 invert
+    Layer 7 cells 1 10 7 invert
+} invert 
