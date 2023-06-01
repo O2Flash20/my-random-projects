@@ -32,7 +32,7 @@ function interpretInstructions(input) {
                 }
                 return output
             }
-            merge1(thisMerge[1], Layers[thisMerge[0]], getLayers())
+            merge(thisMerge[1], Layers[thisMerge[0]], getLayers())
 
             currentLayer = currentMerges[currentMerges.length - 1][0]
             currentMerges.splice(currentMerges.length - 1, 1)
@@ -65,7 +65,8 @@ function interpretInstructions(input) {
 
         else if (input[i] == "noise") {
             i++; const detail = input[i]
-            smoothNoise(Layers[currentLayer], detail)
+            i++; const seed = input[i]
+            smoothNoise(Layers[currentLayer], detail, seed)
         }
 
         else if (input[i] == "blur") {
@@ -89,7 +90,8 @@ function createLayer(size, name) {
     c.canvas.id = name
 
     let la = document.createElement("label")
-    la.for = "name"
+    la.htmlFor = name
+    la.id = "for" + name
     la.innerText = name
     document.body.append(la)
 
@@ -97,6 +99,7 @@ function createLayer(size, name) {
 }
 
 function enter() {
+    clearGeneration()
     interpretInstructions(document.getElementById("input").value)
 }
 

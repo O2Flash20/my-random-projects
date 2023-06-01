@@ -9,7 +9,7 @@ const Effects = ["cells", "voronoi", "smoothNoise", "blur", "threshold", "invert
 
 function preload() {
     for (const effect of Effects) {
-        Shaders[effect] = loadShader("basic.vert", effect + ".frag")
+        Shaders[effect] = loadShader("basic.vert", "Shaders/" + effect + ".frag")
         Buffers[effect] = createGraphics(BuffersSize, BuffersSize, WEBGL)
     }
 }
@@ -26,6 +26,14 @@ function setup() {
 function draw() {
     background(51)
     noLoop()
+}
+
+function clearGeneration() {
+    for (const layer in Layers) {
+        Layers[layer].remove()
+        document.getElementById("for" + layer).remove()
+        delete Layers[layer]
+    }
 }
 
 function changeBufferSizes(size) {
@@ -57,8 +65,9 @@ function voronoi(Layer, numberOfPoints, seed) {
     renderAndSwitch("voronoi", Layer)
 }
 
-function smoothNoise(Layer, detail) {
+function smoothNoise(Layer, detail, seed) {
     Shaders.smoothNoise.setUniform("uDetail", detail)
+    Shaders.smoothNoise.setUniform("uSeed", seed)
 
     renderAndSwitch("smoothNoise", Layer)
 }
@@ -98,7 +107,6 @@ function merge(MergeType, MergeDestination, Layers) {
     //
 
     for (let i = 2; i < Layers.length; i++) {
-        debugger
         Shaders.merge.setUniform("uLayer1", MergeDestination)
         Shaders.merge.setUniform("uLayer2", Layers[i])
 
@@ -113,16 +121,15 @@ also need:
     color mapping on individual layers?
     have a way to set the final image (just the top merge?)
 
-?better name for smoothNoise?
+gui -> code -> interpreter -> gpu
+make a gui
+
+auto-generate ambient occlusion map, normal map, edge map
 
 ?change smoothNoise to octave voronoise that I make
 
 !at really high resolutions, things seem to be put onto non-WEBGL canvases with their center at the bottom right corner
 
-*seed for smooth noise
-    figure out why the corners are always black (a seed thing?)
-
 *contrast effect
-
-*better seed noise from sebastian lague's video
+*posterize effect
 */
