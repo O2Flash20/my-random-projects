@@ -130,6 +130,22 @@ auto-generate ambient occlusion map, normal map, edge map
 
 !at really high resolutions, things seem to be put onto non-WEBGL canvases with their center at the bottom right corner
 
+*Layer color value
+
 *contrast effect
 *posterize effect
+
+types of map to include:
+    Albedo
+    *Normal
+    Roughness
+    Metalness
+    Specular
+    Height
+    Opacity
+    *Ambient occlusion
+    Refraction
+    Self-illumination
+
+* -> auto-generate
 */
