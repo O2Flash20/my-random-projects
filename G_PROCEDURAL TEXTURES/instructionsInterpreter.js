@@ -6,8 +6,36 @@ function interpretInstructions(input) {
     // currentMerges = [[merge1, additive, [layer1, merge2]], [merge2, additive, [layer2, layer3]]]
     let currentMerges = []
     let currentLayer
+    let currentMapLayers = [] //[["merg1", "c1"], ["c2", "c3"]]
+
+    let openBrackets = [] //keeping track of how many brackets are open and what they belong to
 
     for (let i = 1; i < input.length; i++) {
+        // *-------------------------------------------
+        if (MapsList.includes(input[i])) { //if it is a Map
+            Maps[input[i]] = createMap(input[i])
+            openBrackets.push(input[i])
+
+            // Finding all of the layers and merges at the top layer of the Map
+            let f_openBracketsNum = 0
+            let f_layersAndMerges = []
+            for (let k = i + 2; k < input.length; k++) {
+
+                if ((input[k] == "Merge" || input[k] == "Layer") && f_openBracketsNum == 0) {
+                    f_layersAndMerges.push(input[k + 1])
+                }
+
+                if (input[k] == "{") { f_openBracketsNum++ }
+                if (input[k] == "}") {
+                    f_openBracketsNum--
+                    if (f_openBracketsNum == -1) { break }  //leaving the Map, break
+                }
+            }
+            currentMapLayers.push(f_layersAndMerges)
+
+            i++ //skip over opening bracket
+        }
+
         // *-------------------------------------------
         if (input[i] == "Merge") {
             i++; const name = input[i]
@@ -20,25 +48,40 @@ function interpretInstructions(input) {
 
             Layers[name] = createLayer(BuffersSize, name)
 
+            openBrackets.push("Merge")
+
             i++ //skip over opening bracket
         }
 
         // *-------------------------------------------
-        // a merge is ending. merge the things in it and put it onto the layer
         else if (input[i] == "}") {
-            const thisMerge = currentMerges[currentMerges.length - 1]
+            const toClose = openBrackets[openBrackets.length - 1]
 
-            function getLayers() {
-                let output = []
-                for (let i = 0; i < thisMerge[2].length; i++) {
-                    output.push(Layers[thisMerge[2][i]])
+            // closing a merge
+            if (toClose == "Merge") {
+                const thisMerge = currentMerges[currentMerges.length - 1]
+
+                function getLayers() {
+                    let output = []
+                    for (let i = 0; i < thisMerge[2].length; i++) {
+                        output.push(Layers[thisMerge[2][i]])
+                    }
+                    return output
                 }
-                return output
-            }
-            merge(thisMerge[1], Layers[thisMerge[0]], getLayers())
+                merge(thisMerge[1], Layers[thisMerge[0]], getLayers())
 
-            currentLayer = currentMerges[currentMerges.length - 1][0]
-            currentMerges.splice(currentMerges.length - 1, 1)
+                currentLayer = currentMerges[currentMerges.length - 1][0]
+                currentMerges.splice(currentMerges.length - 1, 1)
+
+                openBrackets.splice(openBrackets.length - 1, 1)
+            }
+
+            // closing a map
+            if (MapsList.includes(toClose)) {
+                addToMap(Maps[toClose], currentMapLayers.slice(-1)[0])
+
+                openBrackets.splice(openBrackets.length - 1, 1)
+            }
         }
 
         // *-------------------------------------------
@@ -98,12 +141,27 @@ function interpretInstructions(input) {
 function createLayer(size, name) {
     let c = createGraphics(size, size)
     c.canvas.id = name
-    c.canvas.classList.add("showBuffer")
+    c.canvas.classList.add("showCanvas")
 
     let la = document.createElement("label")
     la.htmlFor = name
     la.id = "for" + name
     la.innerText = name
+    document.body.append(la)
+
+    return c
+}
+
+function createMap(type) {
+    let c = createGraphics(canvas.width, canvas.height)
+    c.canvas.id = type
+    c.canvas.classList.add("showCanvas")
+
+    let la = document.createElement("label")
+    la.htmlFor = type
+    la.id = "for" + type
+    la.innerText = type + " Map"
+    la.style = "font-size:30px;"
     document.body.append(la)
 
     return c
@@ -132,5 +190,3 @@ function extractWordsAndNumbers(input) {
 
 
 // automatically separate } from other stuff
-/*
-*/

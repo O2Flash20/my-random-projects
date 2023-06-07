@@ -4,10 +4,6 @@ body {
     padding: 0;
 }
 
-/* canvas {
-    display: block !important;
-} */
-
-.showBuffer {
+.showCanvas {
     display: block !important;
 }

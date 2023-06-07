@@ -55,3 +55,25 @@ Merge merg1 additive {
     Layer 6 cells 1 10 6 invert
     Layer 7 cells 1 10 7 invert
 } invert 
+
+
+
+
+600
+Albedo {
+    Merge m1 additive {
+        Layer 1 cells 3 10 6 invert
+        Layer 4 cells 1 10 4 invert
+    }
+    Layer c1 cells 10 2 3
+}
+Height {
+    Layer 2 noise 2 5
+    Layer c2 cells 10 2 3
+    Layer c3 cells 10 2 3
+}
+
+600
+Albedo {
+    Layer s noise 1 2
+}

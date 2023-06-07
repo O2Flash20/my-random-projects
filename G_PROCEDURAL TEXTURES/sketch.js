@@ -6,6 +6,11 @@ let Buffers = {}
 let Layers = {}
 
 let Maps = {}
+const MapsList = [
+    "Albedo", "Normal", "Roughness", "Metalness",
+    "Specular", "Height", "Opacity", "Ambient occlusion",
+    "Refraction", "Emissive"
+]
 
 // effect AND layer types, this was before I made a distinction
 const Effects = ["cells", "voronoi", "smoothNoise", "blur", "threshold", "invert", "merge"]
@@ -36,6 +41,11 @@ function clearGeneration() {
         Layers[layer].remove()
         document.getElementById("for" + layer).remove()
         delete Layers[layer]
+    }
+    for (const map in Maps) {
+        Maps[map].remove()
+        document.getElementById("for" + map).remove()
+        delete Maps[map]
     }
 }
 
@@ -119,7 +129,17 @@ function merge(MergeType, MergeDestination, Layers) {
     }
 }
 
-// *function addToMap(map, layer)
+function addToMap(Map, layers) {
+    if (layers.length > 1) {
+        let layerCanvases = []
+        for (let layer of layers) {
+            layerCanvases.push(Layers[layer])
+        }
+        merge("additive", Map, layerCanvases) //?keep additive type?
+    } else {
+        Map.image(Layers[layers[0]], 0, 0)
+    }
+}
 
 /*
 Maps system for the different parts of a PBR material

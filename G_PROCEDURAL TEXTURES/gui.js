@@ -89,12 +89,8 @@ class Effect {
 }
 
 function saveMaterial() {
-    let a = Mat.maps.albedo
-    let output = ""
+    //*-------------Helper Functions-------------
     let layerNumber = 0
-
-    output += Mat.size + " "
-
     function addLayerToOutput(layer) {
         output += "Layer "
         output += layer.name || layerNumber + " "
@@ -118,29 +114,41 @@ function saveMaterial() {
             output += effect[EffectTypes[effect.type][i]] + " "
         }
     }
+    //*------------------------------------------
 
-    // go over each layer
-    for (let i = 0; i < a.layers.length; i++) {
-        const layer = a.layers[i]
+    let output = Mat.size + " "
 
-        // if it's a merge:
-        if (Merge.prototype.isPrototypeOf(layer)) {
-            // the merge stuff
-            const n = layer.name || layerNumber
-            output += "Merge " + n + " " + layer.type + " { "
-            layerNumber++
+    // loops through each map, adds the Map's bits at the start and end, and fills in the Merges and Layers in the middle
+    for (let map in Mat.maps) {
 
-            for (let k = 0; k < layer.layers.length; k++) {
-                addLayerToOutput(layer.layers[k])
+        output += map + " { "
+        map = Mat.maps[map]
+
+        // go over each layer (Layer or Merge)
+        for (let i = 0; i < map.layers.length; i++) {
+            const layer = map.layers[i]
+
+            // if it's a merge (includes layers and effects):
+            // ! does not work for merges within merges - need some recursive function
+            if (Merge.prototype.isPrototypeOf(layer)) {
+                // the merge stuff
+                const n = layer.name || layerNumber
+                output += "Merge " + n + " " + layer.type + " { "
+                layerNumber++
+
+                for (let k = 0; k < layer.layers.length; k++) {
+                    addLayerToOutput(layer.layers[k])
+                }
+
+                output += "} "
             }
 
-            output += "}"
+            // if it's a layer (includes effects):
+            if (Layer.prototype.isPrototypeOf(layer)) {
+                addLayerToOutput(layer)
+            }
         }
-
-        // if it's a layer:
-        if (Layer.prototype.isPrototypeOf(layer)) {
-            addLayerToOutput(layer)
-        }
+        output += "} " //closing bracket for the map
     }
 
     return output
@@ -151,33 +159,49 @@ function saveAndRenderMaterial() {
     enter()
 }
 
-// ? add \n new lines to make it prettier
-// ? always add one overall merge in case the user didnt
-    // with type additive?
+// *add \n new lines to make it prettier
+    // *and indents (might be a bit hard)
 
 /*
-Mat.addMap("albedo")
-Mat.maps.albedo.addLayer()
-Mat.maps.albedo.addMerge()
-Mat.maps.albedo.layers[1].addLayer()
-Mat.maps.albedo.layers[1].addLayer()
+Mat.addMap("Albedo")
+Mat.maps.Albedo.addLayer()
+Mat.maps.Albedo.addMerge()
+Mat.maps.Albedo.layers[1].addLayer()
+Mat.maps.Albedo.layers[1].addLayer()
 
-Mat.maps.albedo.layers[0].setType("cells")
-Mat.maps.albedo.layers[0].numberOfPoints = 15
-Mat.maps.albedo.layers[0].exposure = 5
-Mat.maps.albedo.layers[0].seed = 1
+Mat.maps.Albedo.layers[0].setType("cells")
+Mat.maps.Albedo.layers[0].numberOfPoints = 15
+Mat.maps.Albedo.layers[0].exposure = 5
+Mat.maps.Albedo.layers[0].seed = 1
 
-Mat.maps.albedo.layers[1].setType("additive")
+Mat.maps.Albedo.layers[1].setType("additive")
 
-Mat.maps.albedo.layers[1].layers[0].setType("voronoi")
-Mat.maps.albedo.layers[1].layers[0].numberOfPoints = 10
-Mat.maps.albedo.layers[1].layers[0].seed = 2
+Mat.maps.Albedo.layers[1].layers[0].setType("voronoi")
+Mat.maps.Albedo.layers[1].layers[0].numberOfPoints = 10
+Mat.maps.Albedo.layers[1].layers[0].seed = 2
 
-Mat.maps.albedo.layers[1].layers[1].setType("cells")
-Mat.maps.albedo.layers[1].layers[1].numberOfPoints = 7
-Mat.maps.albedo.layers[1].layers[1].exposure = 5
-Mat.maps.albedo.layers[1].layers[1].seed = 8
+Mat.maps.Albedo.layers[1].layers[1].setType("cells")
+Mat.maps.Albedo.layers[1].layers[1].numberOfPoints = 7
+Mat.maps.Albedo.layers[1].layers[1].exposure = 5
+Mat.maps.Albedo.layers[1].layers[1].seed = 8
 
-Mat.maps.albedo.layers[1].layers[1].addEffect()
-Mat.maps.albedo.layers[1].layers[1].effects[0].setType("invert")
+Mat.maps.Albedo.layers[1].layers[1].addEffect()
+Mat.maps.Albedo.layers[1].layers[1].effects[0].setType("invert")
+
+
+Mat.addMap("Height")
+Mat.maps.Height.addLayer()
+Mat.maps.Height.addLayer()
+
+Mat.maps.Height.layers[0].setType("noise")
+Mat.maps.Height.layers[0].detail = 10
+Mat.maps.Height.layers[0].seed = 1
+
+Mat.maps.Height.layers[1].setType("cells")
+Mat.maps.Height.layers[1].numberOfPoints = 10
+Mat.maps.Height.layers[1].exposure = 10
+Mat.maps.Height.layers[1].seed = 1
+
+Mat.maps.Height.layers[1].addEffect()
+Mat.maps.Height.layers[1].effects[0].setType("invert")
 */
