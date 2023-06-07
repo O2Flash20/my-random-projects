@@ -1,12 +1,14 @@
 function interpretInstructions(input) {
     input = extractWordsAndNumbers(input)
 
-    changeBufferSizes(input[0])
+    changeBufferSizes(input[0]) //material size
 
     // currentMerges = [[merge1, additive, [layer1, merge2]], [merge2, additive, [layer2, layer3]]]
     let currentMerges = []
     let currentLayer
+
     for (let i = 1; i < input.length; i++) {
+        // *-------------------------------------------
         if (input[i] == "Merge") {
             i++; const name = input[i]
             i++; const type = input[i]
@@ -21,6 +23,7 @@ function interpretInstructions(input) {
             i++ //skip over opening bracket
         }
 
+        // *-------------------------------------------
         // a merge is ending. merge the things in it and put it onto the layer
         else if (input[i] == "}") {
             const thisMerge = currentMerges[currentMerges.length - 1]
@@ -38,6 +41,7 @@ function interpretInstructions(input) {
             currentMerges.splice(currentMerges.length - 1, 1)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "Layer") {
             i++; const name = input[i]
 
@@ -50,6 +54,7 @@ function interpretInstructions(input) {
             Layers[currentLayer] = createLayer(BuffersSize, name)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "cells") {
             i++; const numPoints = input[i]
             i++; const exposure = input[i]
@@ -57,28 +62,33 @@ function interpretInstructions(input) {
             cells(Layers[currentLayer], numPoints, exposure, seed)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "voronoi") {
             i++; const numPoints = input[i]
             i++; const seed = input[i]
             voronoi(Layers[currentLayer], numPoints, seed)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "noise") {
             i++; const detail = input[i]
             i++; const seed = input[i]
             smoothNoise(Layers[currentLayer], detail, seed)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "blur") {
             i++; const amount = input[i]
             blur(Layers[currentLayer], amount)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "threshold") {
             i++; const cutoff = input[i]
             threshold(Layers[currentLayer], cutoff)
         }
 
+        // *-------------------------------------------
         else if (input[i] == "invert") {
             invert(Layers[currentLayer])
         }
@@ -88,6 +98,7 @@ function interpretInstructions(input) {
 function createLayer(size, name) {
     let c = createGraphics(size, size)
     c.canvas.id = name
+    c.canvas.classList.add("showBuffer")
 
     let la = document.createElement("label")
     la.htmlFor = name

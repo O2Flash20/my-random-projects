@@ -5,7 +5,10 @@ let Buffers = {}
 
 let Layers = {}
 
-const Effects = ["cells", "voronoi", "smoothNoise", "blur", "threshold", "invert", "merge", "noise"]
+let Maps = {}
+
+// effect AND layer types, this was before I made a distinction
+const Effects = ["cells", "voronoi", "smoothNoise", "blur", "threshold", "invert", "merge"]
 
 function preload() {
     for (const effect of Effects) {
@@ -116,21 +119,17 @@ function merge(MergeType, MergeDestination, Layers) {
     }
 }
 
+// *function addToMap(map, layer)
+
 /*
-also need:
-    color mapping on individual layers?
-    have a way to set the final image (just the top merge?)
+Maps system for the different parts of a PBR material
+    Albedo and Emissive get a mapColor function to give them RGB
 
-gui -> code -> interpreter -> gpu
-make a gui
-
-auto-generate ambient occlusion map, normal map, edge map
+gui -> Mat object -> code -> interpreter -> gpu
 
 ?change smoothNoise to octave voronoise that I make
 
 !at really high resolutions, things seem to be put onto non-WEBGL canvases with their center at the bottom right corner
-
-*Layer color value
 
 *contrast effect
 *posterize effect
@@ -145,7 +144,7 @@ types of map to include:
     Opacity
     *Ambient occlusion
     Refraction
-    Self-illumination
+    Emissive
 
 * -> auto-generate
 */
