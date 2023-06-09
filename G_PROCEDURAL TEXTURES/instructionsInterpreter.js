@@ -1,3 +1,4 @@
+// text -> image
 function interpretInstructions(input) {
     input = extractWordsAndNumbers(input)
 
@@ -8,7 +9,7 @@ function interpretInstructions(input) {
     let currentLayer
     let currentMapLayers = [] //[["merg1", "c1"], ["c2", "c3"]]
 
-    let openBrackets = [] //keeping track of how many brackets are open and what they belong to
+    let openBrackets = [] //keeping track of how many brackets are open and what they belong to, to know what to close when you find a }
 
     for (let i = 1; i < input.length; i++) {
         // *-------------------------------------------
@@ -78,9 +79,12 @@ function interpretInstructions(input) {
 
             // closing a map
             if (MapsList.includes(toClose)) {
-                addToMap(Maps[toClose], currentMapLayers.slice(-1)[0])
+                if (currentMapLayers[0].length > 0) {
+                    addToMap(Maps[toClose], currentMapLayers.slice(-1)[0])
+                }
 
                 openBrackets.splice(openBrackets.length - 1, 1)
+                currentMapLayers = []
             }
         }
 

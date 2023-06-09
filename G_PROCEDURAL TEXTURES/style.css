@@ -7,3 +7,12 @@ body {
 .showCanvas {
     display: block !important;
 }
+
+#guiHolder {
+    background: rgb(46, 46, 46);
+    color: white;
+}
+
+.mapTitle {
+    font-size: 25px;
+}
