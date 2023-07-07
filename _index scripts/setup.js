@@ -45,4 +45,7 @@ addProject("old glitch projects/website learns to write/index.html", "Writing Te
 addProject("old glitch projects/wr game/index.html", "Silly Game", "What a fun and not boring game.")
 addProject("old glitch projects/wrm minecraft music/index.html", "Minecraft Music Player", "A music player for Minecraft music. It's the first big javascript project I ever made.")
 
+addProject("G_PROCEDURAL TEXTURES/index.html", "Procedural Texture Generator", "Uses forms of noise to create seamless, infinite-resolution textures. User interface not done, a fraction of the features I wanted.")
+addProject("WALL DESTRUCTION/index.html", "Wall Destruction Game", "Concept for a shooter game in which all walls are breakable.")
+
 // addProject("/index.html", "", "")
