@@ -1,5 +1,5 @@
 const bpm = 120
-const subBPM = bpm * 2
+const subBPM = bpm
 
 let previewPolysynth
 
@@ -7,9 +7,14 @@ let startTime, timeSinceStart, recording
 let t = 0 //time since page load
 
 let thisBundle = {}
+let savedBundles = {}
 
 let metronome
 let metronomePlaying = false
+
+let bpmCalculating = false
+let bpmSoonCalculating = false
+let bpmBeats = []
 
 function setup() {
     createCanvas(400, 400)
@@ -44,6 +49,16 @@ function draw() {
         background(51)
     }
 
+    if (recording) {
+        fill("red")
+        rect(0, 0, 50, 50)
+    }
+
+    if (bpmCalculating) {
+        fill("blue")
+        rect(50, 0, 50, 50)
+    }
+
     t += deltaTime / 1000
 
     timeSinceStart = t - startTime
@@ -70,11 +85,43 @@ function keyPressed() {
         playBundle(thisBundle)
     }
 
+    if (keyCode == 188) { //,
+        if (!bpmCalculating && !bpmSoonCalculating) {
+            bpmSoonCalculating = true
+            setTimeout(function () { bpmCalculating = true }, 1000)
+            setTimeout(function () {
+                bpmCalculating = false
+
+                console.log(60 * bpmBeats.length / (bpmBeats[bpmBeats.length - 1] - bpmBeats[0]))
+
+                bpmBeats = []
+            }, 6000)
+            setTimeout(function () { bpmSoonCalculating = false }, 8000) // couple seconds of cooldown
+        }
+        if (bpmCalculating) {
+            bpmBeats.push(t)
+        }
+    }
+
     if (keys[keyCode]) {
         if (thisBundle[keyCode] == undefined) { thisBundle[keyCode] = [] }
         thisBundle[keyCode].push([snapTimeToBPM(timeSinceStart, bpm)])
 
         previewPolysynth.noteAttack(keys[keyCode][1], 1)
+    }
+
+    if (keyCode == 39) {
+        for (let i = 48; i <= 57; i++) {
+            if (keyIsDown(i)) {
+                let bundle = savedBundles[i]
+                for (let key in bundle) {
+                    for (let j = 0; j < bundle[key].length; j++) {
+                        bundle[key][j][0] = bundle[key][j][0] / 2
+                        bundle[key][j][1] = bundle[key][j][1] / 2
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -82,10 +129,20 @@ function keyReleased() {
     if (keys[keyCode]) {
         let thisTime = snapTimeToBPM(timeSinceStart, subBPM)
         let thisArray = thisBundle[keyCode][thisBundle[keyCode].length - 1]
-        if (thisArray[0] >= thisTime) { thisTime = thisArray[0] + 60 / subBPM }
+        if (thisArray[0] >= thisTime) { thisTime = thisArray[0] + 60 / (bpm * 2) }
         thisArray.push(thisTime)
 
         previewPolysynth.noteRelease(keys[keyCode][1])
+    }
+
+    // saving keys (number keys)
+    if (keyCode >= 48 && keyCode <= 57) {
+        if (keyIsDown(83)) {//s
+            savedBundles[keyCode] = thisBundle
+        }
+        else {
+            playBundle(savedBundles[keyCode])
+        }
     }
 }
 
@@ -118,7 +175,7 @@ function cleanUpBundle(bundle) {
 
 }
 
-const transitionTime = 0.3 //might not be right
+const transitionTime = 0.3//might not be right
 function playBundle(bundle) {
     let oscillators = {}
     for (let keyNum in bundle) {
@@ -128,8 +185,8 @@ function playBundle(bundle) {
         osc.amp(0, 0)
 
         for (let i = 0; i < bundle[keyNum].length; i++) {
-            setTimeout(function () { osc.amp(1, transitionTime) }, bundle[keyNum][i][0] * 1000 - (transitionTime * 1000))
-            setTimeout(function () { osc.amp(0, transitionTime) }, bundle[keyNum][i][1] * 1000 - (transitionTime * 1000))
+            setTimeout(function () { osc.amp(1, transitionTime) }, bundle[keyNum][i][0] * 1000)
+            setTimeout(function () { osc.amp(0, transitionTime) }, bundle[keyNum][i][1] * 1000)
         }
     }
 
@@ -152,5 +209,22 @@ const keys = {
 }
 //? b and m for pitch up and down
 
-// *bpm calculator
-// *fix preview "clipping"?
+// save bundle to number ~
+// select and speed/pitch bundle ~
+// ?preview plays unexpectedly after a while
+    //? dont rely on setTimeout
+
+// !plays infinitely if I stop the recording while holding a key
+
+// *rework replay to allow for sped up bundles
+    // custom ADSR using a function to pass in time attack-release which sets up a few setTimeouts
+// *rework preview to not clip
+
+// * use beats instead of seconds in bundles
+
+// *make a display for the calculated bpm instead of console.log
+
+// *to make it work with pitching up and down, bundles need to have notes listed under their pitch, not their key number
+
+// wrtuuyupopopopopo]opouopo
+//  https://music.youtube.com/watch?v=M_oobzkXcIs&list=PL0phUzFhhvnNnX_26ybcSK6ZDRgPM2JRL
