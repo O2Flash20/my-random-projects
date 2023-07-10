@@ -147,7 +147,7 @@ Maps system for the different parts of a PBR material
 
 gui -> Mat object -> code -> interpreter -> gpu
 
-!at really high resolutions, things seem to be put onto non-WEBGL canvases with their center at the bottom right corner
+!at really high resolutions (around 5700), things seem to be put onto non-WEBGL canvases with their center at the bottom right corner
 
 *contrast effect
 *posterize effect

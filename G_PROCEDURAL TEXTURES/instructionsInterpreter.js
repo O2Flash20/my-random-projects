@@ -192,5 +192,7 @@ function extractWordsAndNumbers(input) {
     return wordsAndNumbers
 }
 
+// ? interpret.Merge = function(){}
+// ?    for (item in interpret){ interpret[item]() }
 
 // automatically separate } from other stuff
