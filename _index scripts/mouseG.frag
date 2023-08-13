@@ -8,55 +8,30 @@ varying vec2 vTexCoord;
 uniform vec2 uRes;
 uniform vec2 uCanvasPos;
 uniform vec2 uMousePos;
+uniform float uTime;
 
-vec4 hsv(float h, float s, float v) {
-    for(int i = 0; i < 1000; i++) {
-        if(h >= 0.) {
-            break;
-        }
-        h += 360.;
-    }
-    h = mod(h, 360.);
+float hash(vec3 p) {
+    p = fract(p * 0.3183099 + .1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
 
-    float M = v;
-    float m = M * (1. - s);
+    return mix(mix(mix(hash(i + vec3(0, 0, 0)), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float fbmNoise(vec3 x) {
+    return (0.5 * noise(x / 8.) + 0.25 * noise(x / 4.) + 0.125 * noise(x / 2.) + 0.0625 * noise(x));
+}
 
-    float z = (M - m) * (1. - abs(mod(h / 60., 2.) - 1.));
+float mapRange(float value, float inMin, float inMax, float outMin, float outMax) {
+    return (outMax - outMin) * (value - inMin) / (inMax - inMin) + outMin;
+}
 
-    float R, G, B, A;
-    if(0. <= h && h < 60.) {
-        R = M;
-        G = z + m;
-        B = m;
-    }
-    if(60. <= h && h < 120.) {
-        R = z + m;
-        G = M;
-        B = m;
-    }
-    if(120. <= h && h < 180.) {
-        R = m;
-        G = M;
-        B = z + m;
-    }
-    if(180. <= h && h < 240.) {
-        R = m;
-        G = z + m;
-        B = M;
-    }
-    if(240. <= h && h < 300.) {
-        R = z + m;
-        G = m;
-        B = M;
-    }
-    if(300. <= h && h < 360.) {
-        R = M;
-        G = m;
-        B = z + m;
-    }
-    A = 1.;
-
-    return vec4(R, G, B, A);
+vec3 colorRamp(float value, float inMin, float inMax, vec3 color1, vec3 color2) {
+    return (color2 - color1) * (value - inMin) / (inMax - inMin) + color1;
 }
 
 void main() {
@@ -65,19 +40,13 @@ void main() {
     // "the texture is loaded upside down and backwards by default so lets flip it"
     uv.y = 1.0 - uv.y;
 
-    float h = 240. + uv.y * 120.;
-    float s = 1.;
-    float v = 1.;
-
     vec2 mouseUV = vec2((uMousePos - uCanvasPos) / uRes);
 
-    // float val = 3720. * (-((mouseUV.x - uv.x) * (mouseUV.x - uv.x)) - ((mouseUV.y - uv.y) * (mouseUV.y - uv.y))) + 270.;
-    float val = 30. - distance(mouseUV, uv) * 100.;
-    if(val > 0.) {
-        h += val;
-    }
+    vec2 displacedUV = uv + mapRange(fbmNoise(vec3(uv * 20., uTime / 20.)), 0., 1., -0.1, 0.1);
+    float val = distance(mouseUV * uRes, displacedUV * uRes);
 
-    vec4 col = hsv(h, s, v);
-
-    gl_FragColor = col;
+    float colorValue = (sin(val / length(uRes) * 20. - uTime / 20.) + 1.) / 2.;
+    colorValue = floor(colorValue * 7.) / 7.;
+    vec3 col = colorRamp(colorValue, 0., 1., vec3(0.0, 0.68, 0.77), vec3(0.11, 0.97, 0.0));
+    gl_FragColor = vec4(col, 1.);
 }

@@ -1,19 +1,35 @@
 let projects = []
-function getInfo(url) {
-    const iframe = document.createElement("iframe")
-    iframe.addEventListener('load', function () {
-        projects.push(new Project(iframe.contentWindow))
+let folders = {}
+let getInfoCalls = 0
+let getInfoResponses = 0
 
-        // console.log(iframe.contentWindow.document.head.querySelector("title").innerHTML)
+function getInfo(url, folder) {
+    getInfoCalls++
+    // thanks chatgpt buddy 🙂
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch HTML file: ${response.status} ${response.statusText}`)
+            }
+            return response.text()
+        })
+        .then(htmlContent => {
+            // Parse the HTML content using DOMParser
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(htmlContent, 'text/html')
 
-        iframe.remove()
-    })
-    iframe.src = url
+            if (!folders[folder]) {
+                folders[folder] = []
+            }
+            folders[folder].push(new Project(doc, url))
 
-    document.body.append(iframe)
+            getInfoResponses++
+
+            if (getInfoCalls == getInfoResponses) { loadProjectsSide() }
+        })
 }
 
-// to do it manually
+//! to do it manually, hopefully not needed
 function addProject(url, title, description) {
     projects.push({
         url,
@@ -23,7 +39,6 @@ function addProject(url, title, description) {
 }
 
 
-// let words = ["Among Us", "Funny", "Haha"]
 let scores = []
 function search(keyword) {
     scores = []
@@ -60,44 +75,90 @@ function search(keyword) {
 
         scoresOrdered.push(bestScoreI)
         cap = scores[bestScoreI]
-        // scores.splice(bestScoreI, 1)
     }
 
     console.log(scoresOrdered)
     loadProjectsSide(scoresOrdered)
     return scoresOrdered
 }
-// search("")
 
-function loadProjectsSide(order) {
-    document.getElementById("projects").innerHTML = ''
-    if (!order) {
-        order = []
-        for (let i = 0; i < projects.length; i++) { order.push(i) }
-    }
+function loadProjectsSide() {
+    document.getElementById("loadingMessage").remove()
+    // document.getElementById("searchBox").style.display = "block" *MIGHT ADD THIS BACK LATER (SEARCH BOX)
 
-    for (let i = 0; i < order.length; i++) {
-        let div = document.createElement("div")
-        div.classList.add("projectCell")
-        document.getElementById("projects").append(div)
+    const projectsArea = document.getElementById("projects")
+    projectsArea.innerHTML = ""
+    for (let folder in folders) {
 
-        let name = document.createElement("p")
-        name.innerText = projects[order[i]].title
-        div.append(name)
+        const thisFolder = folders[folder]
+        const folderElm = document.createElement("div")
+        folderElm.id = folder
+        folderElm.classList.add("folderCell")
+        projectsArea.append(folderElm)
 
-        let desc = document.createElement("p")
-        desc.classList.add("projectDesc")
-        desc.innerText = projects[order[i]].description
-        div.append(desc)
+        const folderTitle = document.createElement("span")
+        folderTitle.innerText = folder
+        folderElm.append(folderTitle)
 
-        let link = document.createElement("a")
-        link.href = projects[order[i]].url
-        link.innerText = "Go to"
-        div.append(link)
+        const expandButton = document.createElement("span")
+        expandButton.innerText = "<"
+        expandButton.classList.add("expandButton")
+        expandButton.addEventListener("click", function () {
+            if (document.getElementById(folder + " projects").style.display == "none") {
+                document.getElementById(folder + " projects").style.display = "block"
+                expandButton.innerText = "v"
+            } else {
+                document.getElementById(folder + " projects").style.display = "none"
+                expandButton.innerText = "<"
+            }
+        })
+        folderElm.append(expandButton)
+
+        const projectsInFolder = document.createElement("div")
+        projectsInFolder.id = folder + " projects"
+        projectsInFolder.style.display = "none"
+        folderElm.append(projectsInFolder)
+
+        for (let project of thisFolder) {
+            const projectElm = document.createElement("div")
+            projectElm.id = project.title
+            projectElm.classList.add("projectCell")
+            projectsInFolder.append(projectElm)
+
+            let name = document.createElement("p")
+            name.innerText = project.title
+            projectElm.append(name)
+
+            let desc = document.createElement("p")
+            desc.classList.add("projectDesc")
+            desc.innerText = project.description
+            projectElm.append(desc)
+
+            // let link = document.createElement("a")
+            // link.href = project.url
+            // link.innerText = "Go to"
+            // projectElm.append(link)
+
+            let test = document.createElement("p")
+            test.innerText = "Open"
+            test.addEventListener("click", function () {
+                let oldProject = document.getElementById("openedProject")
+                if (oldProject) { oldProject.remove() }
+                let frame = document.createElement("iframe")
+                frame.src = project.url
+                frame.id = "openedProject"
+                document.body.append(frame)
+
+                frame.addEventListener("load", function () {
+                    frame.contentDocument.body.style.zoom = 0.75
+                })
+            })
+            projectElm.append(test)
+        }
     }
 }
-setTimeout(loadProjectsSide, 1000)
-// loadProjectsSide()
+
+// setTimeout(loadProjectsSide2, 2000)
 
 document.getElementById("searchKey").addEventListener("change", function () {
     search(document.getElementById("searchKey").value)
@@ -147,6 +208,7 @@ function draw() {
     image(noise, 0, 0, width, height)
 
     shaderCanvas.width = innerWidth / 4
+    shaderCanvas.height = innerHeight
 
     for (let i = 0; i < points.length; i++) {
         points[i].add(pVel[i])
@@ -159,13 +221,13 @@ function draw() {
 
     gradientShader.setUniform("uRes", [shaderCanvas.width, shaderCanvas.height])
     gradientShader.setUniform("uCanvasPos", [innerWidth * (3 / 4), 0])
-    gradientShader.setUniform("uMousePos", [mouseX * (innerWidth / 2560), mouseY])
+    gradientShader.setUniform("uMousePos", [winMouseX, winMouseY])
+    gradientShader.setUniform("uTime", frameCount)
 
     shaderCanvas.shader(gradientShader)
     shaderCanvas.rect(0, 0, 10, 10)
 }
 
-// -------------<triangles>
 let points = []
 let pVel = []
 function addPoints() {
@@ -286,25 +348,3 @@ function HSVtoRGB(h, s, v) {
         b: Math.round(b * 255)
     }
 }
-
-// alert("Under construction :)")
-// -----------</triangles>
-
-
-/*
-get function
-    title
-    description
-    link
-
-button to open link in new tab
-
-search: concat title and description
-
-when you click to see a certain project, it brings you to a page (same for all of them) which gets the url of the desired project passed in through the location.href (/#...)
-    this page then loads an iframe of the desired project, a back button to the index, a link to each script, and the title becomes the project's title
-
-gifs floating around in front of the triangulation which get bigger when clicked?
-
-LOADING SCREEN
-*/
