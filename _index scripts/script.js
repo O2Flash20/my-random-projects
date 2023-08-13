@@ -1,8 +1,10 @@
 let projects = []
-function get(url) {
+function getInfo(url) {
     const iframe = document.createElement("iframe")
     iframe.addEventListener('load', function () {
         projects.push(new Project(iframe.contentWindow))
+
+        // console.log(iframe.contentWindow.document.head.querySelector("title").innerHTML)
 
         iframe.remove()
     })
