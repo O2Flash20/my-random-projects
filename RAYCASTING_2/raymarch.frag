@@ -21,7 +21,6 @@ const float horizontalFOV = 2. * atan((16. / 9.) * (tan(verticalFOV / 2.)));
 const vec3 sunDir = normalize(vec3(1., 1., 0.));
 const vec3 sunColor = vec3(1.0);
 const vec3 backgroundColor = vec3(0.58, 0.87, 1.0);
-// const vec3 ambientColor = vec3(0.11);
 const vec3 ambientColor = backgroundColor * 0.2;
 
 struct Material {
@@ -191,21 +190,6 @@ Surface sceneSDF(vec3 p) {
 
     // return co;
 
-    // *smin test 
-    // Material sphereMaterial = Material(vec3(1.0, 0.0, 0.0), 0.2, 1.);
-    // Surface s = Sphere(p, vec3(0), 2., sphereMaterial);
-
-    // Material boxMaterial = Material(vec3(1.), 0.8, 0.6);
-    // Surface b = Box(p, vec3(2.5), vec3(2.), 0.1, rotateNone(), boxMaterial);
-    // return surfaceSmin(s, b, 1.);
-
-    // *two branches
-    // Material m1 = Material(vec3(0.91, 0.06, 0.06), 0.2, 0.1);
-    // Material m2 = Material(vec3(0.0, 0.15, 0.97), 0.2, 0.1);
-    // Surface b1 = Branch(p, vec3(0.), rotateNone(), m1);
-    // Surface b2 = Branch(p, vec3(2.), rotateNone(), m2);
-    // return surfaceSmin(b1, b2, 1.);
-
     // *grass field
     float groundHeight = 5. * fbmNoise(vec3(p.xz / 2., 1.));
 
@@ -217,12 +201,6 @@ Surface sceneSDF(vec3 p) {
     Surface ground = FloorPlane(p, groundHeight, groundMat);
 
     return surfaceMin(grass, ground);
-
-    // * ripply ground test
-    // Material mat = Material(vec3(0.37), 0.8, 1.);
-    // Surface ground = FloorPlane(p, sin(p.x * 4.), mat);
-    // ground.sd *= 0.5;
-    // return ground;
 }
 
 vec3 estimateNormal(in vec3 p) {
