@@ -11,7 +11,7 @@ uniform vec3 uCameraRot;
 // CONTROLS
 const int MaxMarchingSteps = 1000;
 const float MinDist = 0.0;
-const float MaxDist = 1000.0;
+const float MaxDist = 500.0;
 const float Epsilon = 0.001; //the distance needed to be considered "hitting"
 
 const float pi = 3.1415926535897932384226;
@@ -128,15 +128,43 @@ Surface FloorPlane(vec3 p, float height, Material mat) {
     return Surface(p.y - height, mat);
 }
 
-Surface Tree(vec3 p, Material mat) {
+// !not used?
+Surface Branch(vec3 p, vec3 position, float radius, float height, float noiseAmount, mat3 transform, Material mat) {
+    p = (p - position) * transform;
+    vec2 pn = normalize(p.xz) * 4.; // *4 for more detail and a vertical stretch
+    Surface co = HalfCylinder(p, vec3(0.), radius, height, rotateNone(), mat);
+    co.sd += noiseAmount * (2. * fbmNoise(vec3(pn.x, pn.y, p.y)) - 1.);
+    return co;
+}
+
+Surface Tree(vec3 p, vec3 position, float seed, mat3 transform, Material mat) {
+    p = (p - position) * transform;
     Surface co = HalfCylinder(p, vec3(0.), 0.2, 5., rotateNone(), mat);
+    // Surface co = Branch(p, vec3(0.), 0.2, 5., 0.5, rotateNone(), mat);
     for (int i = 1; i < 10; i++) {
-        float branchLength = mapRange(hash1d(float(i)), 0., 1., 1., 2.3);
-        mat3 branchRotation = rotateY(hash1d(float(i) + pi) * 2. * pi) * rotateZ(1.);
+        float branchLength = mapRange(hash1d(seed * float(i)), 0., 1., 1., 2.3);
+        mat3 branchRotation = rotateY(hash1d(seed * float(i) + pi) * 2. * pi) * rotateZ(1.);
         Surface newBranch = HalfCylinder(p, vec3(0., float(i), 0.), 0.1, branchLength, branchRotation, mat);
+        // Surface newBranch = Branch(p, vec3(0., float(i), 0.), 0.1, branchLength, 0.1, branchRotation, mat);
         co = surfaceSmin(newBranch, co, 0.1);
     }
     return co;
+}
+
+Surface GrassField(vec3 p, float height, Material mat) {
+    const float gS = 1.; // grass spacing
+    const float gS2 = gS * 2.;
+    vec3 pnew = p;
+    pnew.xz = mod(p.xz, gS2);
+    vec2 grassCoordinate = floor(p.xz / gS2) * gS2;
+    pnew.xz += mapRange(noise(vec3(grassCoordinate * 10., 0.1)), 0., 1., -gS, gS);
+    pnew.xz += mapRange(fbmNoise(vec3(grassCoordinate, uTime / 20.)), 0., 1., -gS, gS) * (p.y - height) * (p.y - height) * 0.5;
+    Material grassMat = Material(vec3(0.02, 0.47, 0.0), 0.8, 1.);
+    float random = noise(vec3(grassCoordinate, 1.) * 10.);
+    Surface grass = Box(pnew, vec3(gS, height, gS), vec3(0.1, 2., 0.005), 0.01, rotateY(random * pi), grassMat);
+    grass.sd *= Epsilon * 200.;
+
+    return grass;
 }
 
 vec3 directionFromUV(vec2 uv) {
@@ -151,23 +179,17 @@ vec3 dirToWorldDir(vec3 dir, vec3 cameraRot) {
 }
 
 Surface sceneSDF(vec3 p) {
-    // *forest scene
+    // *tree
     // vec3 pnew = p;
-    // pnew.xz = mod(p.xz, 20.);
-    // pnew.xz -= 10.;
-    // pnew.xz += mapRange(fbmNoise(floor(p / 40.) * 40.), 0., 1., 10., -10.); //!Bugs it
+    // pnew.xz += 20. * sin(uTime / 200.) * pow(p.y / 50., 2.);
     // Material treeMat = Material(vec3(0.27, 0.13, 0.02), 0.7, 0.2);
-    // Surface co = Tree(pnew, treeMat);
+    // float seed = hash1d(floor(length(p) / 20.));
+    // Surface co = Tree(pnew, vec3(0.), seed, rotateNone(), treeMat);
+
     // Material groundMat = Material(vec3(0.02, 0.23, 0.04), 1., 0.1);
     // co = surfaceMin(co, FloorPlane(p, 0., groundMat));
-    // return co;
 
-    // *nice branch looking thing
-    vec2 pn = normalize(p.xz) * 4.; // *4 for more detail and a vertical stretch
-    Material surfaceMaterial = Material(vec3(0.07, 1.0, 0.56), 0.3, 1.);
-    Surface co = HalfCylinder(p, vec3(0.), 1., 10., rotateNone(), surfaceMaterial);
-    co.sd += 2. * fbmNoise(vec3(pn.x, pn.y, p.y)) - 1.;
-    return co;
+    // return co;
 
     // *smin test 
     // Material sphereMaterial = Material(vec3(1.0, 0.0, 0.0), 0.2, 1.);
@@ -176,6 +198,31 @@ Surface sceneSDF(vec3 p) {
     // Material boxMaterial = Material(vec3(1.), 0.8, 0.6);
     // Surface b = Box(p, vec3(2.5), vec3(2.), 0.1, rotateNone(), boxMaterial);
     // return surfaceSmin(s, b, 1.);
+
+    // *two branches
+    // Material m1 = Material(vec3(0.91, 0.06, 0.06), 0.2, 0.1);
+    // Material m2 = Material(vec3(0.0, 0.15, 0.97), 0.2, 0.1);
+    // Surface b1 = Branch(p, vec3(0.), rotateNone(), m1);
+    // Surface b2 = Branch(p, vec3(2.), rotateNone(), m2);
+    // return surfaceSmin(b1, b2, 1.);
+
+    // *grass field
+    float groundHeight = 5. * fbmNoise(vec3(p.xz / 2., 1.));
+
+    Material grassMat = Material(vec3(0.02, 0.47, 0.0), 0.8, 1.);
+    Surface grass = GrassField(p, groundHeight, grassMat);
+    grass = surfaceMin(grass, GrassField(p - vec3(1., 0., 0.4), groundHeight, grassMat));
+
+    Material groundMat = Material(vec3(0.21, 0.15, 0.01) * fbmNoise(p * 10.), 1., 0.01);
+    Surface ground = FloorPlane(p, groundHeight, groundMat);
+
+    return surfaceMin(grass, ground);
+
+    // * ripply ground test
+    // Material mat = Material(vec3(0.37), 0.8, 1.);
+    // Surface ground = FloorPlane(p, sin(p.x * 4.), mat);
+    // ground.sd *= 0.5;
+    // return ground;
 }
 
 vec3 estimateNormal(in vec3 p) {
@@ -186,18 +233,20 @@ vec3 estimateNormal(in vec3 p) {
         e.xxx * sceneSDF(p + e.xxx).sd);
 }
 
-vec3 shadeSurface(Surface surface, vec3 rayDirection, vec3 normal) {
+vec3 shadeSurface(Surface surface, vec3 rayDirection, vec3 rayPosition, vec3 normal) {
+    vec3 reflectedDir = reflect(rayDirection, normal);
+
     vec3 ambient = ambientColor * surface.mat.baseColor;
 
-    float lambertian = max(0.0, dot(normal, sunDir));
+    float lambertian = max(0., dot(normal, sunDir));
     vec3 diffuse = lambertian * surface.mat.baseColor * sunColor;
 
-    vec3 reflectedDir = reflect(rayDirection, normal);
     float specularDot = max(0., dot(reflectedDir, sunDir));
     float specularPow = mapRange(surface.mat.roughness, 0., 1., 200., 1.);
     vec3 specular = clamp(pow(specularDot, specularPow), 0., surface.mat.specularStrength) * sunColor;
 
     return diffuse + ambient + specular;
+    // return ref;
 }
 
 // shoots a ray out into the scene and returns essentially a depth map (+each point's nearest color)
@@ -210,20 +259,23 @@ vec3 rayMarch(vec3 cameraPos, vec3 rayDirection, float startDepth, float endDept
         co = sceneSDF(p);
 
         if (abs(co.sd) < Epsilon) { //hit something!
-            vec3 normal = estimateNormal(p);
-            return shadeSurface(co, rayDirection, normal);
+            return shadeSurface(co, rayDirection, p, estimateNormal(p));
         }
 
         if (depth > endDepth) {
-            break;
+            // break; // go to return sky
+            return backgroundColor;
         }
 
         depth += co.sd;
     }
 
-    co.sd = depth;
+    // returning sky color
+    // co.sd = depth;
+    // return backgroundColor;
+    return co.mat.baseColor;
 
-    return backgroundColor;
+    // return vec3(depth / 10.);
 }
 
 void main() {
@@ -236,5 +288,6 @@ void main() {
 
 /*
 TODO:
-better color mixing with surfaceSmin
+controls on Tree and Branch
+sun shadows
 */
