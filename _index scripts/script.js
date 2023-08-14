@@ -18,13 +18,14 @@ function getInfo(url, folder) {
             const parser = new DOMParser()
             const doc = parser.parseFromString(htmlContent, 'text/html')
 
+
             if (!folders[folder]) {
                 folders[folder] = []
             }
+
             folders[folder].push(new Project(doc, url))
 
             getInfoResponses++
-
             if (getInfoCalls == getInfoResponses) { loadProjectsSide() }
         })
 }

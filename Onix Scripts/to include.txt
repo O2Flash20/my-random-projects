@@ -1,0 +1,22 @@
+blockToTexture
+cosmeticTools
+logger (+UI)
+vectors
+3dView
+arrowTrail
+betterHunger
+blockMap
+bridgeOverlay
+cameraAnimations
+cosmetics
+DevBlockLeaker (contributed)
+freecam
+immersiveFirstPerson
+lagSwitch
+miniMap
+PvPHelper
+quickWaypoints
+raytracing
+replayMod
+ReplayModOld
+winParticles

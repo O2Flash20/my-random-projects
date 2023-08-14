@@ -182,9 +182,111 @@ for (let p of ProjectList) {
     getInfo(p.url, p.folder)
 }
 
+const OnixProjectList = [
+    {
+        name: "blockToTexture"
+    },
+    {
+        name: "cosmeticTools"
+    },
+    {
+        name: "logger"
+    },
+    {
+        name: "vectors"
+    },
+    {
+        name: "3dView"
+    },
+    {
+        name: "arrowTrail"
+    },
+    {
+        name: "betterHunger"
+    },
+    {
+        name: "blockMap"
+    },
+    {
+        name: "bridgeOverlay"
+    },
+    {
+        name: "cameraAnimations"
+    },
+    {
+        name: "cosmetics"
+    },
+    {
+        name: "DevBlockLeaker"
+    },
+    {
+        name: "freecam"
+    },
+    {
+        name: "ImmersiveFirstPerson"
+    },
+    {
+        name: "lagSwitch"
+    },
+    {
+        name: "miniMap"
+    },
+    {
+        name: "PvPHelper"
+    },
+    {
+        name: "quickWaypoints"
+    },
+    {
+        name: "raytracing"
+    },
+    {
+        name: "replayMod"
+    },
+    {
+        name: "ReplayModOld"
+    },
+    {
+        name: "winParticles"
+    },
+]
+
+let test = 0
+let test1 = 0
+for (let project of OnixProjectList) {
+    if (!folders["Onix Client Scripts"]) { folders["Onix Client Scripts"] = [new OnixProject("whatIsOnixClient")] }
+    folders["Onix Client Scripts"].push(new OnixProject(project.name))
+    const urlInRepo = "https://raw.githubusercontent.com/O2Flash20/My-Onix-Client-Scripts-Folder/main/Modules/" + project.name + ".lua"
+    checkURLExists(urlInRepo)
+    // console.log("https://raw.githubusercontent.com/OnixClient-Scripts/OnixClient_Scripts/master/Modules/" + project.name + ".lua")
+}
+
+function checkURLExists(url) {
+    return fetch(url)
+        .then(response => {
+            if (response.status === 200) {
+                console.log("yes")
+                return true // URL exists (status code 200 OK)
+            } else if (response.status === 404) {
+                console.log("no")
+                return false // URL doesn't exist (status code 404 Not Found)
+            } else {
+                // Handle other status codes if needed
+                console.log("no")
+                return false
+            }
+        })
+        .catch(error => {
+            console.error("Error checking URL:", error)
+            return false // Error occurred, URL likely doesn't exist
+        })
+}
+
 /* TODO
 be able to determine the order of the folders and projects
 rating value
 "finished" indicator
 add Onix scripts
+
+!FIX TETRIS (why borken)
 */
