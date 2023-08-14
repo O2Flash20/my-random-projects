@@ -134,6 +134,7 @@ function loadProjectsSide() {
             desc.innerText = project.description
             projectElm.append(desc)
 
+            // * add as "open in new tab"
             // let link = document.createElement("a")
             // link.href = project.url
             // link.innerText = "Go to"
@@ -158,7 +159,6 @@ function loadProjectsSide() {
     }
 }
 
-// setTimeout(loadProjectsSide2, 2000)
 
 document.getElementById("searchKey").addEventListener("change", function () {
     search(document.getElementById("searchKey").value)
@@ -348,3 +348,5 @@ function HSVtoRGB(h, s, v) {
         b: Math.round(b * 255)
     }
 }
+
+// TODO Redo search

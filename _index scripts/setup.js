@@ -1,62 +1,190 @@
-// addProject("cloth simulation/index.html", "Cloth Simulation", "A cloth simulation using springs and particles that I've made. I want to make it 3d and improve the graphics in the future.")
-// addProject("RAYCASTING_2/index.html", "Ray Marching v2", "Ray Marching but 2. Open at your own risk, it might be intense on the GPU.")
-// addProject("G_PROCEDURAL TEXTURES/index.html", "Procedural Texture Generator", "Uses forms of noise to create seamless, infinite-resolution textures. User interface not done, a fraction of the features I wanted.")
-// addProject("WALL DESTRUCTION/index.html", "Wall Destruction Game", "Concept for a shooter game in which all walls are breakable.")
-// addProject("RAYMARCHING/index.html", "Raymarching Algorithm", "A 3d raymarching (similar to raytracing) project. I want to add typical raytracing features like bump maps and reflections.")
-// addProject("triangle thing 3 epic boogalee/index.html", "Triangle Thing 3: The Good One", "Triangulation using the Bowyer-Watson algorithm")
-// addProject("trails/index.html", "Trails", "The most satisfying thing I've ever made, even though I did it in a little more that 2 hours.")
-// addProject("light simulation/index.html", "Light Simulation", "A shader that mimics light in a scene. I might want to go back on it some day.")
-// addProject("color guesser/index.html", "Color Guesser", "Get a random color and try to guess its rgb value. I made this on a plane so its not that amazing.")
-// addProject("inverse kinematics/inverse/index.html", "Inverse Kinematics", "I followed the Coding Train's inverse kinematics tutorial. Kinda looks like a rope.")
-// addProject("inverse kinematics/forward/index.html", "Forward Kinematics", "I followed the Coding Train's forward kinematics tutorial. That's about it.")
-// addProject("cyoobcast background/index.html", "CyoobCast background", "A cool little graphic for something I was doing on Youtube.")
-// addProject("SHADERS/infinite pattern/index.html", "Infinite Tile Pattern", "A shader that tiles a smaller image, making 240 particles look like 100,000. Another shader on top giving the color.")
-// addProject("SHADERS/wind wave/index.html", "Wind Wave", "A shader effect that looks like something waving in the wind.")
-// addProject("TETRIS/index.html", "Tetris", "A terrible, unfinished Tetris clone.")
-// addProject("SHADERS/metaballs/index.html", "Metaballs", "A metaballs shader using SDFs.")
-// addProject("old glitch projects/ascii post processing/index.html", "ASCII Display", "A (not shader) tool that captures your display and turns it to ascii art.")
-// addProject("SHADERS/3d glasses/index.html", "3D Effect Shader", "A shader that makes a 3d image that you can see by crossing your eyes until the two match up. Takes in a regular image and a depth map. If the depth map isn't smooth and the color image is too simple it creates annoying visible artifacts :(.")
-// addProject("SHADERS/edge detect/index.html", "Edge Detect", "A simple edge detect shader using the camera.")
-// addProject("SHADERS/motion detection shader/index.html", "Camera Motion Detection", " shader that detects motion in your camera.")
-// addProject("SHADERS/webcam rgb shift/index.html", "Camera RGB Shift", "A shader that shifts the red and blue values of your camera, giving a cool glitchy effect.")
-// addProject("SHADERS/motion blur/index.html", "Motion Blur", "A motion blur shader that uses a motion detection mask and box blur. Using camera right now for testing.")
-// addProject("triangle thing 2 electric boogaloo/index.html", "Triangle Thing 2: Electric Boogaloo", "Still not what I wanted, but very very cool and very close.")
-// addProject("vtuber2/index.html", "VTuber", "A little VTuber model which uses AI and uses image files.")
-// addProject("particle system/index.html", "Particle System", "A generic particle system that I can use in other projects. Very satisfying.")
-// addProject("old glitch projects/discord big text/index.html", "Discord Emoji Text", "Converts text to emojis for Discord.")
-// addProject("old glitch projects/canvas game/index.html", "Perlin Noise World Generation", "Something that looks like Minecraft world generation using perlin noise. This used to be an attempt to make a game library with vanilla js.")
-// addProject("smooth noise/index.html", "Smooth Noise", "My attempt at making a perlin-like noise.")
-// addProject("SHADERS/blur/index.html", "Blur Shader", "Making a custom weighted box blur shader. The function for the weights is unique to me from what I know of. The function itself makes it so that I have to do so many more calculations than I should. Lesson learned.")
-// addProject("SHADERS/mouse gradient/index.html", "Mouse Gradient", "A shader that applies a gradient to the canvas and then changes it depending on the position of the mouse.")
-// addProject("triangle thing/index.html", "Triangle Thing", "I tried to get some effect, but it's not exactly what I wanted.")
-// addProject("fake word generator/index.html", "Word Generator", "Generates 1000 random combinations of letters which imitate real english words. Pretty useful if you want to make a unique name or language.")
-// addProject("old glitch projects/website learns to write/index.html", "Writing Text Effect", "A text effect.")
-// addProject("sprite system/index.html", "Sprite System", "A generic sprite system to use in other projects. I forgot that I haven't finished it. Oops.")
-// addProject("old glitch projects/bunger nft/index.html", "Bunger NFT", "The best unfinished NFT parody you've ever seen.")
-// addProject("RAYCASTING GAME/versions/4-current/index.html", "Raycasting game", "A very unfinished 3d-looking game using raycasting. Originally a copy from the Coding Train's video but I added a bunch (color, entities, textures, etc.)")
-// addProject("old glitch projects/game engine/index.html", "Game Library but Not Canvas", "A terrible effort at a game library that uses not a canvas, but the power of *divs moving around*.")
-// addProject("old glitch projects/wrm minecraft music/index.html", "Minecraft Music Player", "A music player for Minecraft music. It's the first big javascript project I ever made.")
-// addProject("old glitch projects/wr game/index.html", "Silly Game", "What a fun and not boring game.")
-// addProject("old glitch projects/display filters/index.html", "Display RGB Shift", "A (not shader) which gives your display the RGB shift effect.")
-// addProject("SHADERS/basic gradient/index.html", "Basic Gradient", "Pretty much the simplest thing you can do with a shader.")
-// addProject("graphing calculator/index.html", "Graphing Calculator", "A *very* simple graphing calculator which I made pretty quickly. Cool, even though it's painful to use.")
-// addProject("old glitch projects/break the cycle/index.html", "BEREMKF THE CYECLE", "A joke site I made for a school project (Break the Cycle).")
-// addProject("old glitch projects/biscord/index.html", "Biscord", "A Discord clone that I made a while ago and no longer works(messages don't actually send). I also had some fun with hacking using it by sending script tags through.")
+const ProjectList = [
+    {
+        url: "cloth simulation/index.html",
+        folder: "Simulations",
+        rating: 4.5
+    },
+    {
+        url: "RAYCASTING_2/index.html",
+        folder: "3D Renders"
+    },
+    {
+        url: "G_PROCEDURAL TEXTURES/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "WALL DESTRUCTION/index.html",
+        folder: "Games"
+    },
+    {
+        url: "RAYMARCHING/index.html",
+        folder: "3D Renders"
+    },
+    {
+        url: "triangle thing 3 epic boogalee/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "trails/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "light simulation/index.html",
+        folder: "Simulations"
+    },
+    {
+        url: "color guesser/index.html",
+        folder: "Games"
+    },
+    {
+        url: "inverse kinematics/inverse/index.html",
+        folder: "Simulations"
+    },
+    {
+        url: "inverse kinematics/forward/index.html",
+        folder: "Simulations"
+    },
+    {
+        url: "cyoobcast background/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/infinite pattern/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/wind wave/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "TETRIS/index.html",
+        folder: "Games"
+    },
+    {
+        url: "SHADERS/metaballs/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "old glitch projects/ascii post processing/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "SHADERS/3d glasses/index.html",
+        folder: "Simulations"
+    },
+    {
+        url: "SHADERS/edge detect/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/motion detection shader/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "SHADERS/webcam rgb shift/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/motion blur/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "triangle thing 2 electric boogaloo/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "vtuber2/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "particle system/index.html",
+        folder: "Simulations"
+    },
+    {
+        url: "old glitch projects/discord big text/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "old glitch projects/canvas game/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "smooth noise/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/blur/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "SHADERS/mouse gradient/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "triangle thing/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "fake word generator/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "old glitch projects/website learns to write/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "sprite system/index.html",
+        folder: "Games"
+    },
+    {
+        url: "old glitch projects/bunger nft/index.html",
+        folder: "Joke Websites"
+    },
+    {
+        url: "RAYCASTING GAME/versions/4-current/index.html",
+        folder: "Games"
+    },
+    {
+        url: "old glitch projects/game engine/index.html",
+        folder: "Games"
+    },
+    {
+        url: "old glitch projects/wrm minecraft music/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "old glitch projects/wr game/index.html",
+        folder: "Games"
+    },
+    { //!get rid of this?
+        url: "old glitch projects/display filters/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "SHADERS/basic gradient/index.html",
+        folder: "Generative Art"
+    },
+    {
+        url: "graphing calculator/index.html",
+        folder: "Tools"
+    },
+    {
+        url: "old glitch projects/break the cycle/index.html",
+        folder: "Joke Websites"
+    },
+    {
+        url: "old glitch projects/biscord/index.html",
+        folder: "Joke Websites"
+    }
+]
 
-// addProject("old glitch projects/class links 2/index.html", "Schedule and Agenda", "A schedule and agenda I made for school that works on cookies.")
-// addProject("LAB CREDIT SCORE/index.html", "Lab Credit Score Graph", "Graphs the credit scores of my friends and I in our science labs. Works over local storage.")
+for (let p of ProjectList) {
+    getInfo(p.url, p.folder)
+}
 
-// FOOLS CARDS NOT WORKING (avengers level threat)
-// pixel game also not working
-// AND wallpaper
-
-// addProject("/index.html", "", "")
-
-getInfo("cloth simulation/index.html", "Simulations")
-getInfo("WALL DESTRUCTION/index.html", "Simulations")
-getInfo("RAYCASTING_2/index.html", "3D Renders")
-getInfo("RAYMARCHING/index.html", "3D Renders")
-getInfo("G_PROCEDURAL TEXTURES/index.html", "Tools")
-getInfo("fake word generator/index.html", "Tools")
-getInfo("triangle thing 3 epic boogalee/index.html", "Generative Art")
-getInfo("cyoobcast background/index.html", "Generative Art") 
+/* TODO
+be able to determine the order of the folders and projects
+rating value
+"finished" indicator
+add Onix scripts
+*/
