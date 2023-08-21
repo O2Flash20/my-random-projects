@@ -117,10 +117,38 @@ Surface Sphere(vec3 p, vec3 position, float radius, Material mat) {
 }
 
 Surface HalfCylinder(vec3 p, vec3 position, float radius, float height, mat3 transform, Material mat) {
+    height /= 2.;
     p = (p - position) * transform;
     p.y -= height;
     vec2 d = abs(vec2(length(p.xz), p.y)) - vec2(radius, height);
     return Surface(min(max(d.x, d.y), 0.0) + length(max(d, 0.0)), mat);
+}
+
+Surface Vesica(vec3 p, vec3 position, float r, float d, float width, mat3 transform, Material mat) {
+    p = (p - position) * transform;
+    float sd;
+    vec2 p2d = p.xz;
+    p2d = abs(p2d);
+    float b = sqrt(r * r - d * d);
+    sd = ((p2d.y - b) * d > p2d.x * b) ? length(p2d - vec2(0.0, b)) : length(p2d - vec2(-d, 0.0)) - r;
+    sd = max(sd, abs(p.y) - width);
+    Surface vesica = Surface(sd, mat);
+    return vesica;
+}
+
+Surface Leaf(vec3 p, vec3 position, float height, float width, float roundness, mat3 transform, Material leafMat, Material branchMat) {
+    p = (p - position) * transform;
+    float ra1 = height;
+    float ra2 = roundness;
+    // float wid = max(0.5, ra1);
+    float wid = 0.36;
+
+    Surface vesica = Vesica(p, vec3(0., 0.565, 0.), wid, ra1, width, rotateX(pi / 2.), leafMat);
+    vesica.sd -= (ra2);
+
+    Surface branchEnd = HalfCylinder(p, vec3(0.), 0.01, 0.4, rotateNone(), branchMat);
+
+    return surfaceMin(vesica, branchEnd);
 }
 
 Surface FloorPlane(vec3 p, float height, Material mat) {
@@ -136,32 +164,52 @@ Surface Branch(vec3 p, vec3 position, float radius, float height, float noiseAmo
     return co;
 }
 
-Surface Tree(vec3 p, vec3 position, float seed, mat3 transform, Material mat) {
+Surface Tree(vec3 p, vec3 position, float height, int numBranches, int numLeaves, float seed, mat3 transform, Material barkMat, Material leafMat) {
     p = (p - position) * transform;
-    Surface co = HalfCylinder(p, vec3(0.), 0.2, 5., rotateNone(), mat);
-    // Surface co = Branch(p, vec3(0.), 0.2, 5., 0.5, rotateNone(), mat);
-    for (int i = 1; i < 10; i++) {
-        float branchLength = mapRange(hash1d(seed * float(i)), 0., 1., 1., 2.3);
+    Surface co = HalfCylinder(p, vec3(0.), 0.2, height, rotateNone(), barkMat); //trunk
+    for (int i = 1; i < 100; i++) { //branches
+        if (i > numBranches) {
+            break;
+        }
+
+        float maxBranchLength = mapRange(p.y / height, 0., 1., 1., 0.2);
+        float branchLength = mapRange(hash1d(seed * float(i)), 0., 1., 1., maxBranchLength * 15.);
         mat3 branchRotation = rotateY(hash1d(seed * float(i) + pi) * 2. * pi) * rotateZ(1.);
-        Surface newBranch = HalfCylinder(p, vec3(0., float(i), 0.), 0.1, branchLength, branchRotation, mat);
-        // Surface newBranch = Branch(p, vec3(0., float(i), 0.), 0.1, branchLength, 0.1, branchRotation, mat);
+        float branchHeight = float(i) / float(numBranches) * height;
+
+        Surface newBranch = HalfCylinder(p, vec3(0., branchHeight, 0.), 0.05, branchLength, branchRotation, barkMat);
         co = surfaceSmin(newBranch, co, 0.1);
+
+        for (int j = 0; j < 100; j++) { //leaves
+            if (j > numLeaves) {
+                break;
+            }
+            float leafSeed = seed * float(j) * float(i);
+
+            float leafSpotOnBranch = hash1d(leafSeed * 20.2313) * branchLength;
+            mat3 leafRotation = rotateX(hash1d(leafSeed) * pi * 2.) * rotateZ(hash1d(leafSeed * 2.) * pi * 2.) * rotateY(hash1d(leafSeed * 3.) * pi * 2.);
+
+            vec3 p1 = ((p - vec3(0., branchHeight, 0.)) * branchRotation - vec3(0., leafSpotOnBranch, 0.)) * leafRotation; //put the leaf onto its branch
+            Surface leaf = Leaf(p1, vec3(0.), 0.3, 0.005, 0., rotateNone(), leafMat, barkMat);
+            co = surfaceMin(co, leaf);
+
+        }
     }
     return co;
 }
 
-Surface GrassField(vec3 p, float height, Material mat) {
-    const float gS = 1.; // grass spacing
-    const float gS2 = gS * 2.;
+Surface GrassField(vec3 p, float height, float grassSpacing, float grassHeight, Material mat) {
+    float gS = grassSpacing;
+    float gS2 = gS * 2.;
     vec3 pnew = p;
-    pnew.xz = mod(p.xz, gS2);
+    pnew.xz = mod(pnew.xz, gS2);
     vec2 grassCoordinate = floor(p.xz / gS2) * gS2;
-    pnew.xz += mapRange(noise(vec3(grassCoordinate * 10., 0.1)), 0., 1., -gS, gS);
-    pnew.xz += mapRange(fbmNoise(vec3(grassCoordinate, uTime / 20.)), 0., 1., -gS, gS) * (p.y - height) * (p.y - height) * 0.5;
+    pnew.xz += mapRange(noise(vec3(grassCoordinate * 10., 0.1)), 0., 1., -gS, gS); //grass offset
+    pnew.xz += mapRange(fbmNoise(vec3(grassCoordinate, uTime)), 0., 1., -gS, gS) * (p.y - height) * (p.y - height) * 100.; //wind sway
     Material grassMat = Material(vec3(0.02, 0.47, 0.0), 0.8, 1.);
-    float random = noise(vec3(grassCoordinate, 1.) * 10.);
-    Surface grass = Box(pnew, vec3(gS, height, gS), vec3(0.1, 2., 0.005), 0.01, rotateY(random * pi), grassMat);
-    grass.sd *= Epsilon * 200.;
+    float random = noise(vec3(grassCoordinate, 1.) * 10.); //random for the rotation
+    Surface grass = Box(pnew, vec3(gS, height + grassHeight / 2., gS), vec3(0.005, grassHeight, 0.002), 0.001, rotateY(random * pi), grassMat);
+    // grass.sd *= Epsilon * 200.;
 
     return grass;
 }
@@ -179,28 +227,44 @@ vec3 dirToWorldDir(vec3 dir, vec3 cameraRot) {
 
 Surface sceneSDF(vec3 p) {
     // *tree
-    // vec3 pnew = p;
-    // pnew.xz += 20. * sin(uTime / 200.) * pow(p.y / 50., 2.);
-    // Material treeMat = Material(vec3(0.27, 0.13, 0.02), 0.7, 0.2);
-    // float seed = hash1d(floor(length(p) / 20.));
-    // Surface co = Tree(pnew, vec3(0.), seed, rotateNone(), treeMat);
+    vec3 pnew = p;
+    vec2 treeIndex = floor(p.xz / 10.) * 10.;
+    pnew.xz += 20. * sin(uTime + length(treeIndex)) * pow(p.y / 50., 2.); //sway
+    pnew.xz = mod(pnew.xz, 10.);
+    pnew.xz -= 5.;
+    float seed = hash1d(floor(length(p) / 20.));
 
-    // Material groundMat = Material(vec3(0.02, 0.23, 0.04), 1., 0.1);
-    // co = surfaceMin(co, FloorPlane(p, 0., groundMat));
+    Material treeMat = Material(vec3(0.27, 0.13, 0.02), 0.7, 0.2);
+    Material leafMat = Material(vec3(0.0, 0.19, 0.06), 0.4, 1.);
+    Surface co = Tree(pnew, vec3(0.), 10., 10, 7, seed, rotateNone(), treeMat, leafMat);
 
-    // return co;
+    Material groundMat = Material(vec3(0.0, 0.44, 0.04) * fbmNoise(p * 20.), 1., 0.01);
+    co = surfaceSmin(co, FloorPlane(p, 0., groundMat), 0.2);
+    co = surfaceMin(co, GrassField(p, 0., 0.02, 0.07 * fbmNoise(p * 100.) * 2., groundMat));
+
+    return co;
 
     // *grass field
-    float groundHeight = 5. * fbmNoise(vec3(p.xz / 2., 1.));
+    // float groundHeight = 5. * fbmNoise(vec3(p.xz / 2., 1.));
 
-    Material grassMat = Material(vec3(0.02, 0.47, 0.0), 0.8, 1.);
-    Surface grass = GrassField(p, groundHeight, grassMat);
-    grass = surfaceMin(grass, GrassField(p - vec3(1., 0., 0.4), groundHeight, grassMat));
+    // Material grassMat = Material(vec3(0.02, 0.47, 0.0), 0.8, 0.3);
+    // Surface grass = GrassField(p, groundHeight, 0.5, 3., grassMat);
 
-    Material groundMat = Material(vec3(0.21, 0.15, 0.01) * fbmNoise(p * 10.), 1., 0.01);
-    Surface ground = FloorPlane(p, groundHeight, groundMat);
+    // Material groundMat = Material(vec3(0.0, 0.44, 0.04) * fbmNoise(p * 20.), 1., 0.01);
+    // Surface ground = FloorPlane(p, groundHeight, groundMat);
 
-    return surfaceMin(grass, ground);
+    // return surfaceMin(grass, ground);
+
+    // *leaf
+    // Material leafMat = Material(vec3(0.0, 0.33, 0.14), 0.6, 0.3);
+    // Material branchMat = Material(vec3(0.25, 0.12, 0.0), 0.2, 1.);
+    // // p.y += pow(p.z, 2.) * 0.2 * sin(uTime / 20.);//branch sway
+    // Surface leaf = Leaf(p, vec3(0.), 0.32, 0.01, 0.0, rotateNone(), leafMat, branchMat);
+
+    // return leaf;
+
+    // // Surface bark = HalfCylinder(p, vec3(0., -1., 0.), 0.1, 2., rotateNone(), branchMat);
+    // // return surfaceSmin(leaf, bark, 0.1);
 }
 
 vec3 estimateNormal(in vec3 p) {

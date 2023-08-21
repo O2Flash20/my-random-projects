@@ -11,11 +11,13 @@ function setup() {
     createCanvas(1920, 1080, WEBGL)
     noStroke()
 
-    cameraPosition = createVector(0, 0, 0)
+    cameraPosition = createVector(0, 1.75, 0)
     cameraRotation = createVector(0, 0, 0)
 }
 
+let time = 0
 function draw() {
+    time += deltaTime
     // rotation
     if (keyIsDown(38)) {
         cameraRotation.add(createVector(-1, 0, 0).mult(deltaTime / 500))
@@ -56,11 +58,12 @@ function draw() {
 
     background(220)
     raymarchingShader.setUniform("uResolution", [width, height])
-    raymarchingShader.setUniform("uTime", frameCount)
+    raymarchingShader.setUniform("uTime", time / 1000)
     raymarchingShader.setUniform("uCameraPos", [cameraPosition.x, cameraPosition.y, cameraPosition.z])
     raymarchingShader.setUniform("uCameraRot", [cameraRotation.x, cameraRotation.y, cameraRotation.z])
 
     shader(raymarchingShader)
 
     rect(0, 0, width, height)
+    console.log(frameRate())
 }
