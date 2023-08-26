@@ -7,5 +7,3 @@ continue raymarching shader
 
 texture creator using noise in code
     tailored to the raymarching shader (color, bump, reflections?)
-
-test
