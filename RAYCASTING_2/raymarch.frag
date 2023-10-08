@@ -227,22 +227,22 @@ vec3 dirToWorldDir(vec3 dir, vec3 cameraRot) {
 
 Surface sceneSDF(vec3 p) {
     // *tree
-    vec3 pnew = p;
-    vec2 treeIndex = floor(p.xz / 10.) * 10.;
-    pnew.xz += 20. * sin(uTime + length(treeIndex)) * pow(p.y / 50., 2.); //sway
-    pnew.xz = mod(pnew.xz, 10.);
-    pnew.xz -= 5.;
-    float seed = hash1d(floor(length(p) / 20.));
+    // vec3 pnew = p;
+    // vec2 treeIndex = floor(p.xz / 10.) * 10.;
+    // pnew.xz += 20. * sin(uTime + length(treeIndex)) * pow(p.y / 50., 2.); //sway
+    // pnew.xz = mod(pnew.xz, 10.);
+    // pnew.xz -= 5.;
+    // float seed = hash1d(floor(length(p) / 20.));
 
-    Material treeMat = Material(vec3(0.27, 0.13, 0.02), 0.7, 0.2);
-    Material leafMat = Material(vec3(0.0, 0.19, 0.06), 0.4, 1.);
-    Surface co = Tree(pnew, vec3(0.), 10., 10, 7, seed, rotateNone(), treeMat, leafMat);
+    // Material treeMat = Material(vec3(0.27, 0.13, 0.02), 0.7, 0.2);
+    // Material leafMat = Material(vec3(0.0, 0.19, 0.06), 0.4, 1.);
+    // Surface co = Tree(pnew, vec3(0.), 10., 10, 7, seed, rotateNone(), treeMat, leafMat);
 
-    Material groundMat = Material(vec3(0.0, 0.44, 0.04) * fbmNoise(p * 20.), 1., 0.01);
-    co = surfaceSmin(co, FloorPlane(p, 0., groundMat), 0.2);
-    co = surfaceMin(co, GrassField(p, 0., 0.02, 0.07 * fbmNoise(p * 100.) * 2., groundMat));
+    // Material groundMat = Material(vec3(0.0, 0.44, 0.04) * fbmNoise(p * 20.), 1., 0.01);
+    // co = surfaceSmin(co, FloorPlane(p, 0., groundMat), 0.2);
+    // co = surfaceMin(co, GrassField(p, 0., 0.02, 0.07 * fbmNoise(p * 100.) * 2., groundMat));
 
-    return co;
+    // return co;
 
     // *grass field
     // float groundHeight = 5. * fbmNoise(vec3(p.xz / 2., 1.));
@@ -265,6 +265,17 @@ Surface sceneSDF(vec3 p) {
 
     // // Surface bark = HalfCylinder(p, vec3(0., -1., 0.), 0.1, 2., rotateNone(), branchMat);
     // // return surfaceSmin(leaf, bark, 0.1);
+
+    // *render demo
+    Material sphereMat = Material(vec3(0.0, 0.32, 1.0), 0., 1.);
+    Material boxMat = Material(vec3(mod(p.x * p.y, 0.5)), 0.5, 1.);
+    vec3 groundColor = vec3(mod(floor(p.x), 2.) * mod(floor(p.z), 2.), 0., 0.);
+    Material groundMat = Material(groundColor, 0.9, (groundColor.x + 0.3) / 1.3);
+    Surface s = Sphere(p, vec3(0., 3., 0.), 1., sphereMat);
+    Surface b = Box(p, vec3(1., 3.5, 0.), vec3(0.5), 0.1, rotateNone(), boxMat);
+    Surface f = FloorPlane(p, 0., groundMat);
+    Surface co = surfaceSmin(s, b, 0.5);
+    return surfaceMin(co, f);
 }
 
 vec3 estimateNormal(in vec3 p) {
@@ -275,8 +286,9 @@ vec3 estimateNormal(in vec3 p) {
         e.xxx * sceneSDF(p + e.xxx).sd);
 }
 
-vec3 shadeSurface(Surface surface, vec3 rayDirection, vec3 rayPosition, vec3 normal) {
-    vec3 reflectedDir = reflect(rayDirection, normal);
+vec3 shadeSurface(Surface surface, vec3 rayDirection, vec3 hitPosition, vec3 normal) {
+    vec3 normalMap = vec3(fbmNoise(hitPosition * 5.) * 10., 1., 0.); //?
+    vec3 reflectedDir = reflect(rayDirection, normalize(normal + normalMap));
 
     vec3 ambient = ambientColor * surface.mat.baseColor;
 
@@ -285,10 +297,9 @@ vec3 shadeSurface(Surface surface, vec3 rayDirection, vec3 rayPosition, vec3 nor
 
     float specularDot = max(0., dot(reflectedDir, sunDir));
     float specularPow = mapRange(surface.mat.roughness, 0., 1., 200., 1.);
-    vec3 specular = clamp(pow(specularDot, specularPow), 0., surface.mat.specularStrength) * sunColor;
+    vec3 specular = pow(specularDot, specularPow) * surface.mat.specularStrength * sunColor;
 
     return diffuse + ambient + specular;
-    // return ref;
 }
 
 // shoots a ray out into the scene and returns essentially a depth map (+each point's nearest color)
@@ -330,6 +341,9 @@ void main() {
 
 /*
 TODO:
-controls on Tree and Branch
 sun shadows
+normal maps, calculated only on a hit
+good procedural textures
+did i do normal maps right?
+the ablitity to have refletive materials, say one bounce
 */
