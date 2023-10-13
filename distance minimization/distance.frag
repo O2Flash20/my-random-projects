@@ -24,7 +24,9 @@ void main() {
             lowestDist = min(lowestDist, distance(st, uPoints[i] / uResolution));
         }
 
-        col = vec3(lowestDist);
+        col = vec3(lowestDist, 0., 0.);
+    } else {
+        col = vec3(0., 1., 0.);
     }
 
     gl_FragColor = vec4(col, 1.);

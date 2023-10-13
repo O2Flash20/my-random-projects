@@ -12,6 +12,9 @@ let maskShader
 let distanceBuffer
 let distanceShader
 
+let sumBuffer
+let sumShader
+
 let points = [] //"shops"
 
 function preload() {
@@ -20,6 +23,9 @@ function preload() {
 
     distanceBuffer = createGraphics(w, h, WEBGL)
     distanceShader = loadShader("basic.vert", "distance.frag")
+
+    sumBuffer = createGraphics(w, 1, WEBGL) //only the columns
+    sumShader = loadShader("basic.vert", "sum.frag")
 }
 
 let startButton
@@ -29,6 +35,7 @@ function setup() {
 
     maskBuffer.shader(maskShader)
     distanceBuffer.shader(distanceShader)
+    sumBuffer.shader(sumShader)
 
     startButton = createButton("Start")
     startButton.mousePressed(function () {
@@ -119,6 +126,14 @@ function generateDistanceField() {
 
     distanceBuffer.shader(distanceShader)
     distanceBuffer.rect(0, 0, w, h)
+}
+
+function sumColumns() {
+    sumShader.setUniform("uResolution", [w, h])
+    sumShader.setUniform("uDepth", distanceBuffer.get())
+
+    sumBuffer.shader(sumShader)
+    sumBuffer.rect(0, 0, w, h)
 }
 
 /*
