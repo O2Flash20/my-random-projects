@@ -5,7 +5,7 @@ precision mediump float;
 uniform vec2 uResolution;
 uniform vec2 uPoints[100];
 uniform int uNumPoints;
-uniform sampler2D uMask;
+uniform sampler2D uDensity;
 
 void main() {
     vec2 st = gl_FragCoord.xy / uResolution.xy;
@@ -13,21 +13,17 @@ void main() {
 
     vec3 col = vec3(0.);
 
-    // only do the calculations if this pixel is in the shape/mask
-    if (texture2D(uMask, st).r == 1.) {
-        float lowestDist = 1000.;
-        for (int i = 0; i < 100; i++) {
-            if (i >= uNumPoints) {
-                break;
-            }
-
-            lowestDist = min(lowestDist, distance(st, uPoints[i] / uResolution));
+    float lowestDist = 1000.;
+    for (int i = 0; i < 100; i++) {
+        if (i >= uNumPoints) {
+            break;
         }
 
-        col = vec3(lowestDist, 0., 0.);
-    } else {
-        col = vec3(0., 1., 0.);
+        lowestDist = min(lowestDist, distance(st, uPoints[i] / uResolution));
     }
+
+    // if the density is 0.5 and the nearest shop is 10 away, it should be the same as a density of 1 with a shop 10*0.5=5 away
+    col = vec3(lowestDist * texture2D(uDensity, st).r, 0., 0.);
 
     gl_FragColor = vec4(col, 1.);
 }

@@ -1,31 +1,30 @@
-const w = 1000
-const h = 1000
-
-let shapePoints = []
-
-// each has [m, b, x1, x2]
-let lineRules = []
-
-let maskBuffer
-let maskShader
+const w = 600
+const h = w
 
 let distanceBuffer
 let distanceShader
 
-let sumBuffer
-let sumShader
+let sumColBuffer
+let sumColShader
+
+let sumRowBuffer
+let sumRowShader
 
 let points = [] //"shops"
 
-function preload() {
-    maskBuffer = createGraphics(w, h, WEBGL)
-    maskShader = loadShader("basic.vert", "mask.frag")
+let densityMap
 
+function preload() {
     distanceBuffer = createGraphics(w, h, WEBGL)
     distanceShader = loadShader("basic.vert", "distance.frag")
 
-    sumBuffer = createGraphics(w, 1, WEBGL) //only the columns
-    sumShader = loadShader("basic.vert", "sum.frag")
+    sumColBuffer = createGraphics(w, 15, WEBGL) //compress down into 15 rows
+    sumColShader = loadShader("basic.vert", "sumCol.frag")
+
+    sumRowBuffer = createGraphics(15, 15, WEBGL) //compress down into 15 columns also
+    sumRowShader = loadShader("basic.vert", "sumRow.frag")
+
+    densityMap = loadImage("maps/test1.png")
 }
 
 let startButton
@@ -33,52 +32,20 @@ function setup() {
     pixelDensity(1)
     createCanvas(w, h)
 
-    maskBuffer.shader(maskShader)
     distanceBuffer.shader(distanceShader)
-    sumBuffer.shader(sumShader)
+    sumColBuffer.shader(sumColShader)
 
     startButton = createButton("Start")
     startButton.mousePressed(function () {
-        points = placePointsInMask(10)
+        points = generatePoints(10)
         generateDistanceField()
     })
-
-    canvas.onclick = function () {
-        shapePoints.push([mouseX, mouseY])
-        console.log(getLines(shapePoints))
-        lineRules = getLines(shapePoints)
-        generateMask(lineRules)
-    }
 }
 
 function draw() {
     background(51)
-
-    blendMode(SCREEN)
-    image(maskBuffer, 0, 0, w, h)
-    blendMode(BLEND)
-
     for (let i = 0; i < points.length; i++) {
-        fill(0)
         ellipse(points[i][0], points[i][1], 10)
-    }
-}
-
-// creates formulas for the lines between the points
-function getLines(points) {
-    let output = []
-    if (points.length == 1) { return [] }
-    for (let i = 0; i < points.length; i++) {
-        if (i == points.length - 1) { //if this is the last point, do it one more time, but looped around
-            const m = (points[i][1] - points[0][1]) / (points[i][0] - points[0][0])
-            const b = points[i][1] - m * points[i][0]
-            output.push([m, b, Math.min(points[i][0], points[0][0]), Math.max(points[i][0], points[0][0])])
-            return output
-        }
-
-        const m = (points[i][1] - points[i + 1][1]) / (points[i][0] - points[i + 1][0])//rise/run
-        const b = points[i][1] - m * points[i][0] //b = y-mx
-        output.push([m, b, Math.min(points[i][0], points[i + 1][0]), Math.max(points[i][0], points[i + 1][0])])
     }
 }
 
@@ -93,25 +60,10 @@ function makeArray1d(array) {
     return output
 }
 
-function generateMask(lines) {
-    maskShader.setUniform("uResolution", [w, h])
-
-    const linesTogether = makeArray1d(lines)
-    maskShader.setUniform("uLines", linesTogether)
-    maskShader.setUniform("uNumLines", lines.length)
-
-    maskBuffer.shader(maskShader)
-    maskBuffer.rect(0, 0, w, h)
-}
-
-function placePointsInMask(numPoints) {
+function generatePoints(numPoints) {
     let output = []
-    for (let i = 0; i < numPoints; i++) {
-        let pointPos = [Math.round(Math.random() * w), Math.round(Math.random() * h)]
-        while (maskBuffer.get(pointPos[0], pointPos[1])[0] == 0) {
-            pointPos = [Math.round(Math.random() * w), Math.round(Math.random() * h)]
-        }
-        output.push([pointPos[0], pointPos[1]])
+    for (i = 0; i < numPoints; i++) {
+        output.push([Math.floor(Math.random() * w), Math.floor(Math.random() * h)])
     }
     return output
 }
@@ -122,20 +74,33 @@ function generateDistanceField() {
     const pointsTogether = makeArray1d(points)
     distanceShader.setUniform("uPoints", pointsTogether)
     distanceShader.setUniform("uNumPoints", points.length)
-    distanceShader.setUniform("uMask", maskBuffer.get())
+    distanceShader.setUniform("uDensity", densityMap)
 
     distanceBuffer.shader(distanceShader)
     distanceBuffer.rect(0, 0, w, h)
 }
 
 function sumColumns() {
-    sumShader.setUniform("uResolution", [w, h])
-    sumShader.setUniform("uDepth", distanceBuffer.get())
+    sumColShader.setUniform("uResolution", [w, 15])
+    sumColShader.setUniform("uDistances", distanceBuffer.get())
 
-    sumBuffer.shader(sumShader)
-    sumBuffer.rect(0, 0, w, h)
+    sumColBuffer.shader(sumColShader)
+    sumColBuffer.rect(0, 0, w, 15)
+}
+
+function sumRows() {
+    sumRowShader.setUniform("uResolution", [15, 15])
+    sumRowShader.setUniform("uDistances", sumColBuffer.get())
+
+    sumRowBuffer.shader(sumRowShader)
+    sumRowBuffer.rect(0, 0, 15, 15)
 }
 
 /*
-!why random pixels in the mask 😩
+TODO:
+areas people can't walk through? (a separate image)
+*/
+
+/* Assumptions:
+People can cross through 0-density areas
 */
