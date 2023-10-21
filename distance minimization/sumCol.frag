@@ -5,17 +5,17 @@ precision mediump float;
 uniform vec2 uResolution;
 uniform sampler2D uDistances;
 
-// supports numbers up to 16777216 (256^3)
-ivec3 toBase256(int base10Input) {
-    int digit1 = int(floor(float(base10Input) / 65536.));
-    int remainder1 = base10Input - digit1 * 65536;
+// supports numbers up to 16581375 (255^3)
+vec3 toBase255(float base10Input) {
+    float digit1 = floor(base10Input / 65025.);
+    float remainder1 = base10Input - digit1 * 65025.;
 
-    int digit2 = int(floor(float(remainder1) / 256.));
-    int remainder2 = remainder1 - digit2 * 256;
+    float digit2 = floor(remainder1 / 255.);
+    float remainder2 = remainder1 - digit2 * 255.;
 
-    int digit3 = remainder2;
+    float digit3 = remainder2;
 
-    return ivec3(digit1, digit2, digit3);
+    return vec3(digit1, digit2, digit3);
 }
 
 void main() {
@@ -24,14 +24,12 @@ void main() {
 
     vec3 col = vec3(0.);
 
-    float thisPosY = st.y * uResolution.y;
+    float thisPosY = gl_FragCoord.y * 40.;
     float sum = 0.;
     for (int i = 0; i < 40; i++) {
-        sum += texture2D(uDistances, vec2(st.x, (thisPosY + float(i)) / uResolution.y)).r;
+        sum += texture2D(uDistances, vec2(st.x, (thisPosY + float(i)) / 600.)).r;
     }
-    col = vec3(toBase256(int(sum * 256.))) / 256.;
+    col = vec3(toBase255(floor(sum * 255.))) / 255.;
 
     gl_FragColor = vec4(col, 1.);
 }
-
-//DISTANCES: buffer->*255?->sum->convert to "base 255" red and green channels->divide by 255 to go back to 0-1

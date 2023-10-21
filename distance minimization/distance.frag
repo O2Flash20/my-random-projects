@@ -13,7 +13,7 @@ void main() {
 
     vec3 col = vec3(0.);
 
-    float lowestDist = 1000.;
+    float lowestDist = 1000000.;
     for (int i = 0; i < 100; i++) {
         if (i >= uNumPoints) {
             break;
