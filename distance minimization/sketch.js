@@ -56,16 +56,17 @@ let lastLowest = 1000000000
 let lowestPos = [[0, 10]]
 function draw() {
     background(51, 51, 51, 10)
-    points = generatePoints(1)
-    generateDistanceField()
-    // for (let i = 0; i < points.length; i++) {
-    //     ellipse(points[i][0], points[i][1], 10)
+    // // points = generatePoints(1)
+    // points = [[mouseX, mouseY]]
+    // generateDistanceField()
+    // // for (let i = 0; i < points.length; i++) {
+    // //     ellipse(points[i][0], points[i][1], 10)
+    // // }
+    // if (sumDistances() < lastLowest) {
+    //     lowestPos = points
+    //     lastLowest = sumDistances()
+    //     console.log(lastLowest)
     // }
-    if (sumDistances() < lastLowest) {
-        lowestPos = points
-        lastLowest = sumDistances()
-        console.log(lastLowest)
-    }
     ellipse(lowestPos[0][0], lowestPos[0][1], 10)
     ellipse(300, 300, 5)
     frameRate(10)
@@ -133,12 +134,6 @@ function sumDistances() {
         }
     }
     sumRowBuffer.updatePixels()
-    // let sum = 0
-    // for (let i = 0; i < 15; i++) {
-    //     for (let j = 0; j < 15; j++) {
-    //         sum += base255ToDecimal(sumRowBuffer.get(i, j))
-    //     }
-    // }
 
     return sum
 }
@@ -150,6 +145,11 @@ function base255ToDecimal(base255) {
 /*
 TODO:
 areas people can't walk through? (a separate image)
+*/
+
+/*
+!for a uniform area, it says the ideal is (317, 318) when it's supposed to be (300, 300)
+    is it that it's not some pixels on the left (or overcounting some pixels on the right)?
 */
 
 /* Assumptions:
