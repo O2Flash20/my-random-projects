@@ -14,9 +14,9 @@ function preload() {
     distanceBuffer = createGraphics(w, h, WEBGL)
     distanceShader = loadShader("basic.vert", "distance.frag")
 
-    averageBuffer = createGraphics(1, 1)
+    averageBuffer = createGraphics(50, 50)
 
-    densityMap = loadImage("maps/test3.1.png")
+    densityMap = loadImage("maps/test1.png")
 }
 
 let startButton
@@ -39,20 +39,16 @@ let lastLowest = 1000000000
 let lowestPos = [[0, 10]]
 function draw() {
     background(51, 51, 51, 10)
-    // points = generatePoints(1)
     points = [[mouseX, mouseY]]
     generateDistanceField()
-    // for (let i = 0; i < points.length; i++) {
-    //     ellipse(points[i][0], points[i][1], 10)
-    // }
     const avg = averageDistanceField()
     if (avg < lastLowest) {
         lowestPos = points
         lastLowest = avg
-        console.log(lastLowest)
     }
     ellipse(lowestPos[0][0], lowestPos[0][1], 10)
     ellipse(300, 300, 5)
+
 }
 
 // glsl can't take 2d arrays, and instead makes vectors itself with a 1d array
@@ -87,9 +83,13 @@ function generateDistanceField() {
 }
 
 function averageDistanceField() {
-    averageBuffer.image(distanceBuffer.get(), 0, 0, 1, 1)
-    averageBuffer.loadPixels()
-    return (averageBuffer.pixels[0])
+    distanceBuffer.loadPixels()
+    const pix = distanceBuffer.pixels
+    let sum = 0
+    for (let i = 0; i < pix.length; i += 4) {
+        sum += pix[i]
+    }
+    return sum / (600 ** 2)
 }
 
 /*
