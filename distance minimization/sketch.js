@@ -1,3 +1,7 @@
+let NUMOFPOINTS = 15
+
+let densityInput
+
 const w = 600
 const h = w
 
@@ -12,7 +16,7 @@ function preload() {
     distanceBuffer = createGraphics(w, h, WEBGL)
     distanceShader = loadShader("basic.vert", "distance.frag")
 
-    densityMap = loadImage("maps/USDensity.png")
+    densityMap = loadImage("maps/test1.png")
 }
 
 let startButton
@@ -24,12 +28,37 @@ function setup() {
 
     frameRate(10000)
 
-    // *Don't actually need the initial thing lol, the slide is too powerful
-    // points = calculateInitialPointPos(10)
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < NUMOFPOINTS; i++) {
         points.push([random(0, 600), random(0, 600)])
     }
-    console.log(averageDistanceField())
+
+    densityInput = createFileInput(handleFile)
+    densityInput.position(10, height + 10)
+}
+
+// Callback function to handle the file input
+function handleFile(file) {
+    // Check if the file is an image
+    if (file.type === 'image') {
+        // Create an image element and load the selected image
+        img = createImg(file.data, '')
+        img.hide() // Hide the image element
+
+        setTimeout(function () {
+            // replace the density map with this new image
+            image(img, 0, 0, 600, 600)
+            densityMap.set(0, 0, get())
+
+            // reset everything, now that there's a new image
+            numIterations = 0
+            pastScores = []
+            bestPoints = []
+        }, 100)
+
+    } else {
+        // If the selected file is not an image, show an error message
+        console.log('Please choose an image file.')
+    }
 }
 
 // POINT SLIDING CONTROLS
@@ -42,17 +71,40 @@ const b = iterationsUntilSlideAmountIs1 / (1 - initialSlideAmount)
 //------------------------
 
 let numIterations = 0
-let lastLowest = 1000000000
-let lowestPos = [[0, 10]]
+let pastScores = []
+let bestPoints = []
 function draw() {
-    numIterations++
-
     image(densityMap, 0, 0)
+    // background(51, 51, 51, 50)
     for (let i = 0; i < points.length; i++) {
         ellipse(points[i][0], points[i][1], 5)
     }
 
-    slidePoints(points, a / (numIterations - b))
+    points = slidePoints(points, a / (numIterations - b))
+
+    // after some time, save this score and restart
+    if (numIterations > iterationsUntilSlideAmountIs1 * 1.5) {
+        const thisScore = averageDistanceField()
+
+        for (let i = 0; i < pastScores.length; i++) {
+            if (thisScore < pastScores[i]) {
+                bestPoints = points
+            }
+        }
+        if (pastScores.length == 0) {
+            bestPoints = points
+        }
+
+        pastScores.push(thisScore)
+
+        points = []
+        for (let i = 0; i < NUMOFPOINTS; i++) {
+            points.push([random(0, 600), random(0, 600)])
+        }
+        numIterations = 0
+    }
+
+    numIterations++
 }
 
 function calculateInitialPointPos(numPoints) {
@@ -78,35 +130,51 @@ function calculateInitialPointPos(numPoints) {
 }
 
 // slides the points around in the direction that best affects the score
-function slidePoints(points, slideAmount) {
-    for (let i = 0; i < points.length; i++) {
-        generateDistanceField(points)
-        const originalScore = averageDistanceField()
-
-        points[i][0] += slideAmount
-        generateDistanceField(points)
-        const rightScore = averageDistanceField() - originalScore
-
-        points[i][0] -= slideAmount
-        generateDistanceField(points)
-        const leftScore = averageDistanceField() - originalScore
-
-        points[i][1] += slideAmount
-        generateDistanceField(points)
-        const upScore = averageDistanceField() - originalScore
-
-        points[i][1] -= slideAmount
-        generateDistanceField(points)
-        const downScore = averageDistanceField() - originalScore
-
-        // the coordinates are made negative because a negative score means you want to move that way, not away from it
-        // this is essentially a vector with length of the slide amount in the direction that the point should move
-        const slide = createVector(-(rightScore - leftScore), -(upScore - downScore)).setMag(slideAmount)
-        points[i][0] += slide.x
-        points[i][1] += slide.y
+function slidePoints(pts, slideAmount) {
+    // copy pts without referencing it, or else it will do some weird stuff
+    let pointsOut = []
+    for (let i = 0; i < pts.length; i++) {
+        pointsOut[i] = []
+        pointsOut[i][0] = pts[i][0]
+        pointsOut[i][1] = pts[i][1]
     }
 
-    return points
+    for (let i = 0; i < pts.length; i++) {
+        generateDistanceField(pointsOut)
+        const originalScore = averageDistanceField()
+
+        pointsOut[i][0] = pts[i][0] - slideAmount
+        generateDistanceField(pointsOut)
+        const leftScore = averageDistanceField() - originalScore
+
+        pointsOut[i][0] = pts[i][0] + slideAmount
+        generateDistanceField(pointsOut)
+        const rightScore = averageDistanceField() - originalScore
+
+        pointsOut[i][1] = pts[i][1] + slideAmount
+        generateDistanceField(pointsOut)
+        const upScore = averageDistanceField() - originalScore
+
+        pointsOut[i][1] = pts[i][1] - slideAmount
+        generateDistanceField(pointsOut)
+        const downScore = averageDistanceField() - originalScore
+
+        // this is essentially a vector with length of the slide amount in the direction that the point should move
+        const slide = createVector(rightScore - leftScore, upScore - downScore).setMag(slideAmount)
+
+        // if the point thinks all hope is lost for helping the score, throw it somewhere new and it will find something
+        if (slide.x == 0 && slide.y == 0) {
+            pointsOut[i][0] = random(0, 600)
+            pointsOut[i][1] = random(0, 600)
+        }
+        else {
+            // the slide amount is subtracted because you want to move away from the place that gives you a higher score
+            pointsOut[i][0] = pts[i][0] - slide.x
+            pointsOut[i][1] = pts[i][1] - slide.y
+        }
+    }
+
+    return pointsOut
 }
 
 // glsl can't take 2d arrays, and instead makes vectors itself with a 1d array
@@ -120,26 +188,19 @@ function makeArray1d(array) {
     return output
 }
 
-function generatePoints(numPoints) {
-    let output = []
-    for (i = 0; i < numPoints; i++) {
-        output.push([Math.floor(Math.random() * w), Math.floor(Math.random() * h)])
-    }
-    return output
-}
-
-function generateDistanceField(p) {
+function generateDistanceField(pts) {
     distanceShader.setUniform("uResolution", [w, h])
 
-    const pointsTogether = makeArray1d(p)
+    const pointsTogether = makeArray1d(pts)
     distanceShader.setUniform("uPoints", pointsTogether)
-    distanceShader.setUniform("uNumPoints", p.length)
+    distanceShader.setUniform("uNumPoints", pts.length)
     distanceShader.setUniform("uDensity", densityMap)
 
     distanceBuffer.shader(distanceShader)
     distanceBuffer.rect(0, 0, w, h)
 }
 
+// loops over every pixel in the distances array and returns the average distance
 function averageDistanceField() {
     distanceBuffer.loadPixels()
     const pix = distanceBuffer.pixels
@@ -152,8 +213,8 @@ function averageDistanceField() {
 
 /*
 TODO:
-areas people can't walk through? (a separate image)
-maybe do a random start a few times and finally choose the best
+?areas people can't walk through? (a separate image)
+easy inputs/outputs
 make a pretty visualization of the distances
 */
 
