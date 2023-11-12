@@ -23,7 +23,8 @@ void main() {
     }
 
     // if the density is 0.5 and the nearest shop is 10 away, it should be the same as a density of 1 with a shop 10*0.5=5 away
-    col = vec3(lowestDist * texture2D(uDensity, st).r, 0., 0.);
+    // the final color is multiplied by some factor or the amount of the number of points to hopefully squeeze some precision out (if these colours are too big or too small, i'm losing information due to rounding or clamping)
+    col = vec3(lowestDist * texture2D(uDensity, st).r * (float(uNumPoints) / 2.), 0., 0.);
 
     gl_FragColor = vec4(col, 1.);
 }
