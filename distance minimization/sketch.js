@@ -1,4 +1,4 @@
-let NUMOFPOINTS = 40
+let NUMOFPOINTS = 10
 
 const w = 600
 const h = w
@@ -25,7 +25,7 @@ function preload() {
     visualizationBuffer.elt.style.display = "block"
     visualizationShader = loadShader("basic.vert", "vis.frag")
 
-    densityMap = loadImage("maps/theBeach.png")
+    densityMap = loadImage("maps/test1.png")
 
     bestImg = createImage(w, h)
 }
@@ -35,8 +35,8 @@ function setup() {
     pixelDensity(1)
     createCanvas(w, h)
 
-    distanceBuffer.shader(distanceShader)
     visualizationBuffer.shader(visualizationShader)
+    distanceBuffer.shader(distanceShader)
 
     frameRate(10000)
 
@@ -44,6 +44,7 @@ function setup() {
         points.push([random(0, 600), random(0, 600)])
     }
 
+    createSpan("Import your own density map here: ")
     densityInput = createFileInput(handleFile)
 
     exportInfoButton = createButton("Download Results")
@@ -53,7 +54,7 @@ function setup() {
     noStroke()
 }
 
-// Callback function to handle the file input
+// callback function to handle the density map input
 function handleFile(file) {
     // Check if the file is an image
     if (file.type === 'image') {
@@ -90,14 +91,33 @@ function downloadInfo() {
     bestImg.save("Best Point Positions")
 }
 
-// POINT SLIDING CONTROLS
-const initialSlideAmount = 200
+let justChangedNumPoints = false
+function changeNumPoints() {
+    NUMOFPOINTS = Number(document.getElementById("numPointsSlider").value)
+    document.getElementById("numPointsDisplay").innerText = NUMOFPOINTS
+
+    // reset everything, now that there's a new number of points
+    numIterations = Infinity //to get it to restart the try
+    numberOfTries = 0
+    document.getElementById("iterationsDisplay").innerText = 0
+    pastScores = []
+    bestPoints = []
+
+    justChangedNumPoints = true
+}
+// updating the display when you move the slider
+document.getElementById("numPointsSlider").onchange = function () {
+    document.getElementById("numPointsDisplay").innerText = document.getElementById("numPointsSlider").value
+}
+
+// POINT SLIDING CONTROLS -------
+const initialSlideAmount = 300
 const iterationsUntilSlideAmountIs1 = 100
 
 // constants needed for a rational function made using the above parameters ( form y = a/(x-b) )
 const a = iterationsUntilSlideAmountIs1 - (iterationsUntilSlideAmountIs1 / (1 - initialSlideAmount))
 const b = iterationsUntilSlideAmountIs1 / (1 - initialSlideAmount)
-//------------------------
+//-------------------------------
 
 let numIterations = 0
 let numberOfTries = 0
@@ -113,29 +133,43 @@ function draw() {
 
     // after some time, save this score and restart
     if (numIterations > iterationsUntilSlideAmountIs1) {
-        const thisScore = averageDistanceField()
+        if (justChangedNumPoints) {
+            pastScores = []
+            bestPoints = []
 
-        for (let i = 0; i < pastScores.length; i++) {
-            if (thisScore < pastScores[i]) {
+            points = []
+            for (let i = 0; i < NUMOFPOINTS; i++) {
+                points.push([random(0, 600), random(0, 600)])
+            }
+            numIterations = 0
+            numberOfTries = 0
+            document.getElementById("iterationsDisplay").innerText = numberOfTries
+            justChangedNumPoints = false
+
+        } else {
+            const thisScore = averageDistanceField()
+
+            for (let i = 0; i < pastScores.length; i++) {
+                if (thisScore < pastScores[i]) {
+                    bestPoints = points
+                    bestImg.set(0, 0, get())
+                }
+            }
+            if (pastScores.length == 0) {
                 bestPoints = points
                 bestImg.set(0, 0, get())
             }
-        }
-        if (pastScores.length == 0) {
-            bestPoints = points
-            bestImg.set(0, 0, get())
-        }
 
-        pastScores.push(thisScore)
+            pastScores.push(thisScore)
 
-        points = []
-        for (let i = 0; i < NUMOFPOINTS; i++) {
-            points.push([random(0, 600), random(0, 600)])
+            points = []
+            for (let i = 0; i < NUMOFPOINTS; i++) {
+                points.push([random(0, 600), random(0, 600)])
+            }
+            numIterations = 0
+            numberOfTries++
+            document.getElementById("iterationsDisplay").innerText = numberOfTries
         }
-        numIterations = 0
-
-        numberOfTries++
-        document.getElementById("iterationsDisplay").innerText = numberOfTries
     }
 
     updateVis()
@@ -154,6 +188,7 @@ function slidePoints(pts, slideAmount) {
     }
 
     for (let i = 0; i < pts.length; i++) {
+        // move the point in all 4 directions and see which gives the best "score"
         generateDistanceField(pointsOut)
         const originalScore = averageDistanceField()
 
@@ -229,7 +264,12 @@ function averageDistanceField() {
 function updateVis() {
     visualizationShader.setUniform("uResolution", [w, h])
     visualizationShader.setUniform("uDist", distanceBuffer)
-    visualizationShader.setUniform("uDensity", densityMap) //!doesnt update when densityMap updates... AND get() causes the gpu memory leak
+
+    // for whatever reason, i have to load and update the pixels so that it updates with a new image
+    densityMap.loadPixels()
+    densityMap.updatePixels()
+    visualizationShader.setUniform("uDensity", densityMap)
+
     visualizationShader.setUniform("uNumPoints", NUMOFPOINTS)
     visualizationShader.setUniform("uKeyColors", makeArray1d(
         [[0.1, 0.35, 1, 1], [0.2, 0.35, 1, 0.31], [0.35, 0.172, 1, 1], [0.5, 0.083, 1, 1], [0.75, 0, 1, 1], [0.9, 0, 1, 0.2]]
@@ -238,11 +278,6 @@ function updateVis() {
     visualizationBuffer.shader(visualizationShader)
     visualizationBuffer.rect(0, 0, w, h)
 }
-
-/*
-TODO:
-?areas people can't walk through? (a separate image)
-*/
 
 /* Assumptions:
 People can cross through 0-density areas

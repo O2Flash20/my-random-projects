@@ -7,7 +7,7 @@
 
     <title>Distance Minimization</title>
     <meta name="description"
-        content="Define a shape, and watch as it minimizes the distance to each point within that shape.">
+        content="Optimize so that the average distance from each pixel to the nearest point is the lowest possible.">
 
     <link rel="stylesheet" type="text/css" href="style.css">
 
@@ -16,9 +16,51 @@
 </head>
 
 <body>
-    <script src="sketch.js"></script>
+    <div id="info">
+        <h1><u>Distance Minimization Tool</u></h1>
+        <p><b>What does it do? </b>The goal of this program is to find the ideal positions of points so that the
+            distance
+            from every pixel to the nearest point is the lowest possible.</p>
+        <p><b>What's up with "Number of iterations"? </b>Every time it tries to find the ideal positions, the points
+            start
+            in a new random arrangement, and therefore the final positions of the points may be different each
+            time. By calculating with multiple starting arrangements, it can ensure that the "best" arrangement is
+            actually
+            the best it can be. If you want to see what I mean, take some time to look at my example
+            situation below. Notice how the number of red dots on the head, arms, and legs change with each iteration.
+        </p>
+        <p>That being said, for most situations, if you leave it running for many iterations, the difference between the
+            "worst" and "best" ones it find will only be around half a percent. So there's no need to leave this running
+            for
+            hours, 10 iterations will be plenty (unless you really need the absolute perfect solution).</p>
+        <p><b>What's a density map?</b> If you want to use this tool to solve your own situation, you can import your
+            own
+            density map. This would be a square, black and white image (like the one with the red dots on it at the
+            bottom
+            of this page) where the lighter the color is at a specific point, the more "people" "live there". Black
+            means
+            no-one's there. The gray exactly halfway between while and black has exactly half the amount of "density"
+            white
+            does. The more dense (light) a location is, the more incentive there is for a point to be near it.</p>
+        <p><b>How can I get the results? </b>At the bottom of the page, there's a "Download Results" button. This will
+            download:
+        <ol>
+            <li>An image showing you the best places to put the points on the density map (the red dots).</li>
+            <li>A .json file containing x-y pairs for the position of each point, each point being numbered. Note that
+                the
+                top left of the density map is (0, 0) and the bottom right is (600, 600).</li>
+        </ol>
+        </p>
+    </div>
+
     <span>Number of iterations:</span>
     <span id="iterationsDisplay">0</span>
+    <br>
+    <span>Number of Points:</span>
+    <input id="numPointsSlider" type="range" min="1" max="100" step="1" value="10">
+    <span id="numPointsDisplay">10</span>
+    <button id="numPointsSubmit" type="button" onclick="changeNumPoints()">Enter</button>
+    <script src="sketch.js"></script>
 </body>
 
 </html>
