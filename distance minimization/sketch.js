@@ -1,6 +1,4 @@
-let NUMOFPOINTS = 15
-
-let densityInput
+let NUMOFPOINTS = 40
 
 const w = 600
 const h = w
@@ -11,12 +9,25 @@ let distanceShader
 let points = [] //"shops"
 
 let densityMap
+let densityInput
+
+let exportInfoButton
+let bestImg
+
+let visualizationBuffer
+let visualizationShader
 
 function preload() {
     distanceBuffer = createGraphics(w, h, WEBGL)
     distanceShader = loadShader("basic.vert", "distance.frag")
 
-    densityMap = loadImage("maps/test1.png")
+    visualizationBuffer = createGraphics(w, h, WEBGL)
+    visualizationBuffer.elt.style.display = "block"
+    visualizationShader = loadShader("basic.vert", "vis.frag")
+
+    densityMap = loadImage("maps/theBeach.png")
+
+    bestImg = createImage(w, h)
 }
 
 let startButton
@@ -25,6 +36,7 @@ function setup() {
     createCanvas(w, h)
 
     distanceBuffer.shader(distanceShader)
+    visualizationBuffer.shader(visualizationShader)
 
     frameRate(10000)
 
@@ -33,7 +45,12 @@ function setup() {
     }
 
     densityInput = createFileInput(handleFile)
-    densityInput.position(10, height + 10)
+
+    exportInfoButton = createButton("Download Results")
+    exportInfoButton.mouseClicked(downloadInfo)
+
+    fill(255, 0, 0)
+    noStroke()
 }
 
 // Callback function to handle the file input
@@ -51,6 +68,8 @@ function handleFile(file) {
 
             // reset everything, now that there's a new image
             numIterations = 0
+            numberOfTries = 0
+            document.getElementById("iterationsDisplay").innerText = 0
             pastScores = []
             bestPoints = []
         }, 100)
@@ -61,38 +80,50 @@ function handleFile(file) {
     }
 }
 
+function downloadInfo() {
+    let pointsObject = {}
+    for (let i = 0; i < bestPoints.length; i++) {
+        pointsObject[i] = bestPoints[i]
+    }
+    createStringDict(pointsObject).saveJSON("Distance Minimization Results")
+
+    bestImg.save("Best Point Positions")
+}
+
 // POINT SLIDING CONTROLS
 const initialSlideAmount = 200
 const iterationsUntilSlideAmountIs1 = 100
 
-// constants needed for a rational function made with the above parameters ( form y = a/(x-b) )
+// constants needed for a rational function made using the above parameters ( form y = a/(x-b) )
 const a = iterationsUntilSlideAmountIs1 - (iterationsUntilSlideAmountIs1 / (1 - initialSlideAmount))
 const b = iterationsUntilSlideAmountIs1 / (1 - initialSlideAmount)
 //------------------------
 
 let numIterations = 0
+let numberOfTries = 0
 let pastScores = []
 let bestPoints = []
 function draw() {
     image(densityMap, 0, 0)
-    // background(51, 51, 51, 50)
     for (let i = 0; i < points.length; i++) {
-        ellipse(points[i][0], points[i][1], 5)
+        ellipse(points[i][0], points[i][1], 8)
     }
 
     points = slidePoints(points, a / (numIterations - b))
 
     // after some time, save this score and restart
-    if (numIterations > iterationsUntilSlideAmountIs1 * 1.5) {
+    if (numIterations > iterationsUntilSlideAmountIs1) {
         const thisScore = averageDistanceField()
 
         for (let i = 0; i < pastScores.length; i++) {
             if (thisScore < pastScores[i]) {
                 bestPoints = points
+                bestImg.set(0, 0, get())
             }
         }
         if (pastScores.length == 0) {
             bestPoints = points
+            bestImg.set(0, 0, get())
         }
 
         pastScores.push(thisScore)
@@ -102,31 +133,14 @@ function draw() {
             points.push([random(0, 600), random(0, 600)])
         }
         numIterations = 0
+
+        numberOfTries++
+        document.getElementById("iterationsDisplay").innerText = numberOfTries
     }
+
+    updateVis()
 
     numIterations++
-}
-
-function calculateInitialPointPos(numPoints) {
-    let points = []
-    for (let i = 0; i < numPoints; i++) {
-        let thisBestPos = []
-        let thisBestScore = Infinity
-        for (let x = 0; x < 600; x += 20) {
-            for (let y = 0; y < 600; y += 20) {
-                points[i] = [x, y]
-                generateDistanceField(points)
-                const score = averageDistanceField()
-                if (score < thisBestScore) {
-                    thisBestPos = [x, y]
-                    thisBestScore = score
-                }
-            }
-        }
-        points[i] = thisBestPos
-    }
-
-    return points
 }
 
 // slides the points around in the direction that best affects the score
@@ -188,6 +202,7 @@ function makeArray1d(array) {
     return output
 }
 
+// a shader that calculates the distance from each pixel to the nearest point
 function generateDistanceField(pts) {
     distanceShader.setUniform("uResolution", [w, h])
 
@@ -200,7 +215,7 @@ function generateDistanceField(pts) {
     distanceBuffer.rect(0, 0, w, h)
 }
 
-// loops over every pixel in the distances array and returns the average distance
+// loops over every pixel's distance and returns the average distance
 function averageDistanceField() {
     distanceBuffer.loadPixels()
     const pix = distanceBuffer.pixels
@@ -211,11 +226,22 @@ function averageDistanceField() {
     return sum / (600 ** 2)
 }
 
+function updateVis() {
+    visualizationShader.setUniform("uResolution", [w, h])
+    visualizationShader.setUniform("uDist", distanceBuffer)
+    visualizationShader.setUniform("uDensity", densityMap) //!doesnt update when densityMap updates... AND get() causes the gpu memory leak
+    visualizationShader.setUniform("uNumPoints", NUMOFPOINTS)
+    visualizationShader.setUniform("uKeyColors", makeArray1d(
+        [[0.1, 0.35, 1, 1], [0.2, 0.35, 1, 0.31], [0.35, 0.172, 1, 1], [0.5, 0.083, 1, 1], [0.75, 0, 1, 1], [0.9, 0, 1, 0.2]]
+    ))
+
+    visualizationBuffer.shader(visualizationShader)
+    visualizationBuffer.rect(0, 0, w, h)
+}
+
 /*
 TODO:
 ?areas people can't walk through? (a separate image)
-easy inputs/outputs
-make a pretty visualization of the distances
 */
 
 /* Assumptions:
