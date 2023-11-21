@@ -33,6 +33,8 @@ function preload() {
 let startButton
 function setup() {
     pixelDensity(1)
+    visualizationBuffer.pixelDensity(1)
+    distanceBuffer.pixelDensity(1)
     createCanvas(w, h)
 
     visualizationBuffer.shader(visualizationShader)
