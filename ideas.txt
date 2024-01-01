@@ -1,9 +1,5 @@
 dithering shader
 fix bloom shader
-play with the sound library
-fix raycast game~
+make an instrument/music making tool (again)
 continue raymarching shader
-3d noise in rgb (i dont remember what that means)
-
-texture creator using noise in code
-    tailored to the raymarching shader (color, bump, reflections?)
+pretty shader skybox
