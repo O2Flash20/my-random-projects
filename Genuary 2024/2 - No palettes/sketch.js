@@ -7,13 +7,10 @@ function preload() {
 
 function setup() {
     pixelDensity(1)
-    createCanvas(480, 270, WEBGL)
+    createCanvas(1500, 844, WEBGL)
 }
 
 function draw() {
-    background(220)
-    // image(img, 0, 0, 480, 270)
-
     paletteShader.setUniform("uImg", img)
 
     let v1 = random()
