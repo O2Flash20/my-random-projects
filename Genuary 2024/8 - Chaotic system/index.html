@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>8 - Chaotic system</title>
+    <meta name="description" content="Genuary 8th: A spirograph that never repeats.">
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="libraries/p5.min.js"></script>
+    <script src="libraries/p5.sound.min.js"></script>
+</head>
+
+<body>
+    <p>When you multiply one of the speeds by pi, the arms will never return to the same place, since pi is an
+        irrational number with infinite decimal places. This means that it will always be a bit off from completing a
+        full loop.</p>
+    <br><br>
+    <span>Length of first arm:</span>
+    <input type="number" id="arm1L" value="100" type="number" oninput="restart()">
+    <br>
+    <span>Length of second arm:</span>
+    <input type="number" id="arm2L" value="275" type="number" oninput="restart()">
+    <br>
+    <span>Speed of first arm:</span>
+    <input type="number" id="arm1S" value="-4" type="number" oninput="restart()">
+    <br>
+    <span>Speed of second arm:</span>
+    <input type="number" id="arm2S" value="3" type="number" oninput="restart()">
+    <br>
+
+    <span>Multiply speed of first arm by pi?</span>
+    <input type="checkbox" id="arm1Pi" checked oninput="restart()">
+    <br>
+    <span>Multiply speed of second arm by pi?</span>
+    <input type="checkbox" id="arm2Pi" oninput="restart()">
+
+    <script src="sketch.js"></script>
+</body>
+
+</html>
