@@ -9,11 +9,13 @@ let c
 function setup() {
     createCanvas(957, 674)
     imageMode(CENTER)
+    pixelDensity(1)
 
     c = createGraphics(width, height)
     c.fill(255)
     c.noStroke()
     c.textFont('Courier New', 8)
+    c.pixelDensity(1)
 }
 
 let t = 0

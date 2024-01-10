@@ -133,8 +133,6 @@ function lerpPointsListToTriangle(pointsList, amount, triangleBase) { //equilate
             pointOnTriangle = intRight
         }
 
-        // console.log(intDown, intLeft, intRight)
-
         output.push(pointsList[i].copy().lerp(pointOnTriangle, amount))
     }
     return output
@@ -166,37 +164,6 @@ function findIntersection(l1p1, l1p2, l2p1, l2p2) {
     ) {
         return createVector(x, y)
     } else {
-        // console.log(x, y)
         return null
     }
 }
-
-// function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
-//     if (x1 === x2 && x3 === x4) {
-//         // Both lines are vertical and parallel, no intersection
-//         return null
-//     }
-
-//     let t1, t2
-
-//     if (x1 === x2) {  // Line 1 is vertical
-//         t2 = (x1 - x3) / (x4 - x3)
-//         t1 = (y3 + t2 * (y4 - y3) - y1) / (y2 - y1)
-//     } else if (x3 === x4) {  // Line 2 is vertical
-//         t1 = (x3 - x1) / (x2 - x1)
-//         t2 = (y1 + t1 * (y2 - y1) - y3) / (y4 - y3)
-//     } else {
-//         // Standard case for non-vertical lines
-//         t1 = ((x3 - x1) * (y3 - y4) - (y3 - y1) * (x3 - x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
-//         t2 = ((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
-//     }
-
-//     // Check if the intersection point is within the line segments
-//     if (0 <= t1 && t1 <= 1 && 0 <= t2 && t2 <= 1) {
-//         const intersection_x = x1 + t1 * (x2 - x1)
-//         const intersection_y = y1 + t1 * (y2 - y1)
-//         return { x: intersection_x, y: intersection_y }
-//     } else {
-//         return null
-//     }
-// }
