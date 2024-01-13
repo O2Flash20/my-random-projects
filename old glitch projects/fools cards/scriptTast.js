@@ -12,9 +12,7 @@ let isOnline = null
 
 //automatically decoding url if exists 
 function startFromURL() {
-    const urlSplit = window.location.href.split("/")
-    const lastPartOfURL = urlSplit[urlSplit.length - 1]
-    if (lastPartOfURL !== "index.html") {
+    if (window.location.href.length !== 85) { //there's an extension for game info
         startup(alphabet.indexOf(urlParameters().charAt(urlParameters().length - 1)), true)
         decodeURLParameters()
         updateBoards()
@@ -42,7 +40,7 @@ function id(id) {
 function urlParameters() {
     var url = window.location.href
     let output = ""
-    for (let i = 96; i < (window.location.href.length); i++) {
+    for (let i = 86; i < (window.location.href.length); i++) {
         output += url.charAt(i)
     }
     return output
