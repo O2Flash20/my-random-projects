@@ -12,7 +12,9 @@ let isOnline = null
 
 //automatically decoding url if exists 
 function startFromURL() {
-    if (window.location.href.length > 32) {
+    const urlSplit = window.location.href.split("/")
+    const lastPartOfURL = urlSplit[urlSplit.length - 1]
+    if (lastPartOfURL !== "index.html") {
         startup(alphabet.indexOf(urlParameters().charAt(urlParameters().length - 1)), true)
         decodeURLParameters()
         updateBoards()
@@ -40,7 +42,7 @@ function id(id) {
 function urlParameters() {
     var url = window.location.href
     let output = ""
-    for (let i = 32; i < (window.location.href.length); i++) {
+    for (let i = 96; i < (window.location.href.length); i++) {
         output += url.charAt(i)
     }
     return output
@@ -262,7 +264,7 @@ function decodeURLParameters() {
 function copyLink(message) {
     var copyText = document.getElementById("copyTextInput")
 
-    copyText.value = message + "https://wr-fool-card.glitch.me/#" + encodeGameState()
+    copyText.value = message + "https://o2flash20.github.io/my-random-projects/old%20glitch%20projects/fools%20cards/index.html#" + encodeGameState()
 
     copyText.select()
     copyText.setSelectionRange(0, 99999)
