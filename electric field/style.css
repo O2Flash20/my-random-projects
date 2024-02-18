@@ -1,0 +1,14 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+canvas {
+    /* display: block !important; */
+    display: none !important;
+}
+
+#defaultCanvas0 {
+    /* display: none !important; */
+}
