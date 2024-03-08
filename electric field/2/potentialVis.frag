@@ -20,5 +20,5 @@ void main() {
 
     float decodedPotential = base256ToFloat(texture2D(uPotential, uv));
 
-    gl_FragColor = vec4(decodedPotential / 50000., 0., -decodedPotential / 50000., 1.);
+    gl_FragColor = vec4(decodedPotential / 5000000., 0., -decodedPotential / 5000000., 1.);
 }

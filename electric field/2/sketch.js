@@ -1,8 +1,10 @@
-let potentialShader, upscalePotentialShader, potentialVisShader
+let potentialShader, upscalePotentialShader, potentialVisShader, equipotentialsShader, fieldShader
 function preload() {
     potentialShader = loadShader("basic.vert", "potential.frag")
     upscalePotentialShader = loadShader("basic.vert", "upscalePotential.frag")
     potentialVisShader = loadShader("basic.vert", "potentialVis.frag")
+    equipotentialsShader = loadShader("basic.vert", "equipotentials.frag")
+    fieldShader = loadShader("basic.vert", "field.frag")
 }
 
 let mode = "positive"
@@ -10,7 +12,7 @@ let chargeStrength = 1
 
 const downScaleDivisor = 10
 
-let cDraw, cPotential, cUpscalePotential, cPotentialVis = null
+let cDraw, cPotential, cUpscalePotential, cPotentialVis, cEquipotentials, cField = null
 function setup() {
     cDraw = createCanvas(800, 800)
     background(0)
@@ -19,16 +21,17 @@ function setup() {
 
     cPotential = createGraphics(width / downScaleDivisor, height / downScaleDivisor, WEBGL)
     // cPotential.elt.style = "width:800px;1height:800px"
-
     cUpscalePotential = createGraphics(width, height, WEBGL)
-
     cPotentialVis = createGraphics(width, height, WEBGL)
+    cEquipotentials = createGraphics(width, height, WEBGL)
+    cField = createGraphics(width / downScaleDivisor, height / downScaleDivisor, WEBGL)
+    cField.elt.style = "width:800px;1height:800px"
 }
 
 let lastMouseX, lastMouseY = null
-let t = 0 //remove later
+let t = 0
 function draw() {
-    t += deltaTime//remove later
+    t += deltaTime / 1000
 
     if (mouseIsPressed) {
         if (mode == "positive") {
@@ -56,7 +59,6 @@ function draw() {
     upscalePotentialShader.setUniform("uPotential", cPotential)
     upscalePotentialShader.setUniform("uRes", [width, height])
     upscalePotentialShader.setUniform("uOriginalRes", [width / downScaleDivisor, height / downScaleDivisor])
-    upscalePotentialShader.setUniform("uTime", t)
     cUpscalePotential.shader(upscalePotentialShader)
     cUpscalePotential.rect(0, 0, 1, 1)
 
@@ -64,6 +66,19 @@ function draw() {
     potentialVisShader.setUniform("uPotential", cUpscalePotential)
     cPotentialVis.shader(potentialVisShader)
     cPotentialVis.rect(0, 0, 1, 1)
+
+    equipotentialsShader.setUniform("uPotential", cUpscalePotential)
+    equipotentialsShader.setUniform("uRes", [width, height])
+    equipotentialsShader.setUniform("uTime", t)
+    equipotentialsShader.setUniform("uShouldAnimateEquipotentials", true)
+    cEquipotentials.shader(equipotentialsShader)
+    cEquipotentials.rect(0, 0, 1, 1)
+
+    cField.clear()
+    fieldShader.setUniform("uWorld", cDraw)
+    fieldShader.setUniform("uRes", [width, height])
+    cField.shader(fieldShader)
+    cField.rect(0, 0, 1, 1)
 }
 
 function keyTyped() {
@@ -77,3 +92,7 @@ function keyTyped() {
         mode = "erase"
     }
 }
+
+/*
+Note: The most efficient way to save the data would be to treat all 4 colour channels as 32 bits total and use only one bit for the sign, instead of using 2 colour channels for positive and 2 for negative. But numbers from here will never go that high and more precision is not necessary.
+*/
