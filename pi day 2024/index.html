@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,9 +11,21 @@
 
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
-  </head>
 
-  <body>
+    <script src="sketch.js"></script>
+</head>
+
+<body>
+    <div style="background-color: rgb(218, 218, 218); border-radius: 15px; padding: 10px; margin:10px;">
+        <h2>How this works:</h2>
+        <img src="explanation.png" width="700" style="border-radius: 15px;">
+        <p>All points are in the square, and a point is determined to be in the circle if its distance to the center of
+            the
+            circle is less than 1 using the pythagorean theorem.</p>
+        <p><b>x² - y² < 1²</b>
+        </p>
+    </div>
+    <br>
     <span>Number of points in the square: </span>
     <span id="pInSquare"></span>
     <br>
@@ -22,8 +35,7 @@
     <span>Calculated value of pi: </span>
     <span id="piVal"></span>
 
-    <script src="sketch.js"></script>
-    
     <p>Note: 1 every 100 points are being drawn</p>
-  </body>
+</body>
+
 </html>
