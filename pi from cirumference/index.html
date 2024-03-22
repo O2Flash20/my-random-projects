@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pi Calculation</title>
+    <meta name="description" content="Calculating π using the circumference of an approximated circle.">
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="libraries/p5.min.js"></script>
+    <script src="libraries/p5.sound.min.js"></script>
+  </head>
+
+  <body>
+    <script src="sketch.js"></script>
+    <span>Circumference: </span>
+    <span id="circumference"></span>
+    <br>
+    <span>Pi: </span>
+    <span id="pi"></span>
+
+    <p>This is an approximated circle with radius 1. Since the circumference is 2πr ( or 2π(1) ), the circumference divided by 2 is π.</p>
+    <p>The circle is approximated by projecting points from a square onto a circle using the pythagorean theorem.</p>
+  </body>
+</html>
