@@ -8,6 +8,8 @@ varying vec2 vTexCoord;
 uniform sampler2D uWorld;
 uniform vec2 uRes;
 
+const float PI = 3.1415926535;
+
 // vec3 this time, because the first colour channel will be for angle
 // also not signed this time
 vec3 toBase256(float inputValue) {
@@ -24,8 +26,13 @@ vec3 toBase256(float inputValue) {
     return vec3(digit1, digit2, digit3);
 }
 
-float to256Angle(vec2 vector) {
-    return (256. / 360.) * (radians(atan(vector.y / vector.x)) + 180.);
+float vec2AngleToChannel(vec2 vector) {
+    if (vector.x > 0.) {
+        return (atan(vector.y / vector.x) + PI / 2.) / (2. * PI);
+    } else {
+        return (atan(vector.y / vector.x) + PI / 2. + PI) / (2. * PI);
+    }
+
 }
 
 void main() {
@@ -41,14 +48,14 @@ void main() {
 
             if (!(thisSample.r == 0. && thisSample.b == 0.)) { //only continue the calculations if there's actually a charge there
 
-                vec2 chargeDirection = normalize(thisSamplePoint - uv);
+                vec2 chargeDirection = normalize(uv - thisSamplePoint);
                 float distToSample = distance(uv, thisSamplePoint) / 100.; //dividing by 100 makes the whole thing 1cm x 1cm
 
-                field += 10. * 10. * (abs(thisSample.r - thisSample.b) / pow(distToSample, 2.)) * chargeDirection; //k*(q/r^2) * [direction vector]
+                field += 10. * 10. * ((thisSample.r - thisSample.b) / pow(distToSample, 2.)) * chargeDirection; //k*(q/r^2) * [direction vector]
             }
         }
     }
 
     // the angle of the vector is the first channel, it's length is the other 3
-    gl_FragColor = vec4(to256Angle(field), toBase256(length(field)));
+    gl_FragColor = vec4(vec2AngleToChannel(field), toBase256(length(field) / 5000.)); //the magnitude needs to be divided or else it will overflow the bits it has and look awful
 }
