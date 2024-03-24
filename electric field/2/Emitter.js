@@ -37,5 +37,16 @@ class Emitter {
         for (let p of this.particles) {
             p.draw(canvas)
         }
+        canvas.fill(Math.max(this.charge * 155, 0) + 100, 100, Math.max(-this.charge, 0) * 155 + 100, 255)
+        canvas.ellipse(this.pos.x, this.pos.y, 25, 25)
+
+        canvas.stroke(255)
+        if (this.charge < 0) {
+            canvas.line(this.pos.x - 5, this.pos.y, this.pos.x + 5, this.pos.y)
+        }
+        else {
+            canvas.line(this.pos.x - 5, this.pos.y, this.pos.x + 5, this.pos.y)
+            canvas.line(this.pos.x, this.pos.y - 5, this.pos.x, this.pos.y + 5)
+        }
     }
 }

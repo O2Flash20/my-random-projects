@@ -17,9 +17,7 @@ let chargeStrength = 1
 
 const downScaleDivisor = 10
 
-let cDraw, cPotential, cUpscalePotential, cPotentialVis, cEquipotentials, cField, cUpscaleField, cFieldVis, cFieldLines, cParticles, cChargeOutline, cComposite = null
-let chargeSlider
-let animateEquipotentials
+let cDraw, cPotential, cUpscalePotential, cPotentialVis, cEquipotentials, cField, cUpscaleField, cFieldVis, cFieldLines, cParticles, cChargeOutline, cComposite, cChargeVis = null
 function setup() {
     cDraw = createCanvas(800, 800)
     cDraw.elt.style = "display:none;"
@@ -35,7 +33,7 @@ function setup() {
     cField = createGraphics(width / downScaleDivisor, height / downScaleDivisor, WEBGL)
     cUpscaleField = createGraphics(width, height, WEBGL)
     cUpscaleField.elt.setAttribute("willReadFrequently", "true")
-    cFieldVis = createGraphics(width, height, WEBGL)
+    // cFieldVis = createGraphics(width, height, WEBGL)
     cFieldLines = createGraphics(width, height)
     cFieldLines.background(0)
     cFieldLines.stroke(255, 255, 0)
@@ -50,16 +48,26 @@ function setup() {
     cComposite = createGraphics(width, height)
     cComposite.elt.style = "display:block;"
 
-    createP()
-    chargeSlider = createSlider(-1, 1, 1, 0.1)
-    animateEquipotentials = createCheckbox("Toggle Animated Equipotentials", true)
+    cChargeVis = createGraphics(20, 20)
+    cChargeVis.noStroke()
+    cChargeVis.fill(255)
+    cChargeVis.textSize(15)
+    cChargeVis.elt.id = "chargeVis"
+
+    chargeSlider = document.getElementById("chargeSlider")
+    document.getElementById("chargeVisDiv").appendChild(cChargeVis.elt)
 }
 
+let rMouseX, rMouseY
 let lastMouseX, lastMouseY = null
 let t = 0
 function draw() {
-    // update drawing charge if needed
-    const sliderValue = chargeSlider.value()
+    // probably due to a bug from p5, this is fixing the mouse position being offset
+    rMouseX = mouseX - 20 + window.scrollX
+    rMouseY = mouseY - 20 + window.scrollY
+
+    // update drawing color (charge) if needed
+    const sliderValue = float(chargeSlider.value)
     if (sliderValue < 0) {
         mode = "negative"
     }
@@ -85,11 +93,11 @@ function draw() {
         else if (mode == "erase") {
             erase()
         }
-        line(lastMouseX, lastMouseY, mouseX, mouseY)
+        line(lastMouseX, lastMouseY, rMouseX, rMouseY)
     }
 
-    lastMouseX = mouseX
-    lastMouseY = mouseY
+    lastMouseX = rMouseX
+    lastMouseY = rMouseY
 
     cPotential.clear()
     potentialShader.setUniform("uWorld", cDraw)
@@ -109,7 +117,7 @@ function draw() {
 
     equipotentialsShader.setUniform("uPotential", cUpscalePotential)
     equipotentialsShader.setUniform("uRes", [width, height])
-    if (animateEquipotentials.checked()) {
+    if (document.getElementById("animatedEquipotentialsButton").checked) {
         equipotentialsShader.setUniform("uTime", t / 2)
     }
     else {
@@ -131,11 +139,11 @@ function draw() {
     cUpscaleField.shader(upscaleFieldShader)
     cUpscaleField.rect(0, 0, 1, 1)
 
-    cFieldVis.clear()
-    fieldVisShader.setUniform("uField", cUpscaleField)
-    fieldVisShader.setUniform("uTime", t)
-    cFieldVis.shader(fieldVisShader)
-    cFieldVis.rect(0, 0, 1, 1)
+    // cFieldVis.clear()
+    // fieldVisShader.setUniform("uField", cUpscaleField)
+    // fieldVisShader.setUniform("uTime", t)
+    // cFieldVis.shader(fieldVisShader)
+    // cFieldVis.rect(0, 0, 1, 1)
 
     chargeOutlineShader.setUniform("uCharges", cDraw)
     chargeOutlineShader.setUniform("uRes", [width, height])
@@ -150,7 +158,7 @@ function draw() {
     cComposite.image(cEquipotentials, 0, 0, width + downScaleDivisor, height + downScaleDivisor)
     cComposite.image(cFieldLines, 0, 0, width + downScaleDivisor, height + downScaleDivisor)
 
-    cComposite.tint(25)
+    cComposite.tint(50)
     cComposite.image(cPotentialVis, 0, 0, width + downScaleDivisor, height + downScaleDivisor)
     cComposite.noTint()
 
@@ -169,23 +177,34 @@ function draw() {
     }
 
     cComposite.image(cParticles, 0, 0)
+
+    if (mode == "positive") {
+        cChargeVis.background(chargeStrength * 255, 0, 0)
+    }
+    else if (mode == "negative") {
+        cChargeVis.background(0, 0, chargeStrength * 255)
+    }
+    else {
+        cChargeVis.background(0)
+    }
+    document.getElementById("modeDisplay").innerText = mode.toUpperCase()
 }
 
 let emitters = []
 function keyTyped() {
     if (key == "1") {
-        chargeSlider.elt.value = "1"
+        chargeSlider.value = "1"
     }
     else if (key == "2") {
-        chargeSlider.elt.value = "-1"
+        chargeSlider.value = "-1"
     }
     else if (key == "3") {
-        chargeSlider.elt.value = "0"
+        chargeSlider.value = "0"
     }
     else if (key == "f") { // draw a field line
         cUpscaleField.loadPixels()
         loadPixels()
-        let lineTracer = createVector(mouseX, mouseY)
+        let lineTracer = createVector(rMouseX, rMouseY)
         // in the direction of the field
         cFieldLines.beginShape()
         for (let k = 0; k < 1000; k++) {
@@ -206,7 +225,7 @@ function keyTyped() {
         cFieldLines.endShape()
 
         // against the direction of the field
-        lineTracer = createVector(mouseX, mouseY)
+        lineTracer = createVector(rMouseX, rMouseY)
         cFieldLines.beginShape()
         for (let k = 0; k < 1000; k++) {
             if (lineTracer.x < 0 || lineTracer.x > width || lineTracer.y < 0 || lineTracer.y > height) {
@@ -226,32 +245,44 @@ function keyTyped() {
         cFieldLines.endShape()
 
         // draw the arrow showing the direction of the field
-        const angleAtClick = cUpscaleField.pixels[(mouseX + mouseY * width) * 4] / 255 * 2 * Math.PI - Math.PI / 2
+        const angleAtClick = cUpscaleField.pixels[(rMouseX + rMouseY * width) * 4] / 255 * 2 * Math.PI - Math.PI / 2
         cFieldLines.push()
-        cFieldLines.translate(mouseX, mouseY)
+        cFieldLines.translate(rMouseX, rMouseY)
         cFieldLines.rotate(angleAtClick)
         cFieldLines.line(-10, 10, 0, 0)
         cFieldLines.line(-10, -10, 0, 0)
         cFieldLines.pop()
     }
-    else if (key == "e") { //add a particle emitter
+    else if (key == "r") {
+        location.reload()
+    }
+
+
+
+    else if (key == "e") { // add/remove a particle emitter
+
+        // check if it has to remove an emitter
+        for (let i = emitters.length - 1; i >= 0; i--) {
+            if (createVector(rMouseX, rMouseY).dist(emitters[i].pos) < 20) {
+                emitters.splice(i, 1)
+                return
+            }
+        }
+
         let emitterCharge
         if (mode == "positive") { emitterCharge = chargeStrength }
         else if (mode == "negative") { emitterCharge = -chargeStrength }
         else { return } //watch out for this return future me!
-        emitters.push(new Emitter(createVector(mouseX, mouseY), emitterCharge, 800, 10))
+        emitters.push(new Emitter(createVector(rMouseX, rMouseY), emitterCharge, 800, 10))
     }
 }
 
 function mousePressed() {
-    if (mouseX < width && mouseY < height) {
+    if (rMouseX < width && rMouseY < height) {
         cFieldLines.background(0)
     }
 }
 
 /*
 Note: The most efficient way to save the data would be to treat all 4 colour channels as 32 bits total and use only one bit for the sign, instead of using 2 colour channels for positive and 2 for negative. But numbers from here will never go that high and more precision is not necessary.
-
-TODO: ability to delete emitters, change the look of particles, visualizer for the color you picked
-remove visualizations when done
 */

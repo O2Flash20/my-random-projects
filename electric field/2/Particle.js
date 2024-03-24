@@ -9,7 +9,7 @@ class Particle {
     }
 
     draw(canvas) {
-        canvas.fill(this.charge * 255, 100, -this.charge * 255, 255)
+        canvas.fill(Math.max(this.charge * 155, 0) + 100, 100, Math.max(-this.charge, 0) * 155 + 100, 255)
         canvas.ellipse(this.pos.x, this.pos.y, 15, 15)
     }
 
