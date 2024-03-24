@@ -29,6 +29,6 @@ void main() {
     vec4 textureValue = texture2D(uField, uv);
     vec2 field = fromBase256(textureValue.gba) * channelToVec2(textureValue.r);
 
-    gl_FragColor = vec4(vec2(abs(field)) / 10000000., 0., 1.);
-    // gl_FragColor = vec4(vec3(fromBase256(textureValue.gba)) / 5000000., 1.);
+    // gl_FragColor = vec4(vec2(abs(field)) / 10000000., 0., 1.);
+    gl_FragColor = vec4(vec3(fromBase256(textureValue.gba)) / 5000000., 1.);
 }

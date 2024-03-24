@@ -39,7 +39,7 @@ void main() {
 
     float maxEquipotential = 10000000.;
     bool isOnEquipotential = false;
-    for (float i = 0.; i < 10.; i++) {
+    for (float i = 0.; i < 10.; i += 1.) {
 
         float thisPotential;
         if (uShouldAnimateEquipotentials) {
