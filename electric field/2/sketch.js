@@ -19,6 +19,8 @@ const downScaleDivisor = 10
 
 let cDraw, cPotential, cUpscalePotential, cPotentialVis, cEquipotentials, cField, cUpscaleField, cFieldVis, cFieldLines, cParticles, cChargeOutline, cComposite, cChargeVis = null
 function setup() {
+    pixelDensity(1)
+    
     cDraw = createCanvas(800, 800)
     cDraw.elt.style = "display:none;"
     cDraw.elt.setAttribute("willReadFrequently", "true")
@@ -245,7 +247,10 @@ function keyTyped() {
         cFieldLines.endShape()
 
         // draw the arrow showing the direction of the field
-        const angleAtClick = cUpscaleField.pixels[(rMouseX + rMouseY * width) * 4] / 255 * 2 * Math.PI - Math.PI / 2
+        const pixelX = Math.floor(rMouseX)
+        const pixelY = Math.floor(rMouseY)
+        const angleAtClick = cUpscaleField.pixels[(pixelX + pixelY * width) * 4] / 255 * 2 * Math.PI - Math.PI / 2
+        console.log(angleAtClick)
         cFieldLines.push()
         cFieldLines.translate(rMouseX, rMouseY)
         cFieldLines.rotate(angleAtClick)
