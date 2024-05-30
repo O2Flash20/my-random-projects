@@ -91,7 +91,10 @@ async function main() {
         ]
     }
 
+    let lastTime = 0
     function render(time) {
+        let deltaTime = time - lastTime
+        lastTime = time
         // set the uniform buffer
         timeValue.set([time], 0)
         device.queue.writeBuffer(uniformBuffer, 0, timeValue)
@@ -110,6 +113,9 @@ async function main() {
 
         const commandBuffer = encoder.finish()
         device.queue.submit([commandBuffer])
+
+        // console.log(1000/deltaTime) 
+        document.getElementById("frameRateDisplay").innerText = (1000/deltaTime).toFixed(1)
 
         requestAnimationFrame(render)
     }
