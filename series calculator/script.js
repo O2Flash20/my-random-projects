@@ -1,10 +1,10 @@
 // let mySequence = "pow(2.0/5.0, n)"
 // let mySequence = "1.0/(n*n)"
-// let mySequence = "1.0/(n*n+9.0*n+20)"
-let mySequence = "atan(n+1.0)-atan(n-1.0)"
+// let mySequence = "1.0/(n*n+9.0*n+20.0)"
+// let mySequence = "atan(n+1.0)-atan(n-1.0)"
 // let mySequence = "pow(0.2, n)+pow(0.6, n-1)"
 
-async function main(sequence, seriesStart, seriesEndCubed) {
+async function approximateSeries(sequence, seriesStart, seriesEndCubed) {
     // set up the device (gpu)
     const adapter = await navigator.gpu?.requestAdapter()
     const device = await adapter?.requestDevice()
@@ -74,9 +74,6 @@ async function main(sequence, seriesStart, seriesEndCubed) {
     pass.setPipeline(sequencePipeline)
     pass.setBindGroup(0, sequenceBindGroup) //0 corresponds to @group(0) in the shader
     pass.dispatchWorkgroups(seriesEndCubed, seriesEndCubed, seriesEndCubed) //run the computer shader as many times as there are input numbers
-    // pass.end()
-
-    // !then a second (/third/fourth?) pass to sum it all up
 
     const sumModule = device.createShaderModule({
         label: "sum calculator compute module",
@@ -161,25 +158,70 @@ async function main(sequence, seriesStart, seriesEndCubed) {
     resultBuffer.unmap()
     // after this, the data that was in resultBuffer is gone
 
-    // console.log("input", workArray)
-    // console.log("result", result)
-    console.log("Sum:", result[0])
-
     const sum = result[0]
-    for (let i = 0; i <= 4; i++) {
-        for (let j = 1; j <= 10; j++) {
+    let bestResults = { calculated: sum, percentDifference: 10000 }
+    for (let i = 0; i <= 3; i++) {
+        for (let j = 1; j <= 50; j++) {
             const testValue = j * sum / (Math.PI ** i)
-            if (Math.abs(testValue - Math.round(testValue)) < 0.01) {
-                const exactValue = Math.PI ** i * Math.round(testValue) / j
-                console.log(
-                    "π^" + i,
-                    "| numerator: " + Math.round(testValue),
-                    "| demonimator: " + j,
-                    "| %difference to calculated: " + Math.abs(sum - exactValue) / ((sum + exactValue) / 2) * 100
-                )
-                return
+            // if (Math.abs(testValue - Math.round(testValue)) < 0.01) {
+            const exactValue = Math.PI ** i * Math.round(testValue) / j
+            const percentDifference = Math.abs(Math.abs(sum - exactValue) / ((sum + exactValue) / 2) * 100)
+            //    if this is so far the best one                  and its not equivalent to the last one (ex 1/6 = 2/12)
+            if (percentDifference < bestResults.percentDifference && Math.abs(percentDifference - bestResults.percentDifference) > 0.0001) {
+                console.log(percentDifference)
+                bestResults = {
+                    calculated: sum,
+                    piExponent: i,
+                    numerator: Math.round(testValue),
+                    demonimator: j,
+                    percentDifference: percentDifference
+                }
             }
         }
     }
+    return bestResults
 }
-main(mySequence, 1, 300)
+
+document.getElementById("cubeRootEndN").addEventListener("change", (event) => {
+    document.getElementById("endNDisplay").innerText = document.getElementById("cubeRootEndN").value ** 3
+})
+
+// when the user clicks "Calculate"
+document.getElementById("calculateButton").addEventListener("click", async function () {
+    const calculationResults = await approximateSeries(
+        document.getElementById("termsSequence").value,
+        Number(document.getElementById("startN").value),
+        Number(document.getElementById("cubeRootEndN").value)
+    )
+
+    console.log(calculationResults)
+
+    const elt = document.getElementById("resultPretty")
+    let string = "$${\\sum\\limits_{"
+    string += "n=" + document.getElementById("startN").value + "}"
+    string += "^{" + document.getElementById("endNDisplay").innerText + "}"
+    string += "a_n = "
+    string += calculationResults.calculated
+
+    if (Math.abs(calculationResults.percentDifference) < 1) {
+        string += "\\approx"
+
+        if (calculationResults.demonimator == 1) {
+            string += calculationResults.numerator
+        } else {
+            string += "\\frac{" + calculationResults.numerator + "}{" + calculationResults.demonimator + "}"
+        }
+        if (calculationResults.piExponent !== 0) {
+            if (calculationResults.piExponent == 1) {
+                string += "\\pi"
+            } else {
+                string += "\\pi^{" + calculationResults.piExponent + "}"
+            }
+        }
+    }
+
+
+    string += "}$$"
+    elt.innerText = string
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub])
+})
