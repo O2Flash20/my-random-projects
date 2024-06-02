@@ -36,6 +36,7 @@ export default /*wgsl*/ `
 
     @group(0) @binding(0) var<uniform> time: u32;
     @group(0) @binding(1) var<uniform> camera: cameraInfo;
+    @group(0) @binding(2)  var<storage, read_write> worleyBuffer: array<f32>;
 
     fn rotate3d(inputVec:vec3f, yaw:f32, pitch:f32) -> vec3f{
         let angleZtoY = atan(inputVec.y/inputVec.z);
@@ -60,20 +61,32 @@ export default /*wgsl*/ `
 
     fn uvToScreenDir(uv:vec2f, projectionDistance:f32)->vec3f{
         let z = projectionDistance;
-        let x = uv.x * -2.0 * projectionDistance + projectionDistance;
-        let yProjectionDistance = 0.75*projectionDistance;
-        let y = uv.y *2.0*yProjectionDistance -yProjectionDistance;
+        let x = uv.x*-2.0 + 1.0;
+        let y = uv.y * 2.0*0.75 - 0.75;
         return normalize(vec3f(x, y, z));
     }
+
+    // fn 3dto1dIndex(inputVec:vec3, dimensions:vec3)->u32{
+    //     return 
+    // }
+
+    // fn interpretWorleyBuffer(coord: vec3f) -> f32{
+    //     // TODO: take into account float inputs, wrap inputs to range, 3d index to 1d index
+
+    // }
 
     @fragment fn fs(fsi:vertexShaderOutput)->@location(0)vec4f{
         let timeSec = f32(time)/1000.;
         let p = camera.position;
         let d = camera.direction;
 
-        const projectionDistance = 1.0;
+        // todo: cast multiple rays for anti-aliasing
 
-        const sunDir = normalize(vec3f(0., -1., 1.));
+        let smh = worleyBuffer[0];
+
+        const projectionDistance = 1.2;
+
+        const sunDir = normalize(vec3f(0., -1., 3.));
 
         let screenDir = uvToScreenDir(fsi.uv, projectionDistance);
 
@@ -81,19 +94,26 @@ export default /*wgsl*/ `
 
         var col = vec3f(0., 0., 0.);
 
-        if (worldDir.y < 0.) {
-            col = vec3f(0.2, 0.2, 0.2);
-            col += vec3f(max(-pow(dot(vec3f(worldDir.x, -worldDir.y, worldDir.z,), sunDir), 5.), 0.));
+        if (worldDir.y < 0.) { //looking at the ground
+            let groundHitPos = vec3f( worldDir.x/worldDir.y * p.y,0., worldDir.z/worldDir.y * p.y);
+            col = vec3f(0.2, 0.2, 0.2); //ground color
+            let sunSpecular = max(dot(reflect(-worldDir, vec3f(0., 1., 0.1*sin(groundHitPos.z))), sunDir), 0.);
+            col += pow(sunSpecular, 30);
         }else{
-            if (dot(worldDir, sunDir) < -0.99){
+            let dotToSun = dot(worldDir, sunDir);
+            if (dotToSun < -0.999){
                 col = vec3f(1., 1., 1.); //looking at the sun
             }
             else{
                 col = vec3f(0.0, 0.5, 1.0); //some color for the sky
+                col += 0.5*vec3f(1.0-worldDir.y); //add some more light on the horizon
+                col += -0.2*vec3f(dotToSun*dotToSun*dotToSun); //add some more light around the sun
             }
         }
 
         return vec4f(col, 1.);
+
+
 
         // return vec4f(worldDir.x, worldDir.y, worldDir.z, 1.);
     }

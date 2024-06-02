@@ -1,4 +1,5 @@
-import shader1 from "./shader.wgsl.js"
+import rendererShaderCode from "./renderer.wgsl.js"
+import worleyShaderCode from "./worleyGenerator.wgsl.js"
 
 async function main() {
     // set up the device (gpu)
@@ -9,6 +10,52 @@ async function main() {
         return
     }
 
+    // *--------first, create the worley noise--------
+    const worleyModule = device.createShaderModule({
+        label: "worley compute module",
+        code: worleyShaderCode
+    })
+
+    const worleyPipeline = device.createComputePipeline({
+        label: "worley compute pipeline",
+        layout: "auto",
+        compute: {
+            module: worleyModule
+        }
+    })
+
+    const worleyDataArray = new Float32Array(200 ** 3)
+    const worleyDataBuffer = device.createBuffer({
+        size: worleyDataArray.byteLength, //making a 200 pixel cubed texture of floats (2 bytes / 16 bits each)
+        usage: GPUBufferUsage.STORAGE /*needed to be compatible with var<storage>*/ | GPUBufferUsage.COPY_SRC /*want to copy data from it*/ | GPUBufferUsage.COPY_DST /*want to copy data to it*/
+    })
+    device.queue.writeBuffer(worleyDataBuffer, 0, worleyDataArray)
+
+    const worleyBindGroup = device.createBindGroup({
+        label: "bind group for the worley noise computer",
+        layout: worleyPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer: worleyDataBuffer } }
+        ]
+    })
+
+    const worleyEncoder = device.createCommandEncoder({
+        label: "worley noise generator encoder"
+    })
+    const worleyPass = worleyEncoder.beginComputePass({
+        label: "worley noise generation pass"
+    })
+    worleyPass.setPipeline(worleyPipeline)
+    worleyPass.setBindGroup(0, worleyBindGroup)
+    worleyPass.dispatchWorkgroups(200, 200, 200)
+    worleyPass.end()
+
+    const worleyCommandBuffer = worleyEncoder.finish()
+    device.queue.submit([worleyCommandBuffer])
+
+    // now worleyDataBuffer should have all the noise in it
+
+    // *--------create the renderer and start rendering--------
     // set up the canvas
     const canvas = document.querySelector("canvas")
     const context = canvas.getContext("webgpu")
@@ -19,19 +66,19 @@ async function main() {
     })
 
     // create the shader module
-    const module = device.createShaderModule({
+    const rendererModule = device.createShaderModule({
         label: "raymarcher shaders",
-        code: shader1
+        code: rendererShaderCode
     })
 
-    const pipeline = device.createRenderPipeline({
+    const rendererPipeline = device.createRenderPipeline({
         label: "ray marching pipeline",
         layout: "auto",
         vertex: {
-            module
+            module: rendererModule
         },
         fragment: {
-            module,
+            module: rendererModule,
             targets: [{ format: presentationFormat }]
         }
     })
@@ -53,11 +100,12 @@ async function main() {
     cameraUniformsArray.set(cameraPosition, 0)
     cameraUniformsArray.set(cameraDirection, 4)
 
-    const bindGroup = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
+    const rendererBindGroup = device.createBindGroup({
+        layout: rendererPipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: timeBuffer } },
-            { binding: 1, resource: { buffer: cameraBuffer } }
+            { binding: 1, resource: { buffer: cameraBuffer } },
+            { binding: 2, resource: { buffer: worleyDataBuffer } }
         ]
     })
 
@@ -89,16 +137,16 @@ async function main() {
         // get the current texture from the canvas context and set it as the texture to render to
         renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
 
-        const encoder = device.createCommandEncoder({
-            label: "shaders encoder"
+        const renderEncoder = device.createCommandEncoder({
+            label: "render shaders encoder"
         })
-        const pass = encoder.beginRenderPass(renderPassDescriptor)
-        pass.setPipeline(pipeline)
-        pass.setBindGroup(0, bindGroup)
-        pass.draw(6) //call it 6 times, 3 vertices for 2 triangles to make a quad
-        pass.end()
+        const renderPass = renderEncoder.beginRenderPass(renderPassDescriptor)
+        renderPass.setPipeline(rendererPipeline)
+        renderPass.setBindGroup(0, rendererBindGroup)
+        renderPass.draw(6) //call it 6 times, 3 vertices for 2 triangles to make a quad
+        renderPass.end()
 
-        const commandBuffer = encoder.finish()
+        const commandBuffer = renderEncoder.finish()
         device.queue.submit([commandBuffer])
 
         // console.log(1000 / deltaTime)
@@ -106,7 +154,7 @@ async function main() {
 
         // animate direction for now
         cameraDirection[0] = time / 1000
-        cameraDirection[1] = Math.sin(time / 1000) / 2
+        cameraDirection[1] = Math.sin(time / 1000) / 5
         requestAnimationFrame(render)
     }
     requestAnimationFrame(render)
@@ -131,4 +179,6 @@ let cameraDirection = [0, 0] //yaw then pitch
 compute shader for worley noise -> outputs a 1d buffer
     fractal, multiple layers that each get smaller
 3d rendering shader reads that
+
+todo: manual controls, figure out if/how to do the worley noise as a 3d texture, anti-aliasing
 */
