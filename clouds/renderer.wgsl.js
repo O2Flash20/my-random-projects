@@ -36,7 +36,8 @@ export default /*wgsl*/ `
 
     @group(0) @binding(0) var<uniform> time: u32;
     @group(0) @binding(1) var<uniform> camera: cameraInfo;
-    @group(0) @binding(2)  var<storage, read_write> worleyBuffer: array<f32>;
+    @group(0) @binding(2) var worleyNoise: texture_3d<f32>;
+    @group(0) @binding(3) var texSampler: sampler;
 
     fn rotate3d(inputVec:vec3f, yaw:f32, pitch:f32) -> vec3f{
         let angleZtoY = atan(inputVec.y/inputVec.z);
@@ -66,23 +67,12 @@ export default /*wgsl*/ `
         return normalize(vec3f(x, y, z));
     }
 
-    // fn 3dto1dIndex(inputVec:vec3, dimensions:vec3)->u32{
-    //     return 
-    // }
-
-    // fn interpretWorleyBuffer(coord: vec3f) -> f32{
-    //     // TODO: take into account float inputs, wrap inputs to range, 3d index to 1d index
-
-    // }
-
     @fragment fn fs(fsi:vertexShaderOutput)->@location(0)vec4f{
         let timeSec = f32(time)/1000.;
         let p = camera.position;
         let d = camera.direction;
 
         // todo: cast multiple rays for anti-aliasing
-
-        let smh = worleyBuffer[0];
 
         const projectionDistance = 1.2;
 
@@ -111,8 +101,10 @@ export default /*wgsl*/ `
             }
         }
 
-        return vec4f(col, 1.);
+        // return vec4f(col, 1.);
 
+        // return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, 0.5)) + vec4f(fsi.uv, 0., 1.);
+        return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, 0.5));
 
 
         // return vec4f(worldDir.x, worldDir.y, worldDir.z, 1.);

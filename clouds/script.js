@@ -24,24 +24,47 @@ async function main() {
         }
     })
 
-    const worleyDataArray = new Float32Array(200 ** 3)
-    const worleyDataBuffer = device.createBuffer({
-        size: worleyDataArray.byteLength, //making a 200 pixel cubed texture of floats (2 bytes / 16 bits each)
-        usage: GPUBufferUsage.STORAGE /*needed to be compatible with var<storage>*/ | GPUBufferUsage.COPY_SRC /*want to copy data from it*/ | GPUBufferUsage.COPY_DST /*want to copy data to it*/
+    // this texture will be written to by the compute shader to create the worley noise
+    const worleyWorkTexture = device.createTexture({
+        label: "the 3d texture to create the worley noise",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [200, 200, 200],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC // | GPUTextureUsage.TEXTURE_BINDING
     })
-    device.queue.writeBuffer(worleyDataBuffer, 0, worleyDataArray)
+
+    // this texture will hold the noise for the renderer to use
+    const worleyNoiseTexture = device.createTexture({
+        label: "the 3d texture to hold the worley noise",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [200, 200, 200],
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+    })
 
     const worleyBindGroup = device.createBindGroup({
         label: "bind group for the worley noise computer",
         layout: worleyPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: { buffer: worleyDataBuffer } }
+            { binding: 0, resource: worleyWorkTexture.createView() }
         ]
     })
 
     const worleyEncoder = device.createCommandEncoder({
         label: "worley noise generator encoder"
     })
+
+    // copy the worley noise to another texture that is not storage and can be sampled from
+    // ! not copying for some reason?
+    worleyEncoder.copyTextureToTexture(
+        { texture: worleyWorkTexture },
+        { texture: worleyNoiseTexture },
+        { width: 200, height: 200, depthOrArrayLayers: 200 }
+    )
+    // worleyEncoder.copyTextureToTexture(
+    //     src:{worleyWorkTexture, }
+    // )
+
     const worleyPass = worleyEncoder.beginComputePass({
         label: "worley noise generation pass"
     })
@@ -53,7 +76,6 @@ async function main() {
     const worleyCommandBuffer = worleyEncoder.finish()
     device.queue.submit([worleyCommandBuffer])
 
-    // now worleyDataBuffer should have all the noise in it
 
     // *--------create the renderer and start rendering--------
     // set up the canvas
@@ -100,12 +122,16 @@ async function main() {
     cameraUniformsArray.set(cameraPosition, 0)
     cameraUniformsArray.set(cameraDirection, 4)
 
+    const textureSampler = device.createSampler()
+
     const rendererBindGroup = device.createBindGroup({
         layout: rendererPipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: timeBuffer } },
             { binding: 1, resource: { buffer: cameraBuffer } },
-            { binding: 2, resource: { buffer: worleyDataBuffer } }
+            { binding: 2, resource: worleyNoiseTexture.createView() },
+            // { binding: 2, resource: worleyWorkTexture.createView() },
+            { binding: 3, resource: textureSampler }
         ]
     })
 
@@ -149,7 +175,6 @@ async function main() {
         const commandBuffer = renderEncoder.finish()
         device.queue.submit([commandBuffer])
 
-        // console.log(1000 / deltaTime)
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
 
         // animate direction for now
