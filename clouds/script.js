@@ -1,6 +1,75 @@
 import rendererShaderCode from "./renderer.wgsl.js"
 import worleyShaderCode from "./worleyGenerator.wgsl.js"
 
+const WorleyTextureSize = 300 //pretty much the max it can be
+const PointsGridTextureSize = 50
+
+// creates a texture representing a grid with a point randomly placed in each cell
+function createPointsGrid(device, gridSize) {
+    const pointsGridModule = device.createShaderModule({
+        label: "points grid compute module",
+        code: /*wgsl*/ `
+
+        @group(0) @binding(0) var pointsGridTexture: texture_storage_3d<rgba8unorm, write>;
+
+        const gridSize = ${gridSize};
+
+        fn pseudoRandom3d(seed:vec3u) -> vec3f {
+            const a = 3.14159265/1000;
+            return ( vec3f(seed) % a) / ( a * gridSize ); //a random number from 0 to 1
+        }
+
+        @compute @workgroup_size(1) fn generateGridPoints(
+            @builtin(global_invocation_id) id:vec3<u32>
+        ){
+            textureStore(pointsGridTexture, id,vec4f( pseudoRandom3d(id), 1.));
+        }
+
+        `
+    })
+
+    const pointsGridPipeline = device.createComputePipeline({
+        label: "points grid generator compute pipeline",
+        layout: "auto",
+        compute: {
+            module: pointsGridModule
+        }
+    })
+
+    const pointsGridTexture = device.createTexture({
+        label: "a 3d texture representing a grid with randomly placed points",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [gridSize, gridSize, gridSize],
+        usage: GPUTextureUsage.STORAGE_BINDING
+    })
+
+    const pointsGridBindGroup = device.createBindGroup({
+        label: "points grid shader bind group",
+        layout: pointsGridPipeline.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: pointsGridTexture.createView() }]
+    })
+
+    const pointsGridEncoder = device.createCommandEncoder({
+        label: "points grid command encoder"
+    })
+
+    const pointsGridPass = pointsGridEncoder.beginComputePass({
+        label: "points grid compute pass"
+    })
+
+
+    pointsGridPass.setPipeline(pointsGridPipeline)
+    pointsGridPass.setBindGroup(0, pointsGridBindGroup)
+    pointsGridPass.dispatchWorkgroups(gridSize, gridSize, gridSize)
+    pointsGridPass.end()
+
+    const pointsGridCommandBuffer = pointsGridEncoder.finish()
+    device.queue.submit([pointsGridCommandBuffer])
+
+    return pointsGridTexture
+}
+
 async function main() {
     // set up the device (gpu)
     const adapter = await navigator.gpu?.requestAdapter()
@@ -24,13 +93,15 @@ async function main() {
         }
     })
 
+    const pointsGridTexture = createPointsGrid(device, PointsGridTextureSize)
+
     // this texture will be written to by the compute shader to create the worley noise
     const worleyWorkTexture = device.createTexture({
         label: "the 3d texture to create the worley noise",
         format: "rgba8unorm",
         dimension: "3d",
-        size: [200, 200, 200],
-        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC // | GPUTextureUsage.TEXTURE_BINDING
+        size: [WorleyTextureSize, WorleyTextureSize, WorleyTextureSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC //| GPUTextureUsage.TEXTURE_BINDING
     })
 
     // this texture will hold the noise for the renderer to use
@@ -38,15 +109,31 @@ async function main() {
         label: "the 3d texture to hold the worley noise",
         format: "rgba8unorm",
         dimension: "3d",
-        size: [200, 200, 200],
+        size: [WorleyTextureSize, WorleyTextureSize, WorleyTextureSize],
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
     })
+
+    // information about the sizes of the textures that will be used
+    const textureSizesBuffer = device.createBuffer({
+        size: 2 * 4, // two f32s
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const textureSizesValues = new ArrayBuffer(8)
+    const textureSizesViews = {
+        worleyTextureSize: new Float32Array(textureSizesValues, 0, 1),
+        pointsGridTextureSize: new Float32Array(textureSizesValues, 4, 1),
+    }
+    textureSizesViews.worleyTextureSize[0] = WorleyTextureSize
+    textureSizesViews.pointsGridTextureSize[0] = PointsGridTextureSize
+    device.queue.writeBuffer(textureSizesBuffer, 0, textureSizesValues)
 
     const worleyBindGroup = device.createBindGroup({
         label: "bind group for the worley noise computer",
         layout: worleyPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: worleyWorkTexture.createView() }
+            { binding: 0, resource: { buffer: textureSizesBuffer } },
+            { binding: 1, resource: worleyWorkTexture.createView() },
+            { binding: 2, resource: pointsGridTexture.createView() }
         ]
     })
 
@@ -54,24 +141,21 @@ async function main() {
         label: "worley noise generator encoder"
     })
 
-    // copy the worley noise to another texture that is not storage and can be sampled from
-    // ! not copying for some reason?
-    worleyEncoder.copyTextureToTexture(
-        { texture: worleyWorkTexture },
-        { texture: worleyNoiseTexture },
-        { width: 200, height: 200, depthOrArrayLayers: 200 }
-    )
-    // worleyEncoder.copyTextureToTexture(
-    //     src:{worleyWorkTexture, }
-    // )
 
     const worleyPass = worleyEncoder.beginComputePass({
         label: "worley noise generation pass"
     })
     worleyPass.setPipeline(worleyPipeline)
     worleyPass.setBindGroup(0, worleyBindGroup)
-    worleyPass.dispatchWorkgroups(200, 200, 200)
+    worleyPass.dispatchWorkgroups(WorleyTextureSize, WorleyTextureSize, WorleyTextureSize)
     worleyPass.end()
+
+    // copy the worley noise to another texture that is not storage and can be sampled from
+    worleyEncoder.copyTextureToTexture(
+        { texture: worleyWorkTexture },
+        { texture: worleyNoiseTexture },
+        [WorleyTextureSize, WorleyTextureSize, WorleyTextureSize]
+    )
 
     const worleyCommandBuffer = worleyEncoder.finish()
     device.queue.submit([worleyCommandBuffer])
@@ -111,16 +195,26 @@ async function main() {
     })
 
     const cameraBuffer = device.createBuffer({
-        size: 4 * 4 + 4 * 4, //one vec3 and one vec2
+        size: 2 * 4 * 4, //one vec3, one vec2, and one f32
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
     const timeUniformArray = new Uint32Array(1)
     timeUniformArray.set([0])
 
-    const cameraUniformsArray = new Float32Array(8)
-    cameraUniformsArray.set(cameraPosition, 0)
-    cameraUniformsArray.set(cameraDirection, 4)
+    const cameraValues = new ArrayBuffer(32)
+    const cameraViews = {
+        position: new Float32Array(cameraValues, 0, 3),
+        direction: new Float32Array(cameraValues, 16, 2),
+        projectionDist: new Float32Array(cameraValues, 24, 1),
+    }
+    cameraViews.position[0] = cameraPosition[0]
+    cameraViews.position[1] = cameraPosition[1]
+    cameraViews.position[2] = cameraPosition[2]
+    cameraViews.direction[0] = cameraDirection[0]
+    cameraViews.direction[1] = cameraDirection[1]
+    cameraViews.projectionDist[0] = projectionDist
+    device.queue.writeBuffer(cameraBuffer, 0, cameraValues)
 
     const textureSampler = device.createSampler()
 
@@ -130,7 +224,6 @@ async function main() {
             { binding: 0, resource: { buffer: timeBuffer } },
             { binding: 1, resource: { buffer: cameraBuffer } },
             { binding: 2, resource: worleyNoiseTexture.createView() },
-            // { binding: 2, resource: worleyWorkTexture.createView() },
             { binding: 3, resource: textureSampler }
         ]
     })
@@ -152,13 +245,19 @@ async function main() {
         let deltaTime = time - lastTime
         lastTime = time
 
+        updateCamera(deltaTime / 1000) //function defined in controlsHandler.js
+
         // set the buffers
         timeUniformArray.set([time], 0)
         device.queue.writeBuffer(timeBuffer, 0, timeUniformArray)
 
-        cameraUniformsArray.set(cameraPosition, 0)
-        cameraUniformsArray.set(cameraDirection, 4)
-        device.queue.writeBuffer(cameraBuffer, 0, cameraUniformsArray)
+        cameraViews.position[0] = cameraPosition[0]
+        cameraViews.position[1] = cameraPosition[1]
+        cameraViews.position[2] = cameraPosition[2]
+        cameraViews.direction[0] = cameraDirection[0]
+        cameraViews.direction[1] = cameraDirection[1]
+        cameraViews.projectionDist[0] = projectionDist
+        device.queue.writeBuffer(cameraBuffer, 0, cameraValues)
 
         // get the current texture from the canvas context and set it as the texture to render to
         renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
@@ -177,10 +276,7 @@ async function main() {
 
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
 
-        // animate direction for now
-        cameraDirection[0] = time / 1000
-        cameraDirection[1] = Math.sin(time / 1000) / 5
-        requestAnimationFrame(render)
+        requestAnimationFrame(render) //to the next frame
     }
     requestAnimationFrame(render)
 
@@ -197,13 +293,6 @@ async function main() {
 }
 main()
 
-let cameraPosition = [0, 10, 0]
-let cameraDirection = [0, 0] //yaw then pitch
-
 /*
-compute shader for worley noise -> outputs a 1d buffer
-    fractal, multiple layers that each get smaller
-3d rendering shader reads that
-
-todo: manual controls, figure out if/how to do the worley noise as a 3d texture, anti-aliasing
+todo: anti-aliasing, actual clouds :)
 */
