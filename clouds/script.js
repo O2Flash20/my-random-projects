@@ -2,7 +2,7 @@ import rendererShaderCode from "./renderer.wgsl.js"
 import worleyShaderCode from "./worleyGenerator.wgsl.js"
 
 const WorleyTextureSize = 300 //pretty much the max it can be
-const PointsGridTextureSize = 50
+const PointsGridTextureSize = 5
 
 // creates a texture representing a grid with a point randomly placed in each cell
 function createPointsGrid(device, gridSize) {
@@ -14,15 +14,33 @@ function createPointsGrid(device, gridSize) {
 
         const gridSize = ${gridSize};
 
-        fn pseudoRandom3d(seed:vec3u) -> vec3f {
-            const a = 3.14159265/1000;
-            return ( vec3f(seed) % a) / ( a * gridSize ); //a random number from 0 to 1
+        // thanks chatgpt buddy
+        fn hash3(u: vec3<u32>) -> vec3<f32> {
+            let k1: u32 = 0x456789ab;
+            let k2: u32 = 0x789abcde;
+            let k3: u32 = 0x12345678;
+
+            var n: u32 = u.x + u.y * k1 + u.z * k2;
+            n = n ^ (n >> 13);
+            n = n * (n * n * k3 + 0x2fd2f4c3);
+            n = n ^ (n >> 16);
+
+            return vec3<f32>(
+                f32((n >> 0) & 0xff) / 255.0,
+                f32((n >> 8) & 0xff) / 255.0,
+                f32((n >> 16) & 0xff) / 255.0
+            );
+        }
+
+        fn random3d(input: vec3<u32>) -> vec3<f32> {
+            let randomVec = hash3(input);
+            return randomVec;
         }
 
         @compute @workgroup_size(1) fn generateGridPoints(
             @builtin(global_invocation_id) id:vec3<u32>
         ){
-            textureStore(pointsGridTexture, id,vec4f( pseudoRandom3d(id), 1.));
+            textureStore(pointsGridTexture, id, vec4f( random3d(id), 1.));
         }
 
         `
@@ -41,7 +59,7 @@ function createPointsGrid(device, gridSize) {
         format: "rgba8unorm",
         dimension: "3d",
         size: [gridSize, gridSize, gridSize],
-        usage: GPUTextureUsage.STORAGE_BINDING
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
     const pointsGridBindGroup = device.createBindGroup({
@@ -79,6 +97,15 @@ async function main() {
         return
     }
 
+    // a sampler with linear interpolation to be used on textures
+    const linearSampler = device.createSampler({
+        addressModeU: "repeat",
+        addressModeV: "repeat",
+        // magFilter: "linear",
+        // minFilter: "linear",
+        // mipmapFilter: "linear",
+    })
+
     // *--------first, create the worley noise--------
     const worleyModule = device.createShaderModule({
         label: "worley compute module",
@@ -115,13 +142,13 @@ async function main() {
 
     // information about the sizes of the textures that will be used
     const textureSizesBuffer = device.createBuffer({
-        size: 2 * 4, // two f32s
+        size: 2 * 4, // two u32s
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
     const textureSizesValues = new ArrayBuffer(8)
     const textureSizesViews = {
-        worleyTextureSize: new Float32Array(textureSizesValues, 0, 1),
-        pointsGridTextureSize: new Float32Array(textureSizesValues, 4, 1),
+        worleyTextureSize: new Uint32Array(textureSizesValues, 0, 1),
+        pointsGridTextureSize: new Uint32Array(textureSizesValues, 4, 1),
     }
     textureSizesViews.worleyTextureSize[0] = WorleyTextureSize
     textureSizesViews.pointsGridTextureSize[0] = PointsGridTextureSize
@@ -133,7 +160,7 @@ async function main() {
         entries: [
             { binding: 0, resource: { buffer: textureSizesBuffer } },
             { binding: 1, resource: worleyWorkTexture.createView() },
-            { binding: 2, resource: pointsGridTexture.createView() }
+            { binding: 2, resource: pointsGridTexture.createView() },
         ]
     })
 
@@ -216,15 +243,13 @@ async function main() {
     cameraViews.projectionDist[0] = projectionDist
     device.queue.writeBuffer(cameraBuffer, 0, cameraValues)
 
-    const textureSampler = device.createSampler()
-
     const rendererBindGroup = device.createBindGroup({
         layout: rendererPipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: timeBuffer } },
             { binding: 1, resource: { buffer: cameraBuffer } },
             { binding: 2, resource: worleyNoiseTexture.createView() },
-            { binding: 3, resource: textureSampler }
+            { binding: 3, resource: linearSampler }
         ]
     })
 

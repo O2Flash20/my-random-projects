@@ -101,13 +101,11 @@ fn uvToScreenDir(uv:vec2f, projectionDistance:f32)->vec3f{
         }
     }
 
-    return vec4f(col, 1.);
+    // return vec4f(col, 1.);
 
     // return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, 0.5)) + vec4f(fsi.uv, 0., 1.);
     
-    return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, timeSec/10 % 1.2));
-    
-    // return vec4f(vec3f(camera.projectionDist), 1.0); //!why projection dist not work !!!
+    return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, timeSec/10 % 1.)*vec3f(3., 3., 1.));
 
     // return vec4f(worldDir.x, worldDir.y, worldDir.z, 1.);
 }
