@@ -2,7 +2,7 @@ import rendererShaderCode from "./renderer.wgsl.js"
 import worleyShaderCode from "./worleyGenerator.wgsl.js"
 
 const WorleyTextureSize = 300 //pretty much the max it can be
-const PointsGridTextureSize = 5
+const PointsGridTextureSize = 32
 
 // creates a texture representing a grid with a point randomly placed in each cell
 function createPointsGrid(device, gridSize) {
@@ -101,9 +101,10 @@ async function main() {
     const linearSampler = device.createSampler({
         addressModeU: "repeat",
         addressModeV: "repeat",
-        // magFilter: "linear",
-        // minFilter: "linear",
-        // mipmapFilter: "linear",
+        addressModeW: "repeat",
+        magFilter: "linear",
+        minFilter: "linear",
+        mipmapFilter: "linear",
     })
 
     // *--------first, create the worley noise--------

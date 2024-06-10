@@ -9,10 +9,9 @@ struct textureSizes {
 @group(0) @binding(1) var worleyTexture: texture_storage_3d<rgba8unorm, write>;
 @group(0) @binding(2) var pointsGridTexture: texture_3d<f32>;
 
-@compute @workgroup_size(1) fn generateWorleyNoise(
-    @builtin(global_invocation_id) id:vec3<u32>
-){
-    let texSizeRatio = f32(texSizes.worleyTextureSize) / f32(texSizes.pointsGridTextureSize); //should be a number > 1
+// pointsGridTextureSize should be divisible by scale
+fn worleyLayer(scale:u32, id:vec3u) -> f32 {
+    let texSizeRatio = f32(texSizes.worleyTextureSize) / f32(texSizes.pointsGridTextureSize / scale); //should be a number > 1
     let thisGridCell = vec3u( vec3f(id) / texSizeRatio ); //get the cell of this sample point
     let thisPosInGrid = (vec3f(id) % texSizeRatio) / texSizeRatio; // [0, 1]
 
@@ -21,13 +20,14 @@ struct textureSizes {
         for (var j = -1; j <= 1; j++){
             for (var k = -1; k <= 1; k++){
                 // the cell that this point is in
-                let pointCell = vec3u((vec3i(thisGridCell) + vec3i(i, j, k)) % i32(texSizes.pointsGridTextureSize));
+                //!why tiling no workie?????
+                let pointCell = vec3u((vec3i(thisGridCell) + vec3i(i, j, k)) % i32(texSizes.pointsGridTextureSize / scale));
                 //get the point's offset from pointsGridTexture
                 let pointPosInItsCell = textureLoad(pointsGridTexture, pointCell, 0).rgb;
                 //get the point's position relative to the start of the cell that the sample is in, if one cell is 1u across
                 let pointPosRelativeToSampleCell = pointPosInItsCell + vec3f(vec3i(i, j, k));
 
-                let thisDist = distance(thisPosInGrid, pointPosRelativeToSampleCell);
+                let thisDist = distance(thisPosInGrid, pointPosRelativeToSampleCell); // practically [0, 1]
                 if (thisDist < closestDist){
                     closestDist = thisDist;
                 }
@@ -35,23 +35,18 @@ struct textureSizes {
         }
     }
 
+    return closestDist;
+}
+
+// ? one workgroup per color channel to decrease load time?
+@compute @workgroup_size(1) fn generateWorleyNoise(
+    @builtin(global_invocation_id) id:vec3<u32>
+){
     textureStore(
         worleyTexture,
         id,
-        vec4f(1. - closestDist, 0., 0., 1.)
+        vec4f(worleyLayer(1, id), worleyLayer(2, id), worleyLayer(4, id), worleyLayer(8, id))
     );
-
-    // textureStore(
-    //     worleyTexture,
-    //     id,
-    //     textureLoad(
-    //         pointsGridTexture, 
-    //         vec3u(
-    //             vec3f(id) / f32(texSizes.worleyTextureSize) * f32(texSizes.pointsGridTextureSize)
-    //         ),
-    //         0
-    //     )
-    // );
 }
 
 `
