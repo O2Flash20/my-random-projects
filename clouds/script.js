@@ -192,6 +192,13 @@ async function main() {
     // *--------create the renderer and start rendering--------
     // set up the canvas
     const canvas = document.querySelector("canvas")
+
+    // locks the cursor when you click on the canvas
+    canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock()
+    })
+
     const context = canvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
     context.configure({

@@ -12,6 +12,7 @@ function keyPressed(key) {
     return pressedKeys[key] == true
 }
 
+// key controls
 function updateCamera(dt) {
     let MovementSpeed = 2
     if (keyPressed("Shift")) { MovementSpeed *= 4 }
@@ -69,6 +70,27 @@ function updateCamera(dt) {
     }
 }
 
+// mouse controls
+document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === document.querySelector("canvas")) {
+        document.addEventListener('mousemove', mouseLook, false)
+    } else {
+        document.removeEventListener('mousemove', mouseLook, false)
+    }
+})
+function mouseLook(event) {
+    const movementX = event.movementX || event.mozMovementX || 0
+    const movementY = event.movementY || event.mozMovementY || 0
+
+    console.log(movementX, movementY)
+
+    cameraDirection[0] += movementX / 1000
+    cameraDirection[1] -= movementY / 1000
+
+    cameraDirection[1] = Math.min(Math.max(cameraDirection[1], -Math.PI / 2), Math.PI / 2)
+}
+
+// a helper function
 function angleToVector(yaw, pitch) {
     const y = Math.sin(pitch)
     const xzMag = Math.cos(pitch)

@@ -78,15 +78,15 @@ fn getCloudDensity(worleyTexture: texture_3d<f32>, samplePoint: vec3f, offsets: 
     return 0.0625 * level1 + 0.125 * level2 + 0.25 * level3 + 0.5 * level4;
 }
 
-const numCloudSamples = 4;
+const numCloudSamples = 9;
 fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cloudBottom:f32, cloudTop:f32) -> array<vec3f, numCloudSamples> {
     var output = array<vec3f, numCloudSamples>();
-    for (var i = 0; i < numCloudSamples; i++){
+    for (var i = 0; i < numCloudSamples; i++){ //pretty sure it's i+1 / numCloudSamples because indexing starts at 0, check it out though
         let thisHeight = ( cloudTop-cloudBottom ) * ( f32(2 * i + 1)/f32(2 * numCloudSamples) ) + cloudBottom;
         let thisPos = vec3f(
-            dir.x/dir.y * (thisHeight-pos.y) + pos.x,
+            clamp(dir.x/dir.y * (thisHeight-pos.y) + pos.x, -10000., 10000.),
             thisHeight,
-            dir.z/dir.y * (thisHeight-pos.y) + pos.z,
+            clamp(dir.z/dir.y * (thisHeight-pos.y) + pos.z, -10000., 10000.)
         );
         output[i] = thisPos;
     }
@@ -133,7 +133,7 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cloudBottom:f32, cloudTop:f32) -
     // }
 
     const cloudHeightBottom = 100.;
-    const cloudHeightTop = 400.;
+    const cloudHeightTop = 200.;
     if (p.y < cloudHeightBottom){
         let cloudBottomHit = vec3f(
             worldDir.x/worldDir.y * (cloudHeightBottom-p.y) + p.x,
@@ -147,7 +147,11 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cloudBottom:f32, cloudTop:f32) -
             vec3f(timeSec/160., 0, 0),
             vec3f(timeSec/320., 0, 0)
         );
-        // TODO: get cloud densities at a set amount of points spread across the cloud volume evenly
+
+        // TODO: for each sample point here, sample a few more points going towards the sun to see how much this point is blocked from light
+        // TODO: have a limit to how far a sample point can be
+        // TODO: same logic for if you are above the cloud
+        // TODO: slightly different logic for if you are within the clouds
 
         let cloudSamplePoints = getCloudSamplePoints(worldDir, p, cloudHeightBottom, cloudHeightTop);
 
@@ -158,8 +162,6 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cloudBottom:f32, cloudTop:f32) -
         avgDensity /= numCloudSamples;
 
         col = vec3f(avgDensity);
-
-        // col = vec3f(getCloudDensity(worleyNoise, cloudBottomHit/1000., cloudOffsets));
     }
 
     return vec4f(col, 1.);
