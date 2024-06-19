@@ -2,7 +2,7 @@ import rendererShaderCode from "./renderer.wgsl.js"
 import worleyShaderCode from "./worleyGenerator.wgsl.js"
 
 const WorleyTextureSize = 300 //pretty much the max it can be
-const PointsGridTextureSize = 32
+const PointsGridTextureSize = 32 // for the most detailed layer
 
 // creates a texture representing a grid with a point randomly placed in each cell
 function createPointsGrid(device, gridSize) {

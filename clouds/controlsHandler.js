@@ -14,7 +14,7 @@ function keyPressed(key) {
 
 // key controls
 function updateCamera(dt) {
-    let MovementSpeed = 2
+    let MovementSpeed = 10
     if (keyPressed("Shift")) { MovementSpeed *= 4 }
 
     if (keyPressed("w")) {
@@ -81,8 +81,6 @@ document.addEventListener('pointerlockchange', () => {
 function mouseLook(event) {
     const movementX = event.movementX || event.mozMovementX || 0
     const movementY = event.movementY || event.mozMovementY || 0
-
-    console.log(movementX, movementY)
 
     cameraDirection[0] += movementX / 1000
     cameraDirection[1] -= movementY / 1000

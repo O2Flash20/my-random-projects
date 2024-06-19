@@ -16,6 +16,7 @@ fn worleyLayer(scale:u32, id:vec3u) -> f32 {
     let thisPosInGrid = (vec3f(id) % texSizeRatio) / texSizeRatio; // [0, 1]
 
     var closestDist = 10000000.;
+    // the closest point might also be 2 cells away (not diagonal), but maybe i can ignore that :) it doesnt fix tiling
     for (var i = -1; i <= 1; i++){
         for (var j = -1; j <= 1; j++){
             for (var k = -1; k <= 1; k++){
