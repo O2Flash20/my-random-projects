@@ -5,8 +5,8 @@ let cameraDirection = [0, 0]
 let projectionDist = 0.8
 
 let pressedKeys = []
-window.onkeydown = function (e) { pressedKeys[e.key] = true }
-window.onkeyup = function (e) { pressedKeys[e.key] = false }
+window.onkeydown = function (e) { pressedKeys[e.key.toLowerCase()] = true }
+window.onkeyup = function (e) { pressedKeys[e.key.toLowerCase()] = false }
 
 function keyPressed(key) {
     return pressedKeys[key] == true
