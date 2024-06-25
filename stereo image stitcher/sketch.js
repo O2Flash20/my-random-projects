@@ -1,3 +1,20 @@
+let imageTransforms = {
+    left: {
+        rotation: 0,
+        center: [0.5, 0.5]
+    },
+    right: {
+        rotation: 0,
+        center: [0.5, 0.5]
+    }
+}
+
+const SCALE = 0.25
+
+let imageL
+let imageR
+
+// called when the user submits the images
 function loadImages() {
     let fileL = document.getElementById("iL").files[0]
     let fileR = document.getElementById("iR").files[0]
@@ -15,8 +32,10 @@ function loadImages() {
         })
     }
 
-    Promise.all([loadFile(fileL), loadFile(fileR)]).then(([imageL, imageR]) => {
-        bothImagesLoaded(imageL, imageR)
+    Promise.all([loadFile(fileL), loadFile(fileR)]).then(([imageLeft, imageRight]) => {
+        imageL = imageLeft
+        imageR = imageRight
+        bothImagesLoaded()
     }).catch(error => {
         console.error("Error loading images: ", error)
     })
@@ -28,174 +47,226 @@ function loadImage(dataUrl) {
     return img
 }
 
-let imageTransforms = {
-    left: {
-        translation: [0, 0],
-        rotation: 0
-    },
-    right: {
-        translation: [0, 0],
-        rotation: 0
-    }
-}
+// called once with images are loaded properly
+function bothImagesLoaded() {
+    const canvasL = document.getElementById("leftC")
+    canvasL.width = Math.min(imageL.width, imageR.width) * SCALE
+    canvasL.height = Math.min(imageL.height, imageR.height) * SCALE
+    const ctxL = canvasL.getContext("2d")
+    ctxL.drawImage(imageL, 0, 0, canvasL.width, canvasL.height)
 
-const SCALE = 0.1
+    const canvasR = document.getElementById("rightC")
+    canvasR.width = canvasL.width
+    canvasR.height = canvasL.height
+    const ctxR = canvasR.getContext("2d")
+    ctxR.drawImage(imageR, 0, 0, canvasR.width, canvasR.height)
 
-function bothImagesLoaded(imageL, imageR) {
-    let mainCanvas = document.getElementById("mainC")
-    let mCtx = mainCanvas.getContext("2d")
-    if (threeDMode == "cross-eye" || threeDMode == "VR") {
-        mainCanvas.width = SCALE * 2 * Math.min(imageL.width, imageR.width)
-        mainCanvas.height = SCALE * Math.min(imageL.height, imageR.height)
+    canvasL.addEventListener("click", function (event) {
+        const boundingRect = canvasL.getBoundingClientRect()
+        const clickPosX = event.clientX - boundingRect.left
+        const clickPosY = event.clientY - boundingRect.top
 
-        // the image for the left eye
-        let leftCanvas = document.getElementById("leftC")
-        lCtx = leftCanvas.getContext("2d")
-        leftCanvas.width = mainCanvas.width / 2
-        leftCanvas.height = mainCanvas.height
-
-        leftCanvas.addEventListener("click", function (event) {
-            const boundingRect = leftCanvas.getBoundingClientRect()
-            const clickPosX = event.clientX - boundingRect.left
-            const clickPosY = event.clientY - boundingRect.top
-
-            imageTransforms.left.translation = [
-                leftCanvas.width / 2 - clickPosX,
-                leftCanvas.height / 2 - clickPosY
-            ]
-
-            drawOverlayImage(
-                { canvas: leftCanvas, image: imageL },
-                { canvas: rightCanvas, image: imageR }
-            )
-        })
-
-        lCtx.drawImage(imageL, 0, 0, leftCanvas.width, leftCanvas.height)
-
-        // the image for the right eye
-        let rightCanvas = document.getElementById("rightC")
-        rCtx = rightCanvas.getContext("2d")
-        rightCanvas.width = mainCanvas.width / 2
-        rightCanvas.height = mainCanvas.height
-
-        rightCanvas.addEventListener("click", function (event) {
-            const boundingRect = rightCanvas.getBoundingClientRect()
-            const clickPosX = event.clientX - boundingRect.left
-            const clickPosY = event.clientY - boundingRect.top
-
-            imageTransforms.right.translation = [
-                rightCanvas.width / 2 - clickPosX,
-                rightCanvas.height / 2 - clickPosY
-            ]
-
-            drawOverlayImage(
-                { canvas: leftCanvas, image: imageL },
-                { canvas: rightCanvas, image: imageR }
-            )
-        })
-
-        rCtx.drawImage(imageR, 0, 0, rightCanvas.width, rightCanvas.height)
-    }
-    else if (threeDMode == "cyanRed") {
-        mainCanvas.width = SCALE * Math.min(imageL.width, imageR.width)
-        mainCanvas.height = SCALE * Math.min(imageL.height, imageR.height)
-
-        // the image for the left eye
-        let leftCanvas = document.createElement("canvas")
-        lCtx = leftCanvas.getContext("2d")
-        leftCanvas.width = mainCanvas.width
-        leftCanvas.height = mainCanvas.height
-        document.body.append(leftCanvas)
-
-        lCtx.drawImage(imageL, 0, 0, leftCanvas.width, leftCanvas.height)
-        lCtx.globalCompositeOperation = "multiply"
-        lCtx.fillStyle = "cyan"
-        lCtx.fillRect(0, 0, leftCanvas.width, leftCanvas.height)
-
-        // the image for the right eye
-        let rightCanvas = document.createElement("canvas")
-        rCtx = rightCanvas.getContext("2d")
-        rightCanvas.width = mainCanvas.width
-        rightCanvas.height = mainCanvas.height
-        document.body.append(rightCanvas)
-
-        // put the two together
-        rCtx.drawImage(imageR, 0, 0, rightCanvas.width, rightCanvas.height)
-        rCtx.globalCompositeOperation = "multiply"
-        rCtx.fillStyle = "red"
-        rCtx.fillRect(0, 0, rightCanvas.width, rightCanvas.height)
-
-        mCtx.drawImage(leftCanvas, 0, 0, mainCanvas.width, mainCanvas.height)
-        mCtx.globalCompositeOperation = "lighter"
-        mCtx.drawImage(rightCanvas, 0, 0, mainCanvas.width, mainCanvas.height)
-    }
-}
-
-threeDMode = "cross-eye"
-
-function drawOverlayImage(left, right) {
-    if (threeDMode == "cross-eye" || threeDMode == "VR") {
-        const overlayCanvas = document.getElementById("overlayC")
-        const oCtx = overlayCanvas.getContext("2d")
-        overlayCanvas.width = left.canvas.width //should be same as right width
-        overlayCanvas.height = left.canvas.height
-
-        const averageTranslation = [
-            (imageTransforms.left.translation[0] + imageTransforms.right.translation[0]) / 2,
-            (imageTransforms.left.translation[1] + imageTransforms.right.translation[1]) / 2
+        imageTransforms.left.center = [
+            clickPosX / canvasL.width,
+            clickPosY / canvasL.height
         ]
+        updateOverLayImage(imageL, imageR)
+    })
 
-        oCtx.translate(
-            imageTransforms.left.translation[0] - averageTranslation[0],
-            imageTransforms.left.translation[1] - averageTranslation[1]
+    canvasR.addEventListener("click", function (event) {
+        const boundingRect = canvasR.getBoundingClientRect()
+        const clickPosX = event.clientX - boundingRect.left
+        const clickPosY = event.clientY - boundingRect.top
+
+        imageTransforms.right.center = [
+            clickPosX / canvasR.width,
+            clickPosY / canvasR.height
+        ]
+        updateOverLayImage(imageL, imageR)
+    })
+}
+
+function updateOverLayImage() {
+    const overlayC = document.getElementById("overlayC")
+    const ctxO = overlayC.getContext("2d")
+    overlayC.width = Math.min(imageL.width, imageR.width) * SCALE
+    overlayC.height = Math.min(imageL.height, imageR.height) * SCALE
+
+    const averageCenter = [
+        (imageTransforms.left.center[0] + imageTransforms.right.center[0]) / 2,
+        (imageTransforms.left.center[1] + imageTransforms.right.center[1]) / 2,
+    ]
+
+    ctxO.translate(
+        averageCenter[0] * overlayC.width,
+        averageCenter[1] * overlayC.height
+    )
+    ctxO.rotate(imageTransforms.left.rotation)
+    ctxO.translate(
+        -imageTransforms.left.center[0] * overlayC.width,
+        -imageTransforms.left.center[1] * overlayC.height
+    )
+    ctxO.drawImage(imageL, 0, 0, overlayC.width, overlayC.height)
+
+    ctxO.globalAlpha = 0.5
+    ctxO.resetTransform()
+
+    ctxO.translate(
+        averageCenter[0] * overlayC.width,
+        averageCenter[1] * overlayC.height
+    )
+    ctxO.rotate(imageTransforms.right.rotation)
+    ctxO.translate(
+        -imageTransforms.right.center[0] * overlayC.width,
+        -imageTransforms.right.center[1] * overlayC.height
+    )
+    ctxO.drawImage(imageR, 0, 0, overlayC.width, overlayC.height)
+}
+
+function updateFinalImages() {
+    const averageCenter = [
+        (imageTransforms.left.center[0] + imageTransforms.right.center[0]) / 2,
+        (imageTransforms.left.center[1] + imageTransforms.right.center[1]) / 2,
+    ]
+
+    // the cross eye version------------------------------------
+    const crossEyeC = document.getElementById("crossEyeC")
+    crossEyeC.width = 2 * Math.min(imageL.width, imageR.width)
+    crossEyeC.height = Math.min(imageL.height, imageR.height)
+    const ctxCE = crossEyeC.getContext("2d")
+
+    ctxCE.translate(
+        averageCenter[0] * (crossEyeC.width / 2),
+        averageCenter[1] * crossEyeC.height
+    )
+    ctxCE.rotate(imageTransforms.right.rotation)
+    ctxCE.translate(
+        -imageTransforms.right.center[0] * crossEyeC.width / 2,
+        -imageTransforms.right.center[1] * crossEyeC.height
+    )
+    ctxCE.drawImage(imageR, 0, 0, crossEyeC.width / 2, crossEyeC.height)
+
+    ctxCE.translate(
+        (averageCenter[0] + 1) * (crossEyeC.width / 2),
+        averageCenter[1] * crossEyeC.height
+    )
+    ctxCE.rotate(imageTransforms.left.rotation)
+    ctxCE.translate(
+        -imageTransforms.left.center[0] * crossEyeC.width / 2,
+        -imageTransforms.left.center[1] * crossEyeC.height
+    )
+    ctxCE.drawImage(imageL, 0, 0, crossEyeC.width / 2, crossEyeC.height)
+    // ---------------------------------------------------------
+
+    const vrC = document.getElementById("vrC")
+    vrC.width = 1920 * 2 //just make it 4k because it will go through the user's screen anyways
+    vrC.height = 1080 * 2
+    const ctxVR = vrC.getContext("2d")
+
+    ctxVR.fillStyle = "black"
+    ctxVR.fillRect(0, 0, vrC.width, vrC.height)
+
+    if (imageL.width / imageL.height < vrC.width / vrC.height) { //more square or vertical than 16:9
+        ctxVR.translate(
+            averageCenter[0] * vrC.width / 2,
+            averageCenter[1] * vrC.height
         )
-        oCtx.drawImage(left.image, 0, 0, left.canvas.width, left.canvas.height)
-
-        oCtx.globalAlpha = 0.5
-        oCtx.resetTransform()
-
-        oCtx.translate(
-            imageTransforms.right.translation[0] - averageTranslation[0],
-            imageTransforms.right.translation[1] - averageTranslation[1]
+        ctxVR.rotate(imageTransforms.left.rotation)
+        ctxVR.translate(
+            -imageTransforms.left.center[0] * vrC.width / 2,
+            -imageTransforms.left.center[1] * vrC.height
         )
-        oCtx.drawImage(right.image, 0, 0, right.canvas.width, right.canvas.height)
+        ctxVR.drawImage(
+            imageL,
+            (vrC.width / 2 - (imageL.width * vrC.height / imageL.height) / 2) / 2,
+            0,
+            (imageL.width * vrC.height / imageL.height) / 2,
+            vrC.height
+        )
 
-        const mainCanvas = document.getElementById("mainC")
-        const mCtx = mainCanvas.getContext("2d")
+        ctxVR.resetTransform()
 
-        mCtx.fillStyle = "black"
-        mCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height)
+        ctxVR.translate(
+            averageCenter[0] * vrC.width / 2,
+            averageCenter[1] * vrC.height
+        )
+        ctxVR.rotate(imageTransforms.right.rotation)
+        ctxVR.translate(
+            -imageTransforms.right.center[0] * vrC.width / 2,
+            -imageTransforms.right.center[1] * vrC.height
+        )
+        ctxVR.drawImage(
+            imageR,
+            (vrC.width / 2 - (imageR.width * vrC.height / imageR.height) / 2) / 2 + vrC.width / 2,
+            0,
+            (imageR.width * vrC.height / imageR.height) / 2,
+            vrC.height
+        )
+    } else { //never actually tested, cant be bothered :)
+        ctxVR.translate(
+            averageCenter[0] * vrC.width / 2,
+            averageCenter[1] * vrC.height
+        )
+        ctxVR.rotate(imageTransforms.left.rotation)
+        ctxVR.translate(
+            -imageTransforms.left.center[0] * vrC.width / 2,
+            -imageTransforms.left.center[1] * vrC.height
+        )
+        ctxVR.drawImage(
+            imageL,
+            0,
+            (vrC.height - imageL.height * (vrC.width / 2) / imageL.width) / 2,
+            vrC.width / 2,
+            imageL.height * (vrC.width / 2) / imageL.width
+        )
 
-        if (threeDMode == "cross-eye") {
-            mCtx.drawImage(
-                right.image,
-                imageTransforms.right.translation[0] - averageTranslation[0],
-                imageTransforms.right.translation[1] - averageTranslation[1],
-                right.canvas.width,
-                right.canvas.height
-            )
-            mCtx.drawImage(
-                left.image,
-                mainCanvas.width / 2 + imageTransforms.left.translation[0] - averageTranslation[0],
-                imageTransforms.left.translation[1] - averageTranslation[1],
-                left.canvas.width,
-                left.canvas.height
-            )
-        } else if (threeDMode == "VR") {
-            mCtx.drawImage(
-                left.image,
-                imageTransforms.left.translation[0] - averageTranslation[0],
-                imageTransforms.left.translation[1] - averageTranslation[1],
-                left.canvas.width,
-                left.canvas.height
-            )
-            mCtx.drawImage(
-                right.image,
-                mainCanvas.width / 2 + imageTransforms.right.translation[0] - averageTranslation[0],
-                imageTransforms.right.translation[1] - averageTranslation[1],
-                right.canvas.width,
-                right.canvas.height
-            )
+        ctxVR.resetTransform()
+
+        ctxVR.translate(
+            averageCenter[0] * vrC.width / 2,
+            averageCenter[1] * vrC.height
+        )
+        ctxVR.rotate(imageTransforms.right.rotation)
+        ctxVR.translate(
+            -imageTransforms.right.center[0] * vrC.width / 2,
+            -imageTransforms.right.center[1] * vrC.height
+        )
+        ctxVR.drawImage(
+            imageL,
+            vrC.width / 2,
+            (vrC.height - imageL.height * (vrC.width / 2) / imageL.width) / 2,
+            vrC.width / 2,
+            imageL.height * (vrC.width / 2) / imageL.width
+        )
+    }
+}
+
+window.onkeydown = function (e) {
+    if (e.key.toLowerCase() == "e") {
+        imageTransforms.left.rotation -= 0.01
+        if (imageL && imageR) {
+            updateOverLayImage()
+        }
+    }
+    if (e.key.toLowerCase() == "q") {
+        imageTransforms.left.rotation += 0.01
+        if (imageL && imageR) {
+            updateOverLayImage()
+        }
+    }
+
+    if (e.key.toLowerCase() == "d") {
+        imageTransforms.right.rotation -= 0.01
+        if (imageL && imageR) {
+            updateOverLayImage()
+        }
+    }
+    if (e.key.toLowerCase() == "a") {
+        imageTransforms.right.rotation += 0.01
+        if (imageL && imageR) {
+            updateOverLayImage()
         }
     }
 }
+
+// no cyan-red, but who cares really
