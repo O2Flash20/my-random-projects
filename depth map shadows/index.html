@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadows from Depth Map</title>
+    <script src="script.js" type="module"></script>
+    <meta name="description" content="Realistic-ish shadows using a depth map and WebGPU.">
+</head>
+
+<body>
+    <canvas id="mainCanvas" width="800" height="800"></canvas>
+    <br>
+    <span>FPS:</span>
+    <span id="frameRateDisplay"></span>
+    <br>
+    <p>The color map.</p>
+    <img src="images/colorMap.png">
+    <p>And the depth map, pulled straight from a Minecraft world.</p>
+    <img src="images/depthMap.png">
+    <p>The direct shadows are done by casting a ray from every pixel in the sun direction, and at every small step
+        checking if the ray is underneath the terrain (blocked from the sun) by testing its position against the depth
+        map.</p>
+    <p>The overall lighting effect is done by converting the depth map into a normal map, then illumination is
+        proportional to the dot product between the normal and the unit vector pointing to the sun.</p>
+</body>
+
+</html>
