@@ -43,7 +43,7 @@ async function main() {
         return await createImageBitmap(blob, { colorSpaceConversion: "none" })
     }
 
-    const imageUrl = "./muh.jpg"
+    const imageUrl = "Screenshot 2024-06-27 171153.png"
     const source = await loadImageBitmap(imageUrl)
     const texture = device.createTexture({
         label: imageUrl,
@@ -178,6 +178,8 @@ async function main() {
         device.queue.submit([commandBuffer2])
 
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
+
+        lastTime = time
 
         requestAnimationFrame(render)
     }
