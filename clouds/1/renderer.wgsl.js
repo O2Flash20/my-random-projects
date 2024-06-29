@@ -192,7 +192,7 @@ fn getCloudIllumination(pos: vec3f, scaler: vec3f, cloudOffsets: array<vec3f, 4>
     for (var i = 0; i < numIlluminationSamples; i++){
         let mixAmount = (2.*f32(i) + 1.) / (2.*numIlluminationSamples);
         let samplePosition = linearInterpolateVec3(mixAmount, pos, endPos);
-        totalDensity += contrast(getCloudDensity(worleyNoise, samplePosition, scaler, cloudOffsets), 10); //*i need to rethink where i have my contrasts
+        totalDensity += contrast(getCloudDensity(worleyNoise, samplePosition, scaler, cloudOffsets), 3); //*i need to rethink where i have my contrasts
     }
     totalDensity /= f32(numIlluminationSamples);
 
@@ -258,7 +258,7 @@ fn getCloudIllumination(pos: vec3f, scaler: vec3f, cloudOffsets: array<vec3f, 4>
     avgDensity /= f32(numCloudSamples);
     avgBrightness /= f32(numCloudSamples);
     if(!isLookingAtClouds){avgDensity = 0.;} //get rid of all that work if it's not looking at a cloud
-    let cloudDensity = vec3f(contrast(avgDensity, 10));
+    let cloudDensity = vec3f(contrast(avgDensity, 3));
 
     var environmentCol = vec3f(0.);
 
@@ -272,7 +272,7 @@ fn getCloudIllumination(pos: vec3f, scaler: vec3f, cloudOffsets: array<vec3f, 4>
     col = cloudDensity*vec3f(avgBrightness) + (1-cloudDensity)*environmentCol;
     return vec4f(col, 1.);
 
-    // return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, timeSec/10 % 1.)*vec3f(3., 3., 1.));
+    // return textureSample(worleyNoise, texSampler, vec3f(fsi.uv, timeSec/20 % 1.)*vec3f(3., 3., 1.));
 }
 
 // would be nice to add a fog for outside the sample limit

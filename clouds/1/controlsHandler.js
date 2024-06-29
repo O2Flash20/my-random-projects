@@ -15,7 +15,7 @@ function keyPressed(key) {
 // key controls
 function updateCamera(dt) {
     let MovementSpeed = 10
-    if (keyPressed("Shift")) { MovementSpeed *= 4 }
+    if (keyPressed("shift")) { MovementSpeed *= 4 }
 
     if (keyPressed("w")) {
         const movementDirection = angleToVector(cameraDirection[0], 0)
