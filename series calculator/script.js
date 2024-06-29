@@ -1,9 +1,3 @@
-// let mySequence = "pow(2.0/5.0, n)"
-// let mySequence = "1.0/(n*n)"
-// let mySequence = "1.0/(n*n+9.0*n+20.0)"
-// let mySequence = "atan(n+1.0)-atan(n-1.0)"
-// let mySequence = "pow(0.2, n)+pow(0.6, n-1)"
-
 async function approximateSeries(sequence, seriesStart, seriesEndCubed) {
     // set up the device (gpu)
     const adapter = await navigator.gpu?.requestAdapter()
@@ -163,10 +157,9 @@ async function approximateSeries(sequence, seriesStart, seriesEndCubed) {
     for (let i = 0; i <= 3; i++) {
         for (let j = 1; j <= 50; j++) {
             const testValue = j * sum / (Math.PI ** i)
-            // if (Math.abs(testValue - Math.round(testValue)) < 0.01) {
             const exactValue = Math.PI ** i * Math.round(testValue) / j
             const percentDifference = Math.abs(Math.abs(sum - exactValue) / ((sum + exactValue) / 2) * 100)
-            //    if this is so far the best one                  and its not equivalent to the last one (ex 1/6 = 2/12)
+            //    if this is so far the best one                   v  and its not equivalent to the last one (ex 1/6 = 2/12)
             if (percentDifference < bestResults.percentDifference && Math.abs(percentDifference - bestResults.percentDifference) > 0.0001) {
                 console.log(percentDifference)
                 bestResults = {
