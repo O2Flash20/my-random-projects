@@ -21,8 +21,7 @@ fn worleyLayer(scale:u32, id:vec3u) -> f32 {
         for (var j = -1; j <= 1; j++){
             for (var k = -1; k <= 1; k++){
                 // the cell that this point is in
-                //!why tiling no workie?????
-                let pointCell = vec3u((vec3i(thisGridCell) + vec3i(i, j, k)) % i32(texSizes.pointsGridTextureSize / scale));
+                let pointCell = vec3u( (vec3i(thisGridCell) + vec3i(i, j, k)) ) % u32(texSizes.pointsGridTextureSize / scale) ;
                 //get the point's offset from pointsGridTexture
                 let pointPosInItsCell = textureLoad(pointsGridTexture, pointCell, 0).rgb;
                 //get the point's position relative to the start of the cell that the sample is in, if one cell is 1u across
