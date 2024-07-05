@@ -1,4 +1,7 @@
 import worleyCode from "./shaders/worleyGenerator.wgsl.js"
+import valueCode from "./shaders/valueNoiseGenerator.wgsl.js"
+import fbmCode from "./shaders/fbmGenerator.wgsl.js"
+import fbmwCode from "./shaders/fbmWorleyGenerator.wgsl.js"
 import renderCode from "./shaders/renderer.wgsl.js"
 
 const bigTextureSize = 128
@@ -155,8 +158,161 @@ function createWorleyNoise(device, textureSize, gridSize) {
     return worleyTexture
 }
 
-function createFBMNoise() {
+function createValueNoise(device, textureSize) {
+    const valueModule = device.createShaderModule({
+        label: "value noise compute module",
+        code: valueCode
+    })
 
+    const valuePipeline = device.createComputePipeline({
+        label: "value noise compute pipeline",
+        layout: "auto",
+        compute: {
+            module: valueModule
+        }
+    })
+
+    const valueTexture = device.createTexture({
+        label: "the 3d texture to hold the value noise",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [textureSize, textureSize, textureSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const valueBindGroup = device.createBindGroup({
+        label: "bind group for the value noise generator",
+        layout: valuePipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: valueTexture.createView() }
+        ]
+    })
+
+    const valueEncoder = device.createCommandEncoder({
+        label: "value noise generator encoder"
+    })
+
+    const valuePass = valueEncoder.beginComputePass({
+        label: "value noise generation pass"
+    })
+    valuePass.setPipeline(valuePipeline)
+    valuePass.setBindGroup(0, valueBindGroup)
+    valuePass.dispatchWorkgroups(textureSize, textureSize, textureSize)
+    valuePass.end()
+
+    const commandBuffer = valueEncoder.finish()
+    device.queue.submit([commandBuffer])
+
+    return valueTexture
+}
+
+// returns an rgba texture, but only r is used, the rest are empty
+function createFBMNoise(device, textureSize) {
+
+    // a texture containing 4 channels of value noise
+    const valueTexture = createValueNoise(device, textureSize)
+
+    const fbmModule = device.createShaderModule({
+        label: "fbm compute module",
+        code: fbmCode
+    })
+
+    const fbmPipeline = device.createComputePipeline({
+        label: "fbm compute pipeline",
+        layout: "auto",
+        compute: {
+            module: fbmModule
+        }
+    })
+
+    const fbmTexture = device.createTexture({
+        label: "the 3d texture to hold the fbm noise",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [textureSize, textureSize, textureSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const fbmBindGroup = device.createBindGroup({
+        label: "bind group for the fbm noise generator",
+        layout: fbmPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: fbmTexture.createView() },
+            { binding: 1, resource: valueTexture.createView() }
+        ]
+    })
+
+    const fbmEncoder = device.createCommandEncoder({
+        label: "fbm noise generator encoder"
+    })
+
+    const fbmPass = fbmEncoder.beginComputePass({
+        label: "fbm noise generation pass"
+    })
+    fbmPass.setPipeline(fbmPipeline)
+    fbmPass.setBindGroup(0, fbmBindGroup)
+    fbmPass.dispatchWorkgroups(textureSize, textureSize, textureSize)
+    fbmPass.end()
+
+    const commandBuffer = fbmEncoder.finish()
+    device.queue.submit([commandBuffer])
+
+    return fbmTexture
+}
+
+function createFBMWorleyNoise(device, textureSize) {
+    // r channel is fbm+worley, gba are just layered worleys
+
+    const fbmTexture = createFBMNoise(device, textureSize)
+    const worleyTexture = createWorleyNoise(device, textureSize, 32)
+
+    const fbmwModule = device.createShaderModule({
+        label: "fbm-worley compute module",
+        code: fbmwCode
+    })
+
+    const fbmwPipeline = device.createComputePipeline({
+        label: "fbm-worley compute pipeline",
+        layout: "auto",
+        compute: {
+            module: fbmwModule
+        }
+    })
+
+    const fbmwTexture = device.createTexture({
+        label: "the 3d texture to hold the fbm-worley noise",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [textureSize, textureSize, textureSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const fbmwBindGroup = device.createBindGroup({
+        label: "bind group for the fbm-worley noise generator",
+        layout: fbmwPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: fbmTexture.createView() },
+            { binding: 1, resource: worleyTexture.createView() },
+            { binding: 2, resource: fbmwTexture.createView() }
+        ]
+    })
+
+    const fbmwEncoder = device.createCommandEncoder({
+        label: "fbm-worley noise generator encoder"
+    })
+
+    const fbmwPass = fbmwEncoder.beginComputePass({
+        label: "fbm-worley noise generation pass"
+    })
+    fbmwPass.setPipeline(fbmwPipeline)
+    fbmwPass.setBindGroup(0, fbmwBindGroup)
+    fbmwPass.dispatchWorkgroups(textureSize, textureSize, textureSize)
+    fbmwPass.end()
+
+    const commandBuffer = fbmwEncoder.finish()
+    device.queue.submit([commandBuffer])
+
+    return fbmwTexture
 }
 
 async function main() {
@@ -188,7 +344,8 @@ async function main() {
     })
 
     // load up the needed textures
-    const worleyTexture = createWorleyNoise(device, bigTextureSize, 16)
+    const fbmwTexture = createFBMWorleyNoise(device, bigTextureSize)
+    const worleyDetailTexture = createWorleyNoise(device, smallTextureSize, 12) //* r and g channels are the same
 
     // set up the renderer
     const renderModule = device.createShaderModule({
@@ -234,7 +391,8 @@ async function main() {
         entries: [
             { binding: 0, resource: { buffer: uniformsBuffer } },
             { binding: 1, resource: linearSampler },
-            { binding: 2, resource: worleyTexture.createView() }
+            // { binding: 2, resource: fbmwTexture.createView() }
+            { binding: 2, resource: worleyDetailTexture.createView() }
         ]
     })
 
@@ -265,3 +423,16 @@ async function main() {
 }
 
 main()
+
+/*
+TODO:
+
+create one channel of fbm noise, 1 channel of worley noise, and 3 channels of layered worley noise
+-> combine them to make a texture with one channel of fbm+worley (doing most of the work) and 3 layed worley (for carving away the main and making blobby shapes)
+-> threshold to create empty spaces
+create a 32^3 texture of layed worley noise
+
+maybe use an fbm to offset the fbm-worley noise and make what seems like air currents, would make it more stylized
+
+my worley layers dont look like the presentation's, probably doesnt matter idk
+*/ 

@@ -40,7 +40,7 @@ struct uniforms {
 @group(0) @binding(2) var worleyTexture: texture_3d<f32>;
 
 @fragment fn render(fsi:vertexShaderOutput) -> @location(0) vec4f {
-    let worleyValue = textureSample(worleyTexture, linearSampler, vec3f(fsi.uv*3., u.time/10));
+    let worleyValue = textureSample(worleyTexture, linearSampler, vec3f(fsi.uv, u.time/10));
     return vec4f(vec3f(worleyValue.r), 1.);
 }
 

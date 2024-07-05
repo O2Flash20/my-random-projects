@@ -42,10 +42,23 @@ fn worleyLayer(scale:u32, id:vec3u) -> f32 {
 @compute @workgroup_size(1) fn generateWorleyNoise(
     @builtin(global_invocation_id) id:vec3<u32>
 ){
+    let layer1 = worleyLayer(1, id);
+    let layer1Offset1 = worleyLayer(1, id+vec3u(5));
+    let layer1Offset2 = worleyLayer(1, id+vec3u(15));
+    let layer2 = worleyLayer(2, id);
+    let layer3 = worleyLayer(4, id);
+
+    let layeredNoise1 = 0.7*layer3 + 0.175*layer2 + 0.125*layer1;
+
     textureStore(
         worleyTexture,
         id,
-        1. - vec4f(worleyLayer(1, id), worleyLayer(2, id), worleyLayer(4, id), worleyLayer(8, id))
+        1 - vec4f(
+            layeredNoise1, //in the big texture, this will be overlaid with fbm noise, in the small, it can be ignored
+            layeredNoise1,
+            0.75*layer2 + 0.25*layer1,
+            0.33*layer1 + 0.33*layer1Offset1 + 0.33*layer1Offset2
+        )
     );
 }
 
