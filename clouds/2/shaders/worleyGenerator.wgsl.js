@@ -63,18 +63,3 @@ fn worleyLayer(scale:u32, id:vec3u) -> f32 {
 }
 
 `
-
-/*
-for each level of noise:
-    set up a 3d grid of a certain density
-    in each cell of the grid, randomly place a point
-        this could be done with a different 3d image texture, where each grid cell is a pixel and the color in rgb is the position within the cell
-    then for each pixel look at the grid it's in and the 26 others around it
-        if this grid cell is on the edge the ones off the edge are wrapped around to the other side to make the texture tileable
-    write the distance to the nearest point
-then do a few more levels of noise with different grid densities
-add the levels together as some series which converges to 1
-
-4 levels of noise, 4 colour channels in the texture
-later, all those channels get added together
-*/

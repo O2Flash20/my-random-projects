@@ -336,6 +336,11 @@ async function main() {
 
     // set up the canvas
     const canvas = document.getElementById("mainCanvas")
+    // sets it up so that when you click on the canvas it locks the cursor
+    canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock()
+    })
     const context = canvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
     context.configure({
@@ -379,7 +384,8 @@ async function main() {
     })
     const uniformsValues = new ArrayBuffer(48)
     const uniformsViews = {
-        time: new Float32Array(uniformsValues, 0, 1),
+        screenSize: new Uint32Array(uniformsValues, 0, 2),
+        time: new Float32Array(uniformsValues, 8, 1),
         pos: new Float32Array(uniformsValues, 16, 3),
         dir: new Float32Array(uniformsValues, 32, 2),
         projDist: new Float32Array(uniformsValues, 40, 1),
@@ -391,17 +397,28 @@ async function main() {
         entries: [
             { binding: 0, resource: { buffer: uniformsBuffer } },
             { binding: 1, resource: linearSampler },
-            // { binding: 2, resource: fbmwTexture.createView() }
-            { binding: 2, resource: worleyDetailTexture.createView() }
+            { binding: 2, resource: fbmwTexture.createView() },
+            { binding: 3, resource: worleyDetailTexture.createView() }
         ]
     })
 
+    let lastTime = 0
     function render(time) {
+        let deltaTime = time - lastTime
+        lastTime = time
+
+        // updates camera information
+        updateCamera(deltaTime / 1000)
+
         // get the current texture from the canvas context and set it as the texture to render to
         renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
 
         // update the data to pass into the renderer
+        uniformsViews.screenSize[0] = canvas.clientWidth; uniformsViews.screenSize[1] = canvas.clientHeight
         uniformsViews.time[0] = time / 1000
+        uniformsViews.pos[0] = cameraPosition[0]; uniformsViews.pos[1] = cameraPosition[1]; uniformsViews.pos[2] = cameraPosition[2]
+        uniformsViews.dir[0] = cameraDirection[0]; uniformsViews.dir[1] = cameraDirection[1]
+        uniformsViews.projDist[0] = projectionDist
         device.queue.writeBuffer(uniformsBuffer, 0, uniformsValues)
 
         const renderEncoder = device.createCommandEncoder({
@@ -416,6 +433,7 @@ async function main() {
         const commandBuffer = renderEncoder.finish()
         device.queue.submit([commandBuffer])
 
+        document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
         requestAnimationFrame(render)
     }
 
@@ -433,6 +451,4 @@ create one channel of fbm noise, 1 channel of worley noise, and 3 channels of la
 create a 32^3 texture of layed worley noise
 
 maybe use an fbm to offset the fbm-worley noise and make what seems like air currents, would make it more stylized
-
-my worley layers dont look like the presentation's, probably doesnt matter idk
 */ 
