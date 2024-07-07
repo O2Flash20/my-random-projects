@@ -33,7 +33,10 @@ struct uniforms {
     time: f32,
     pos: vec3f,
     dir: vec2f,
-    projDist: f32
+    projDist: f32,
+    testVal1: f32,
+    testVal2: f32,
+    testVal3: f32
 }
 
 @group(0) @binding(0) var<uniform> u: uniforms;
@@ -61,8 +64,8 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numCloudSamples = 10;
-const sampleDistanceLimit = 10000;
+const numCloudSamples = 50;
+const sampleDistanceLimit = 500;
 // assuming this pixel is looking at the clouds (a check should be done earlier)
 fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, numCloudSamples> {
     var output = array<vec3f, numCloudSamples>();
@@ -136,6 +139,13 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
     return output;
 }
 
+// blackLevel and value are numbers 0->1, under that blackLevel, returns 0. above, value is remapped
+// !not great, i think because the noise practically isnt in the 0->1 range, a contrast function might be better, or one that preserves the area of the function
+fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
+    if (value <= blackLevel) { return 0.; }
+    else { return (value-1.) * (1./(1-blackLevel)) + 1.; }
+}
+
 @fragment fn render(i: vertexShaderOutput) -> @location(0) vec4f {
     let fbmwValue = textureSample(fbmwTexture, linearSampler, vec3f(i.uv, u.time/10));
     let detailValue = textureSample(detailTexture, linearSampler, vec3f(i.uv, u.time/10));
@@ -144,9 +154,10 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
     let worldDir = rotateYaw(rotatePitch(screenDir, -u.dir.y), -u.dir.x);
 
     // the top and bottom of the cloud volume, this should be changed to realistic values later
-    const cTop = 150.;
-    const cBottom = 50.;
+    const cTop = 250.;
+    const cBottom = 150.;
 
+    // get the points to sample the cloud volume
     var isLookingAtClouds = true;
     var samplePoints = array<vec3f, numCloudSamples>();
     if (
@@ -160,8 +171,32 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
         samplePoints = getCloudSamplePoints(worldDir, u.pos, cTop, cBottom);
     }
 
+    var cloudDensity = 0.;
+    for (var i = 0; i < numCloudSamples; i++) {
+        cloudDensity += thresholdBlack(
+            textureSample(fbmwTexture, linearSampler, samplePoints[i]/vec3f(u.testVal2*2000)).r,
+            u.testVal1
+        );
+    }
+    cloudDensity /= numCloudSamples;
+    let cloudDensityClamped = clamp(cloudDensity, 0., 1.);
+
+    // the color of the environment around the clouds
+    var envCol = vec3f(16, 102, 8)/255;
+    if (worldDir.y > 0) {
+        envCol = vec3f(176, 231, 255)/255;
+    }
+
+    // the color of the clouds
+    let cloudCol = vec3f(1.);
+
+    let compositeCol = cloudDensityClamped*cloudCol + (1. - cloudDensityClamped)*envCol;
+
     // return vec4f(worldDir, 0.);
-    return vec4f(samplePoints[0].y/200., samplePoints[5].y/200., samplePoints[9].y/200., 0.);
+    // return vec4f(samplePoints[0].y/200., samplePoints[5].y/200., samplePoints[9].y/200., 0.);
+    // return vec4f(compositeCol, 1.);
+
+    return vec4f(vec3f(cloudDensity), 1.);
 }
 
 `

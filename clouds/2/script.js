@@ -379,16 +379,19 @@ async function main() {
     }
 
     const uniformsBuffer = device.createBuffer({
-        size: 48,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
-    const uniformsValues = new ArrayBuffer(48)
+    const uniformsValues = new ArrayBuffer(64)
     const uniformsViews = {
         screenSize: new Uint32Array(uniformsValues, 0, 2),
         time: new Float32Array(uniformsValues, 8, 1),
         pos: new Float32Array(uniformsValues, 16, 3),
         dir: new Float32Array(uniformsValues, 32, 2),
         projDist: new Float32Array(uniformsValues, 40, 1),
+        testVal1: new Float32Array(uniformsValues, 44, 1),
+        testVal2: new Float32Array(uniformsValues, 48, 1),
+        testVal3: new Float32Array(uniformsValues, 52, 1),
     }
     device.queue.writeBuffer(uniformsBuffer, 0, uniformsValues)
 
@@ -419,6 +422,9 @@ async function main() {
         uniformsViews.pos[0] = cameraPosition[0]; uniformsViews.pos[1] = cameraPosition[1]; uniformsViews.pos[2] = cameraPosition[2]
         uniformsViews.dir[0] = cameraDirection[0]; uniformsViews.dir[1] = cameraDirection[1]
         uniformsViews.projDist[0] = projectionDist
+        uniformsViews.testVal1[0] = Number(document.getElementById("t1").value)
+        uniformsViews.testVal2[0] = Number(document.getElementById("t2").value)
+        uniformsViews.testVal3[0] = Number(document.getElementById("t3").value)
         device.queue.writeBuffer(uniformsBuffer, 0, uniformsValues)
 
         const renderEncoder = device.createCommandEncoder({
