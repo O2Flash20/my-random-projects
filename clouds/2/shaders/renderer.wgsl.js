@@ -64,8 +64,8 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numCloudSamples = 50;
-const sampleDistanceLimit = 500;
+const numCloudSamples = 100;
+const sampleDistanceLimit = 2000;
 // assuming this pixel is looking at the clouds (a check should be done earlier)
 fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, numCloudSamples> {
     var output = array<vec3f, numCloudSamples>();
@@ -139,11 +139,42 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
     return output;
 }
 
+// all values are in the [0, 1] range
+fn f1(x: f32) -> f32 {
+    return -(cos(3.14159265*x) - 1.) / 2.;
+}
+fn f2(x: f32, k: f32) -> f32 {
+    if (0 <= x && x < k) {return f1(x/k);}
+    if (k <= x && x <= 1. - k) {return 1;}
+    if (1. - k < x && x <= 1) {return f1(-(x-1.)/k);}
+    return 0;
+}
+fn noiseSignal(sampleHeight: f32, startHeight: f32, endHeight: f32, sustainLength: f32) -> f32 {
+    let k = (1. - sustainLength)/2.;
+    if (sampleHeight <= startHeight || sampleHeight >= endHeight) {return 0.;}
+    else {return f2((sampleHeight-startHeight)/(endHeight-startHeight), k);}
+}
+
+// the fbmw noise isnt exactly [0, 1], so this makes it closer to that
+fn correctFBMWNoiseRange(noiseValue: f32) -> f32 {
+    return 2*noiseValue - 0.5;
+}
+
 // blackLevel and value are numbers 0->1, under that blackLevel, returns 0. above, value is remapped
-// !not great, i think because the noise practically isnt in the 0->1 range, a contrast function might be better, or one that preserves the area of the function
 fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
     if (value <= blackLevel) { return 0.; }
     else { return (value-1.) * (1./(1-blackLevel)) + 1.; }
+}
+
+fn contrast(value: f32, amount: f32) -> f32 {
+    let v = clamp(value, 0, 1);
+    if (v <= 0.5) {return pow(2., amount-1.)*pow(v, amount);}
+    else {return 1 - pow(2., amount-1.)*pow(1-v, amount);}
+}
+
+fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
+    if (value > threshold) {return 0;}
+    else { return clamp(1. - 1/threshold * value, 0., 1.); }
 }
 
 @fragment fn render(i: vertexShaderOutput) -> @location(0) vec4f {
@@ -154,7 +185,7 @@ fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
     let worldDir = rotateYaw(rotatePitch(screenDir, -u.dir.y), -u.dir.x);
 
     // the top and bottom of the cloud volume, this should be changed to realistic values later
-    const cTop = 250.;
+    const cTop = 550.;
     const cBottom = 150.;
 
     // get the points to sample the cloud volume
@@ -173,18 +204,33 @@ fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
 
     var cloudDensity = 0.;
     for (var i = 0; i < numCloudSamples; i++) {
-        cloudDensity += thresholdBlack(
-            textureSample(fbmwTexture, linearSampler, samplePoints[i]/vec3f(u.testVal2*2000)).r,
-            u.testVal1
+        let textureSamplePos = samplePoints[i]/vec3f(5000);
+        let fbmwTextureValue = correctFBMWNoiseRange(textureSample(fbmwTexture, linearSampler, 10*textureSamplePos).r);
+
+        // ! this should have some threshold control
+        let densityMask = noiseSignal((samplePoints[i].y-cBottom)/(cTop-cBottom), 0, 1, 0.7) * contrast(
+            textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(u.testVal1/5, 0, 0)).b/2 +
+            textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(u.testVal1*sin(0.2)/5, 0, u.testVal1*cos(0.2)/5)).a/2,
+            20
         );
+
+        let thisCloudDensity = fbmwTextureValue * densityMask;
+
+        const subtractThreshold = 0.5;
+
+        let amountToSubtract = getAmountToSubtract(thisCloudDensity, u.testVal2);
+
+        cloudDensity += max(thisCloudDensity - amountToSubtract*textureSample(detailTexture, linearSampler, textureSamplePos*50).b, 0);
     }
     cloudDensity /= numCloudSamples;
-    let cloudDensityClamped = clamp(cloudDensity, 0., 1.);
+
+    var cloudDensityClamped = clamp(cloudDensity, 0., 1.);
+    cloudDensityClamped = u.testVal3 * 15 * (1. - exp(-cloudDensityClamped));
 
     // the color of the environment around the clouds
     var envCol = vec3f(16, 102, 8)/255;
     if (worldDir.y > 0) {
-        envCol = vec3f(176, 231, 255)/255;
+        envCol = vec3f(53, 84, 115)/255;
     }
 
     // the color of the clouds
@@ -192,11 +238,9 @@ fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
 
     let compositeCol = cloudDensityClamped*cloudCol + (1. - cloudDensityClamped)*envCol;
 
-    // return vec4f(worldDir, 0.);
-    // return vec4f(samplePoints[0].y/200., samplePoints[5].y/200., samplePoints[9].y/200., 0.);
-    // return vec4f(compositeCol, 1.);
-
-    return vec4f(vec3f(cloudDensity), 1.);
+    return vec4f(compositeCol, 1.);
 }
 
 `
+
+// it would be really cool to simulate the curvature of the earth (by having the sample rays curve?)
