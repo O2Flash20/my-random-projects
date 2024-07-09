@@ -64,11 +64,11 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numCloudSamples = 100;
-const sampleDistanceLimit = 2000;
+const numDensitySamples = 50;
+const sampleDistanceLimit = 500;
 // assuming this pixel is looking at the clouds (a check should be done earlier)
-fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, numCloudSamples> {
-    var output = array<vec3f, numCloudSamples>();
+fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, numDensitySamples> {
+    var output = array<vec3f, numDensitySamples>();
     var startPos = vec3f(0.);
     var endPos = vec3f(0.);
 
@@ -90,8 +90,8 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
         }
         if (length(endPos-startPos) > sampleDistanceLimit) {endPos = sampleDistanceLimit*normalize(endPos-startPos)+startPos;}
 
-        for (var i = 0; i < numCloudSamples; i++){
-            let mixAmount = (2.*f32(i) + 1.) / (2.*numCloudSamples);
+        for (var i = 0; i < numDensitySamples; i++){
+            let mixAmount = (2.*f32(i) + 1.) / (2.*numDensitySamples);
             output[i] = linearInterpolateVec3(mixAmount, startPos, endPos);
         }
     }
@@ -110,8 +110,8 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
         );
         if (length(endPos-startPos) > sampleDistanceLimit) {endPos = sampleDistanceLimit*normalize(endPos-startPos)+startPos;}
 
-        for (var i = 0; i < numCloudSamples; i++){
-            let mixAmount = (2.*f32(i) + 1.) / (2.*numCloudSamples);
+        for (var i = 0; i < numDensitySamples; i++){
+            let mixAmount = (2.*f32(i) + 1.) / (2.*numDensitySamples);
             output[i] = linearInterpolateVec3(mixAmount, startPos, endPos);
         }
     }
@@ -130,13 +130,82 @@ fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> arra
         );
         if (length(endPos-startPos) > sampleDistanceLimit) {endPos = sampleDistanceLimit*normalize(endPos-startPos)+startPos;}
 
-        for (var i = 0; i < numCloudSamples; i++){
-            let mixAmount = (2.*f32(i) + 1.) / (2.*numCloudSamples);
+        for (var i = 0; i < numDensitySamples; i++){
+            let mixAmount = (2.*f32(i) + 1.) / (2.*numDensitySamples);
             output[i] = linearInterpolateVec3(mixAmount, startPos, endPos);
         }
     }
 
     return output;
+}
+
+const numLightSamples = 6;
+fn getSamplePointsCone(coneRadius: f32, coneHeight:f32, origin: vec3f, direction: vec3f) -> array<vec3f, numLightSamples> {
+    var output = array<vec3f, numLightSamples>();
+
+    for(var i = 0; i < numLightSamples; i++){
+        let iF = f32(i);
+        var point = vec3f(
+            coneRadius * iF / numLightSamples * sin(500*iF),
+            coneRadius * iF / numLightSamples * cos(500*iF),
+            coneHeight * (iF*iF)/(numLightSamples*numLightSamples)
+        );
+        point = rotatePitch(point, -atan2(direction.y, length(direction.xz)));
+        point = rotateYaw(point, atan2(direction.x, direction.z));
+        output[i] = point + origin;
+    }
+
+    return output;
+}
+
+fn sampleCloud(samplePoints: array<vec3f, numDensitySamples>, cTop: f32, cBottom: f32, sunDir: vec3f, t: f32) -> vec4f {
+    var cloudDensity = 0.;
+    var cloudIllumination = 0.;
+    for (var i = 0; i < numDensitySamples; i++) {
+        cloudDensity += getPointDensity(samplePoints[i], cTop, cBottom, t);
+
+        cloudIllumination += beersPowderLaw(getPointObscurity(samplePoints[i], sunDir, cTop, cBottom, t));
+    }
+    cloudDensity /= numDensitySamples;
+    cloudIllumination /= numDensitySamples;
+
+    cloudIllumination *= 5;
+
+    return vec4f(cloudIllumination, cloudIllumination, cloudIllumination, cloudDensity);
+}
+
+fn getPointDensity(pos: vec3f, cTop: f32, cBottom: f32, t:f32) -> f32 {
+    let textureSamplePos = pos/vec3f(5000);
+
+    let densityMask = noiseSignal((pos.y-cBottom)/(cTop-cBottom), 0, 1, 0.7) * thresholdSmooth(
+        textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(t/5, 0, 0)).b/2 +
+        textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(t*sin(0.2)/5, 0, t*cos(0.2)/5)).a/2,
+    1 - u.testVal1, 20);
+
+    let thisCloudDensity = correctFBMWNoiseRange(textureSample(fbmwTexture, linearSampler, 10*textureSamplePos).r) * densityMask;
+
+    const subtractThreshold = 0.5;
+
+    let amountToSubtract = getAmountToSubtract(thisCloudDensity, 0.5);
+
+    return max(thisCloudDensity - amountToSubtract*textureSample(detailTexture, linearSampler, textureSamplePos*50).b, 0);
+}
+
+// how much the point is obscured from the light of the sun
+fn getPointObscurity(pos: vec3f, sunDir: vec3f, cTop: f32, cBottom: f32, t: f32) -> f32 {
+    let samplePoints = getSamplePointsCone(5., 100., pos, sunDir);
+
+    var cloudDensity = 0.;
+    for (var i = 0; i < numLightSamples; i++) {
+        cloudDensity += getPointDensity(samplePoints[i], cTop, cBottom, t);
+    }
+    cloudDensity /= numLightSamples;
+
+    return cloudDensity;
+}
+
+fn beersPowderLaw(value: f32) -> f32 {
+    return 1-exp(-value*2) * exp(-value);
 }
 
 // all values are in the [0, 1] range
@@ -160,10 +229,16 @@ fn correctFBMWNoiseRange(noiseValue: f32) -> f32 {
     return 2*noiseValue - 0.5;
 }
 
-// blackLevel and value are numbers 0->1, under that blackLevel, returns 0. above, value is remapped
-fn thresholdBlack(value: f32, blackLevel: f32) -> f32 {
-    if (value <= blackLevel) { return 0.; }
-    else { return (value-1.) * (1./(1-blackLevel)) + 1.; }
+fn g1(x: f32, a: f32) -> f32 {
+    return exp2(a-1) * pow(x, a);
+}
+fn thresholdSmooth(value: f32, midPoint: f32, sharpness: f32) -> f32{
+    let x = value - midPoint + 0.5;
+
+    if(x <= 0) { return 0; }
+    else if (x <= 0.5) { return g1(x, sharpness); }
+    else if (x >= 1) { return 1; }
+    else { return 1 - g1(1 - x, sharpness); }
 }
 
 fn contrast(value: f32, amount: f32) -> f32 {
@@ -184,13 +259,15 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
     let screenDir = uvToScreenDir(i.uv, u.projDist, f32(u.screenSize.y)/f32(u.screenSize.x));
     let worldDir = rotateYaw(rotatePitch(screenDir, -u.dir.y), -u.dir.x);
 
+    let sunDir = normalize(vec3f(cos(u.testVal2*6.28), sin(u.testVal2*6.28), 0));
+
     // the top and bottom of the cloud volume, this should be changed to realistic values later
-    const cTop = 550.;
-    const cBottom = 150.;
+    const cTop = 757.;
+    const cBottom = 330.;
 
     // get the points to sample the cloud volume
     var isLookingAtClouds = true;
-    var samplePoints = array<vec3f, numCloudSamples>();
+    var samplePoints = array<vec3f, numDensitySamples>();
     if (
         (u.pos.y < cBottom && worldDir.y < 0)
         ||
@@ -202,41 +279,24 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
         samplePoints = getCloudSamplePoints(worldDir, u.pos, cTop, cBottom);
     }
 
-    var cloudDensity = 0.;
-    for (var i = 0; i < numCloudSamples; i++) {
-        let textureSamplePos = samplePoints[i]/vec3f(5000);
-        let fbmwTextureValue = correctFBMWNoiseRange(textureSample(fbmwTexture, linearSampler, 10*textureSamplePos).r);
+    let cloudInfo = sampleCloud(samplePoints, cTop, cBottom, sunDir, u.time/100);
 
-        // ! this should have some threshold control
-        let densityMask = noiseSignal((samplePoints[i].y-cBottom)/(cTop-cBottom), 0, 1, 0.7) * contrast(
-            textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(u.testVal1/5, 0, 0)).b/2 +
-            textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(u.testVal1*sin(0.2)/5, 0, u.testVal1*cos(0.2)/5)).a/2,
-            20
-        );
-
-        let thisCloudDensity = fbmwTextureValue * densityMask;
-
-        const subtractThreshold = 0.5;
-
-        let amountToSubtract = getAmountToSubtract(thisCloudDensity, u.testVal2);
-
-        cloudDensity += max(thisCloudDensity - amountToSubtract*textureSample(detailTexture, linearSampler, textureSamplePos*50).b, 0);
-    }
-    cloudDensity /= numCloudSamples;
-
-    var cloudDensityClamped = clamp(cloudDensity, 0., 1.);
-    cloudDensityClamped = u.testVal3 * 15 * (1. - exp(-cloudDensityClamped));
+    let cloudAlpha = cloudInfo.a; //? do something to it
+    let cloudAlphaClamped = clamp(cloudAlpha, 0, 1);
 
     // the color of the environment around the clouds
     var envCol = vec3f(16, 102, 8)/255;
-    if (worldDir.y > 0) {
+    if (acos(dot(worldDir, sunDir)) < 0.02) { //should be .0087 to get the sun as it is irl
+        envCol = vec3f(1.);
+    }
+    else if (worldDir.y > 0) {
         envCol = vec3f(53, 84, 115)/255;
     }
 
     // the color of the clouds
-    let cloudCol = vec3f(1.);
+    let cloudCol = cloudInfo.rgb;
 
-    let compositeCol = cloudDensityClamped*cloudCol + (1. - cloudDensityClamped)*envCol;
+    let compositeCol = cloudAlphaClamped*cloudCol + (1. - cloudAlphaClamped)*envCol;
 
     return vec4f(compositeCol, 1.);
 }
