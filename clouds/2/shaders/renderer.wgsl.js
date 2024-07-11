@@ -64,7 +64,7 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numDensitySamples = 50;
+const numDensitySamples = 100;
 const sampleDistanceLimit = 500;
 // assuming this pixel is looking at the clouds (a check should be done earlier)
 fn getCloudSamplePoints(dir: vec3f, pos: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, numDensitySamples> {
@@ -148,7 +148,7 @@ fn getSamplePointsCone(coneRadius: f32, coneHeight:f32, origin: vec3f, direction
         var point = vec3f(
             coneRadius * iF / numLightSamples * sin(500*iF),
             coneRadius * iF / numLightSamples * cos(500*iF),
-            coneHeight * (iF*iF)/(numLightSamples*numLightSamples)
+            coneHeight * (iF*iF*iF)/(numLightSamples*numLightSamples*numLightSamples)
         );
         point = rotatePitch(point, -atan2(direction.y, length(direction.xz)));
         point = rotateYaw(point, atan2(direction.x, direction.z));
@@ -158,46 +158,55 @@ fn getSamplePointsCone(coneRadius: f32, coneHeight:f32, origin: vec3f, direction
     return output;
 }
 
-fn sampleCloud(samplePoints: array<vec3f, numDensitySamples>, cTop: f32, cBottom: f32, sunDir: vec3f, t: f32) -> vec4f {
+fn sampleCloud(camPos: vec3f, samplePoints: array<vec3f, numDensitySamples>, cTop: f32, cBottom: f32, viewDir: vec3f, sunDir: vec3f, t: f32) -> vec4f {
     var cloudDensity = 0.;
     var cloudIllumination = 0.;
+    var transmittance = 1.;
+
+    let sampleStepSize = distance(samplePoints[0], samplePoints[numDensitySamples-1]) / (numDensitySamples-1); //the distance between each sample point
+
     for (var i = 0; i < numDensitySamples; i++) {
-        cloudDensity += getPointDensity(samplePoints[i], cTop, cBottom, t);
+        let thisDensity = getPointDensity(camPos, samplePoints[i], cTop, cBottom, t);
+        cloudDensity += thisDensity * sampleStepSize;
 
-        cloudIllumination += beersPowderLaw(getPointObscurity(samplePoints[i], sunDir, cTop, cBottom, t));
+        let phase = twoLobeHG(viewDir, sunDir, 0.8, -0.5, 0.5);
+
+        transmittance *= beersLaw(thisDensity * sampleStepSize);
+        let lightIntensity = 5 * beersLaw(getPointObscurity(camPos, samplePoints[i], sunDir, cTop, cBottom, t));
+        cloudIllumination += lightIntensity*phase*transmittance*thisDensity*sampleStepSize;
     }
-    cloudDensity /= numDensitySamples;
-    cloudIllumination /= numDensitySamples;
 
-    cloudIllumination *= 5;
+    // Reinhard tonemapping
+    cloudIllumination = reinhard(cloudIllumination);
 
     return vec4f(cloudIllumination, cloudIllumination, cloudIllumination, cloudDensity);
 }
 
-fn getPointDensity(pos: vec3f, cTop: f32, cBottom: f32, t:f32) -> f32 {
+fn getPointDensity(camPos: vec3f, pos: vec3f, cTop: f32, cBottom: f32, t:f32) -> f32 {
     let textureSamplePos = pos/vec3f(5000);
 
-    let densityMask = noiseSignal((pos.y-cBottom)/(cTop-cBottom), 0, 1, 0.7) * thresholdSmooth(
+    let densityMask = noiseSignal((pos.y-cBottom)/(cTop-cBottom), 0, 1, 0.7) * (
         textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(t/5, 0, 0)).b/2 +
-        textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(t*sin(0.2)/5, 0, t*cos(0.2)/5)).a/2,
-    1 - u.testVal1, 20);
+        textureSample(fbmwTexture, linearSampler, textureSamplePos + vec3f(t*sin(0.2)/5, 0, t*cos(0.2)/5)).a/2
+    ) - 0.55;
 
-    let thisCloudDensity = correctFBMWNoiseRange(textureSample(fbmwTexture, linearSampler, 10*textureSamplePos).r) * densityMask;
+    var thisCloudDensity = densityMask*5;
+    thisCloudDensity *= correctFBMWNoiseRange(textureSample(fbmwTexture, linearSampler, 10*textureSamplePos).r);
 
-    const subtractThreshold = 0.5;
+    let detailTextureValue = textureSample(detailTexture, linearSampler, textureSamplePos*25);
+    let amountToSubtract = getAmountToSubtract(thisCloudDensity, 0.2);
+    thisCloudDensity -= amountToSubtract*thresholdSmooth(detailTextureValue.a, 0.5, 2);
 
-    let amountToSubtract = getAmountToSubtract(thisCloudDensity, 0.5);
-
-    return max(thisCloudDensity - amountToSubtract*textureSample(detailTexture, linearSampler, textureSamplePos*50).b, 0);
+    return max(thisCloudDensity, 0); //making sure density isnt negative
 }
 
 // how much the point is obscured from the light of the sun
-fn getPointObscurity(pos: vec3f, sunDir: vec3f, cTop: f32, cBottom: f32, t: f32) -> f32 {
-    let samplePoints = getSamplePointsCone(5., 100., pos, sunDir);
+fn getPointObscurity(camPos:vec3f, pos: vec3f, sunDir: vec3f, cTop: f32, cBottom: f32, t: f32) -> f32 {
+    let samplePoints = getSamplePointsCone(1., 50., pos, sunDir);
 
     var cloudDensity = 0.;
     for (var i = 0; i < numLightSamples; i++) {
-        cloudDensity += getPointDensity(samplePoints[i], cTop, cBottom, t);
+        cloudDensity += getPointDensity(camPos, samplePoints[i], cTop, cBottom, t);
     }
     cloudDensity /= numLightSamples;
 
@@ -206,6 +215,30 @@ fn getPointObscurity(pos: vec3f, sunDir: vec3f, cTop: f32, cBottom: f32, t: f32)
 
 fn beersPowderLaw(value: f32) -> f32 {
     return 1-exp(-value*2) * exp(-value);
+    // return exp(-value);
+}
+fn beersLaw(value: f32) -> f32 {
+    return exp(-value);
+}
+
+// for water, g should be around 0.85-0.95
+fn henyeyGreenstein(dir: vec3f, sunDir: vec3f, g: f32) -> f32 {
+    let cosTheta = dot(dir, sunDir);
+
+    return 0.79577474*(1-g*g)/pow(1+g*g-2*g*cosTheta, 1.5);
+    // that first constant is 1/4π
+}
+fn twoLobeHG(dir: vec3f, sunDir: vec3f, g1: f32, g2: f32, lerp: f32) -> f32 {
+    let a1 = henyeyGreenstein(dir, sunDir, g1);
+    let a2 = henyeyGreenstein(dir, sunDir, g2);
+    return lerp*a1 + (1-lerp)*a2;
+}
+
+fn reinhard(lum: f32) -> f32 {
+    return lum/(lum+1);
+}
+fn ACES(x: f32) -> f32 {
+    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
 }
 
 // all values are in the [0, 1] range
@@ -279,7 +312,7 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
         samplePoints = getCloudSamplePoints(worldDir, u.pos, cTop, cBottom);
     }
 
-    let cloudInfo = sampleCloud(samplePoints, cTop, cBottom, sunDir, u.time/100);
+    let cloudInfo = sampleCloud(u.pos, samplePoints, cTop, cBottom, worldDir, sunDir, u.time/100);
 
     let cloudAlpha = cloudInfo.a; //? do something to it
     let cloudAlphaClamped = clamp(cloudAlpha, 0, 1);
@@ -304,3 +337,5 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
 `
 
 // it would be really cool to simulate the curvature of the earth (by having the sample rays curve?)
+// clouds should also get more like the atmosphere colour with distance so simulate fog
+// the sun and atmosphere should have a color, coloring the light from the clouds
