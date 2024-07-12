@@ -450,11 +450,13 @@ main()
 
 /*
 TODO:
-
-create one channel of fbm noise, 1 channel of worley noise, and 3 channels of layered worley noise
--> combine them to make a texture with one channel of fbm+worley (doing most of the work) and 3 layed worley (for carving away the main and making blobby shapes)
--> threshold to create empty spaces
-create a 32^3 texture of layed worley noise
-
 maybe use an fbm to offset the fbm-worley noise and make what seems like air currents, would make it more stylized
+simulate curvature of the earth? (and therefore clouds)
+atmosphere
+depth fog
+have another pass to scale up the clouds to HD
+
+1. render everything but the clouds and atmosphere in HD, include the depth buffer
+2. render the clouds and atmosphere in a lower resolution pass, making sure to have the clouds be occluded by the depth buffer, the cloud's fog would be the colour of the atmosphere behind it, alpha channel important
+3. the clouds and atmosphere are upscaled (reprojection too, whatever that is?) and overlayed on the terrain using the alpha channel of the low resolution texture
 */ 
