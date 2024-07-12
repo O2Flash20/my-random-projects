@@ -2,7 +2,7 @@ import worleyCode from "./shaders/worleyGenerator.wgsl.js"
 import valueCode from "./shaders/valueNoiseGenerator.wgsl.js"
 import fbmCode from "./shaders/fbmGenerator.wgsl.js"
 import fbmwCode from "./shaders/fbmWorleyGenerator.wgsl.js"
-import renderCode from "./shaders/renderer.wgsl.js"
+import cloudRenderCode from "./shaders/cloudRenderer.wgsl.js"
 
 const bigTextureSize = 128
 const smallTextureSize = 32
@@ -335,15 +335,15 @@ async function main() {
     })
 
     // set up the canvas
-    const canvas = document.getElementById("mainCanvas")
+    const cloudCanvas = document.getElementById("cloudCanvas")
     // sets it up so that when you click on the canvas it locks the cursor
-    canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock
-    canvas.addEventListener('click', () => {
-        canvas.requestPointerLock()
+    cloudCanvas.requestPointerLock = cloudCanvas.requestPointerLock || cloudCanvas.mozRequestPointerLock
+    cloudCanvas.addEventListener('click', () => {
+        cloudCanvas.requestPointerLock()
     })
-    const context = canvas.getContext("webgpu")
+    const cloudContext = cloudCanvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
-    context.configure({
+    cloudContext.configure({
         device,
         format: presentationFormat,
     })
@@ -353,21 +353,21 @@ async function main() {
     const worleyDetailTexture = createWorleyNoise(device, smallTextureSize, 12) //* r and g channels are the same
 
     // set up the renderer
-    const renderModule = device.createShaderModule({
-        label: "render module",
-        code: renderCode
+    const cloudRenderModule = device.createShaderModule({
+        label: "cloud render module",
+        code: cloudRenderCode
     })
-    const renderPipeline = device.createRenderPipeline({
-        label: "render pipeline",
+    const cloudRenderPipeline = device.createRenderPipeline({
+        label: "cloud render pipeline",
         layout: "auto",
-        vertex: { module: renderModule },
+        vertex: { module: cloudRenderModule },
         fragment: {
-            module: renderModule,
+            module: cloudRenderModule,
             targets: [{ format: presentationFormat }]
         }
     })
-    const renderPassDescriptor = {
-        label: "render renderPass",
+    const cloudRenderPassDescriptor = {
+        label: "cloud render renderPass",
         colorAttachments: [
             {
                 // view: <- to be filled out when we render
@@ -378,27 +378,27 @@ async function main() {
         ]
     }
 
-    const uniformsBuffer = device.createBuffer({
+    const cloudUniformsBuffer = device.createBuffer({
         size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
-    const uniformsValues = new ArrayBuffer(64)
-    const uniformsViews = {
-        screenSize: new Uint32Array(uniformsValues, 0, 2),
-        time: new Float32Array(uniformsValues, 8, 1),
-        pos: new Float32Array(uniformsValues, 16, 3),
-        dir: new Float32Array(uniformsValues, 32, 2),
-        projDist: new Float32Array(uniformsValues, 40, 1),
-        testVal1: new Float32Array(uniformsValues, 44, 1),
-        testVal2: new Float32Array(uniformsValues, 48, 1),
-        testVal3: new Float32Array(uniformsValues, 52, 1),
+    const cloudUniformsValues = new ArrayBuffer(64)
+    const cloudUniformsViews = {
+        screenSize: new Uint32Array(cloudUniformsValues, 0, 2),
+        time: new Float32Array(cloudUniformsValues, 8, 1),
+        pos: new Float32Array(cloudUniformsValues, 16, 3),
+        dir: new Float32Array(cloudUniformsValues, 32, 2),
+        projDist: new Float32Array(cloudUniformsValues, 40, 1),
+        testVal1: new Float32Array(cloudUniformsValues, 44, 1),
+        testVal2: new Float32Array(cloudUniformsValues, 48, 1),
+        testVal3: new Float32Array(cloudUniformsValues, 52, 1),
     }
-    device.queue.writeBuffer(uniformsBuffer, 0, uniformsValues)
+    device.queue.writeBuffer(cloudUniformsBuffer, 0, cloudUniformsValues)
 
-    const renderBindGroup = device.createBindGroup({
-        layout: renderPipeline.getBindGroupLayout(0),
+    const cloudRenderBindGroup = device.createBindGroup({
+        layout: cloudRenderPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: { buffer: uniformsBuffer } },
+            { binding: 0, resource: { buffer: cloudUniformsBuffer } },
             { binding: 1, resource: linearSampler },
             { binding: 2, resource: fbmwTexture.createView() },
             { binding: 3, resource: worleyDetailTexture.createView() }
@@ -414,30 +414,30 @@ async function main() {
         updateCamera(deltaTime / 1000)
 
         // get the current texture from the canvas context and set it as the texture to render to
-        renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
+        cloudRenderPassDescriptor.colorAttachments[0].view = cloudContext.getCurrentTexture().createView()
 
         // update the data to pass into the renderer
-        uniformsViews.screenSize[0] = canvas.clientWidth; uniformsViews.screenSize[1] = canvas.clientHeight
-        uniformsViews.time[0] = time / 1000
-        uniformsViews.pos[0] = cameraPosition[0]; uniformsViews.pos[1] = cameraPosition[1]; uniformsViews.pos[2] = cameraPosition[2]
-        uniformsViews.dir[0] = cameraDirection[0]; uniformsViews.dir[1] = cameraDirection[1]
-        uniformsViews.projDist[0] = projectionDist
-        uniformsViews.testVal1[0] = Number(document.getElementById("t1").value)
-        uniformsViews.testVal2[0] = Number(document.getElementById("t2").value)
-        uniformsViews.testVal3[0] = Number(document.getElementById("t3").value)
-        device.queue.writeBuffer(uniformsBuffer, 0, uniformsValues)
+        cloudUniformsViews.screenSize[0] = cloudCanvas.clientWidth; cloudUniformsViews.screenSize[1] = cloudCanvas.clientHeight
+        cloudUniformsViews.time[0] = time / 1000
+        cloudUniformsViews.pos[0] = cameraPosition[0]; cloudUniformsViews.pos[1] = cameraPosition[1]; cloudUniformsViews.pos[2] = cameraPosition[2]
+        cloudUniformsViews.dir[0] = cameraDirection[0]; cloudUniformsViews.dir[1] = cameraDirection[1]
+        cloudUniformsViews.projDist[0] = projectionDist
+        cloudUniformsViews.testVal1[0] = Number(document.getElementById("t1").value)
+        cloudUniformsViews.testVal2[0] = Number(document.getElementById("t2").value)
+        cloudUniformsViews.testVal3[0] = Number(document.getElementById("t3").value)
+        device.queue.writeBuffer(cloudUniformsBuffer, 0, cloudUniformsValues)
 
-        const renderEncoder = device.createCommandEncoder({
+        const cloudRenderEncoder = device.createCommandEncoder({
             label: "render encoder"
         })
-        const renderPass = renderEncoder.beginRenderPass(renderPassDescriptor)
-        renderPass.setPipeline(renderPipeline)
-        renderPass.setBindGroup(0, renderBindGroup)
-        renderPass.draw(6)
-        renderPass.end()
+        const cloudRenderPass = cloudRenderEncoder.beginRenderPass(cloudRenderPassDescriptor)
+        cloudRenderPass.setPipeline(cloudRenderPipeline)
+        cloudRenderPass.setBindGroup(0, cloudRenderBindGroup)
+        cloudRenderPass.draw(6)
+        cloudRenderPass.end()
 
-        const commandBuffer = renderEncoder.finish()
-        device.queue.submit([commandBuffer])
+        const cloudCommandBuffer = cloudRenderEncoder.finish()
+        device.queue.submit([cloudCommandBuffer])
 
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
         requestAnimationFrame(render)
