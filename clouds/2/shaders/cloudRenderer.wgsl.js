@@ -64,7 +64,7 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numDensitySamples = 50;
+const numDensitySamples = 128;
 const maxFogDistance = 2000; //the distance at which the fog is fully opaque
 // assuming this pixel is looking at the clouds (a check should be done earlier)
 fn getSamplingEndPoints(pos: vec3f, dir: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, 2> { // returns the start and end of the line that this pixel should sample along
@@ -332,22 +332,6 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
     const cTop = 757.;
     const cBottom = 330.;
 
-    // // get the points to sample the cloud volume
-    // var isLookingAtClouds = true;
-    // var samplePoints = array<vec3f, numDensitySamples>();
-    // if (
-    //     (u.pos.y < cBottom && worldDir.y < 0)
-    //     ||
-    //     (u.pos.y > cTop && worldDir.y > 0)
-    // ){ //this pixel isnt looking at clouds, keeps the sample points at a useless (0, 0, 0)
-    //     isLookingAtClouds = false;
-    // }
-    // else{ //this pixel is looking at clouds, so get the sample points
-    //     samplePoints = getCloudSamplePoints(worldDir, u.pos, cTop, cBottom);
-    // }
-
-    // let cloudInfo = sampleCloud(u.pos, samplePoints, cTop, cBottom, worldDir, sunDir, u.time/100);
-
     var isLookingAtClouds = true;
     var sampleStart = vec3f(0); var sampleEnd = vec3f(0);
     if ( !(
@@ -379,7 +363,8 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
 
     let compositeCol = cloudAlphaClamped*cloudCol + (1. - cloudAlphaClamped)*envCol;
 
-    return vec4f(compositeCol, 1.);
+    // return vec4f(compositeCol, 1.);
+    return vec4f(cloudInfo);
 }
 
 `

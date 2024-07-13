@@ -1,11 +1,16 @@
-import worleyCode from "./shaders/worleyGenerator.wgsl.js"
-import valueCode from "./shaders/valueNoiseGenerator.wgsl.js"
-import fbmCode from "./shaders/fbmGenerator.wgsl.js"
-import fbmwCode from "./shaders/fbmWorleyGenerator.wgsl.js"
-import cloudRenderCode from "./shaders/cloudRenderer.wgsl.js"
+import worleyCode from "./shaders/noise/worleyGenerator.wgsl.js"
+import valueCode from "./shaders/noise/valueNoiseGenerator.wgsl.js"
+import fbmCode from "./shaders/noise/fbmGenerator.wgsl.js"
+import fbmwCode from "./shaders/noise/fbmWorleyGenerator.wgsl.js"
 
-const bigTextureSize = 128
-const smallTextureSize = 32
+import cloudRenderCode from "./shaders/cloudRenderer.wgsl.js"
+import terrainRenderCode from "./shaders/terrainRenderer.wgsl.js"
+
+import compositeCode from "./shaders/composite.wgsl.js"
+
+const fbmwTextureSize = 128
+const detailTextureSize = 32
+const cloudTextureDownscale = 4
 
 // creates a texture representing a grid with a point randomly placed in each cell
 function createPointsGrid(device, gridSize) {
@@ -323,6 +328,7 @@ async function main() {
         alert("need a browser that supports WebGPU")
         return
     }
+    const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
 
     // a sampler with linear interpolation to be used on textures
     const linearSampler = device.createSampler({
@@ -334,23 +340,85 @@ async function main() {
         mipmapFilter: "linear",
     })
 
-    // set up the canvas
-    const cloudCanvas = document.getElementById("cloudCanvas")
+    const mainCanvas = document.getElementById("mainCanvas")
     // sets it up so that when you click on the canvas it locks the cursor
-    cloudCanvas.requestPointerLock = cloudCanvas.requestPointerLock || cloudCanvas.mozRequestPointerLock
-    cloudCanvas.addEventListener('click', () => {
-        cloudCanvas.requestPointerLock()
+    mainCanvas.requestPointerLock = mainCanvas.requestPointerLock || mainCanvas.mozRequestPointerLock
+    mainCanvas.addEventListener('click', () => {
+        mainCanvas.requestPointerLock()
     })
-    const cloudContext = cloudCanvas.getContext("webgpu")
-    const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
-    cloudContext.configure({
+    const mainCanvasContext = mainCanvas.getContext("webgpu")
+    mainCanvasContext.configure({
         device,
-        format: presentationFormat,
+        format: presentationFormat
+    })
+
+    // ------------------------terrain stuff------------------------
+
+    const terrainRenderTexture = device.createTexture({
+        label: "the texture that the terrain is rendered to",
+        format: "rgba16float",
+        dimension: "2d",
+        size: [mainCanvas.clientWidth, mainCanvas.clientHeight],
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+    const terrainRenderModule = device.createShaderModule({
+        label: "terrain render module",
+        code: terrainRenderCode
+    })
+    const terrainRenderPipeline = device.createRenderPipeline({
+        label: "terrain render pipeline",
+        layout: "auto",
+        vertex: { module: terrainRenderModule },
+        fragment: {
+            module: terrainRenderModule,
+            targets: [{ format: "rgba16float" }]
+        }
+    })
+    const terrainRenderPassDescriptor = {
+        label: "terrain render pass descriptor",
+        colorAttachments: [{
+            // view: <- to be filled out when we render
+            clearValue: [0.3, 0.3, 0.3, 1],
+            loadOp: "clear",
+            storeOp: "store"
+        }]
+    }
+
+    const terrainUniformsBuffer = device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const terrainUniformsValues = new ArrayBuffer(48)
+    const terrainUniformsViews = {
+        pos: new Float32Array(terrainUniformsValues, 0, 3),
+        dir: new Float32Array(terrainUniformsValues, 16, 2),
+        projDist: new Float32Array(terrainUniformsValues, 24, 1),
+        screenSize: new Uint32Array(terrainUniformsValues, 32, 2),
+        time: new Float32Array(terrainUniformsValues, 40, 1),
+    }
+    device.queue.writeBuffer(terrainUniformsBuffer, 0, terrainUniformsValues)
+
+    const terrainRenderBindGroup = device.createBindGroup({
+        layout: terrainRenderPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer: terrainUniformsBuffer } },
+            // { binding: 1, resource: linearSampler }
+        ]
+    })
+
+    // ------------------------cloud stuff------------------------
+
+    const cloudRenderTexture = device.createTexture({
+        label: "the texture that the clouds are rendered to",
+        format: "rgba8unorm",
+        dimension: "2d",
+        size: [mainCanvas.clientWidth / cloudTextureDownscale, mainCanvas.clientHeight / cloudTextureDownscale],
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
     })
 
     // load up the needed textures
-    const fbmwTexture = createFBMWorleyNoise(device, bigTextureSize)
-    const worleyDetailTexture = createWorleyNoise(device, smallTextureSize, 12) //* r and g channels are the same
+    const fbmwTexture = createFBMWorleyNoise(device, fbmwTextureSize)
+    const worleyDetailTexture = createWorleyNoise(device, detailTextureSize, 12) //* r and g channels are the same
 
     // set up the renderer
     const cloudRenderModule = device.createShaderModule({
@@ -363,7 +431,7 @@ async function main() {
         vertex: { module: cloudRenderModule },
         fragment: {
             module: cloudRenderModule,
-            targets: [{ format: presentationFormat }]
+            targets: [{ format: "rgba8unorm" }]
         }
     })
     const cloudRenderPassDescriptor = {
@@ -405,6 +473,43 @@ async function main() {
         ]
     })
 
+    // ------------------------compositing stuff------------------------
+
+    const compositeModule = device.createShaderModule({
+        label: "compositing terrain and clouds module",
+        code: compositeCode
+    })
+    const compositePipeline = device.createRenderPipeline({
+        label: "composite pipeline",
+        layout: "auto",
+        vertex: { module: compositeModule },
+        fragment: {
+            module: compositeModule,
+            targets: [{ format: presentationFormat }]
+        }
+    })
+    const compositePassDescriptor = {
+        label: "compositing renderPass",
+        colorAttachments: [
+            {
+                // view: <- to be filled out when we render
+                clearValue: [0.3, 0.3, 0.3, 1],
+                loadOp: "clear",
+                storeOp: "store"
+            }
+        ]
+    }
+
+    const compositeBindGroup = device.createBindGroup({
+        layout: compositePipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: linearSampler },
+            { binding: 1, resource: terrainRenderTexture.createView() },
+            { binding: 2, resource: cloudRenderTexture.createView() }
+        ]
+    })
+
+
     let lastTime = 0
     function render(time) {
         let deltaTime = time - lastTime
@@ -413,11 +518,37 @@ async function main() {
         // updates camera information
         updateCamera(deltaTime / 1000)
 
-        // get the current texture from the canvas context and set it as the texture to render to
-        cloudRenderPassDescriptor.colorAttachments[0].view = cloudContext.getCurrentTexture().createView()
+        // ----------------terrain stuff----------------
+
+        terrainRenderPassDescriptor.colorAttachments[0].view = terrainRenderTexture.createView()
 
         // update the data to pass into the renderer
-        cloudUniformsViews.screenSize[0] = cloudCanvas.clientWidth; cloudUniformsViews.screenSize[1] = cloudCanvas.clientHeight
+        terrainUniformsViews.pos[0] = cameraPosition[0]; terrainUniformsViews.pos[1] = cameraPosition[1]; terrainUniformsViews.pos[2] = cameraPosition[2]
+        terrainUniformsViews.dir[0] = cameraDirection[0]; terrainUniformsViews.dir[1] = cameraDirection[1]
+        terrainUniformsViews.projDist[0] = projectionDist
+        terrainUniformsViews.screenSize[0] = mainCanvas.clientWidth; terrainUniformsViews.screenSize[1] = mainCanvas.clientHeight
+        terrainUniformsViews.time[0] = time / 1000
+        device.queue.writeBuffer(terrainUniformsBuffer, 0, terrainUniformsValues)
+
+        const terrainRenderEncoder = device.createCommandEncoder({
+            label: "terrain render encoder"
+        })
+        const terrainRenderPass = terrainRenderEncoder.beginRenderPass(terrainRenderPassDescriptor)
+        terrainRenderPass.setPipeline(terrainRenderPipeline)
+        terrainRenderPass.setBindGroup(0, terrainRenderBindGroup)
+        terrainRenderPass.draw(6)
+        terrainRenderPass.end()
+
+        const terrainCommandBuffer = terrainRenderEncoder.finish()
+        device.queue.submit([terrainCommandBuffer])
+
+        // ----------------cloud stuff----------------
+
+        // get the current texture from the canvas context and set it as the texture to render to
+        cloudRenderPassDescriptor.colorAttachments[0].view = cloudRenderTexture.createView()
+
+        // update the data to pass into the renderer
+        cloudUniformsViews.screenSize[0] = mainCanvas.clientWidth / cloudTextureDownscale; cloudUniformsViews.screenSize[1] = mainCanvas.clientHeight / cloudTextureDownscale
         cloudUniformsViews.time[0] = time / 1000
         cloudUniformsViews.pos[0] = cameraPosition[0]; cloudUniformsViews.pos[1] = cameraPosition[1]; cloudUniformsViews.pos[2] = cameraPosition[2]
         cloudUniformsViews.dir[0] = cameraDirection[0]; cloudUniformsViews.dir[1] = cameraDirection[1]
@@ -428,7 +559,7 @@ async function main() {
         device.queue.writeBuffer(cloudUniformsBuffer, 0, cloudUniformsValues)
 
         const cloudRenderEncoder = device.createCommandEncoder({
-            label: "render encoder"
+            label: "cloud render encoder"
         })
         const cloudRenderPass = cloudRenderEncoder.beginRenderPass(cloudRenderPassDescriptor)
         cloudRenderPass.setPipeline(cloudRenderPipeline)
@@ -438,6 +569,24 @@ async function main() {
 
         const cloudCommandBuffer = cloudRenderEncoder.finish()
         device.queue.submit([cloudCommandBuffer])
+
+        // ----------------compositing stuff----------------
+
+        compositePassDescriptor.colorAttachments[0].view = mainCanvasContext.getCurrentTexture().createView()
+
+        const compositeEncoder = device.createCommandEncoder({
+            label: "composite encoder"
+        })
+        const compositeRenderPass = compositeEncoder.beginRenderPass(compositePassDescriptor)
+        compositeRenderPass.setPipeline(compositePipeline)
+        compositeRenderPass.setBindGroup(0, compositeBindGroup)
+        compositeRenderPass.draw(6)
+        compositeRenderPass.end()
+
+        const compositeCommandBuffer = compositeEncoder.finish()
+        device.queue.submit([compositeCommandBuffer])
+
+        // -------------------------------------------------
 
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
         requestAnimationFrame(render)
