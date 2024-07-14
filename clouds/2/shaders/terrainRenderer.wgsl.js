@@ -94,6 +94,7 @@ fn sdfScene(p: vec3f) -> objectInfo {
     var rayPos = u.pos;
     var raycastDist = 1000000.;
     var raycastCol = vec3f(0);
+    var didntFindHit = false;
     for (var i = 0; i < 1000; i++) {
         let nearestObject = sdfScene(rayPos);
         if (nearestObject.dist < 0.01) {
@@ -102,10 +103,13 @@ fn sdfScene(p: vec3f) -> objectInfo {
             break;
         }
         rayPos += nearestObject.dist * worldDir;
+
+        if (i == 999) { didntFindHit=true; }
     }
 
+    if (didntFindHit) { raycastCol = vec3f(100, 170, 255)/255;}
+
     return vec4f(raycastCol, raycastDist);
-    // return vec4f(raycastDist/2000);
 }
 
 `

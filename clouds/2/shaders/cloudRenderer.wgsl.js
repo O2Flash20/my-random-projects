@@ -43,6 +43,7 @@ struct uniforms {
 @group(0) @binding(1) var linearSampler: sampler;
 @group(0) @binding(2) var fbmwTexture: texture_3d<f32>;
 @group(0) @binding(3) var detailTexture: texture_3d<f32>;
+@group(0) @binding(4) var terrainTexture: texture_2d<f32>;
 
 fn rotateYaw(position: vec3f, yaw:f32) -> vec3f {
     return vec3f( position.z * sin(yaw) + position.x * cos(yaw), position.y, position.z * cos(yaw) - position.x * sin(yaw) );
@@ -64,7 +65,7 @@ fn linearInterpolateVec3(mix:f32, start:vec3f, end:vec3f) -> vec3f {
     return (1. - mix) * start + mix * end;
 }
 
-const numDensitySamples = 128;
+const numDensitySamples = 75; //!have this number be bigger and just end earlier if the sampling end points are closer together?
 const maxFogDistance = 2000; //the distance at which the fog is fully opaque
 // assuming this pixel is looking at the clouds (a check should be done earlier)
 fn getSamplingEndPoints(pos: vec3f, dir: vec3f, cTop: f32, cBottom: f32) -> array<vec3f, 2> { // returns the start and end of the line that this pixel should sample along
@@ -145,7 +146,7 @@ fn getSamplePointsCone(coneRadius: f32, coneHeight:f32, origin: vec3f, direction
     return output;
 }
 
-fn sampleCloud(camPos: vec3f, camDir: vec3f, sampleStart: vec3f, sampleEnd: vec3f, cTop: f32, cBottom: f32, sunDir: vec3f, t: f32) -> vec4f {
+fn sampleCloud(camPos: vec3f, camDir: vec3f, sampleStart: vec3f, sampleEnd: vec3f, cTop: f32, cBottom: f32, sunDir: vec3f, t: f32, terrainDistance: f32) -> vec4f {
     let totalSampleDistance = distance(sampleStart, sampleEnd); // the total distance that might need to be covered by samples
     let WideSampleSpacing = 2 * totalSampleDistance / f32(numDensitySamples);
     let NarrowSampleSpacing = WideSampleSpacing / 5;
@@ -158,23 +159,27 @@ fn sampleCloud(camPos: vec3f, camDir: vec3f, sampleStart: vec3f, sampleEnd: vec3
     var samplingPos = sampleStart;
     var numSamplesWithoutDensity = 0;
 
+    var isBehindTerrain = false;
+
     for (var i = 0; i < numDensitySamples; i++) {
         let thisDensity = getPointDensity(camPos, samplingPos, cTop, cBottom, t);
         let thisObscurity = getPointObscurity(camPos, samplingPos, sunDir, cTop, cBottom, t); //it's a shame that this has to be done even when it's not needed but wgsl wants texture sampling to be done only in uniform control flow
 
+        isBehindTerrain = distance(camPos, samplingPos) >= terrainDistance; //check is this sample point is behind the terrain already rendered
+
         if (thisDensity != 0) { //there's density here
             if (usingNarrowSpacing) { //we're using narrow sampling in an area with density, so process this data and keep going
+                if ( !isBehindTerrain ) { //the sample point is NOT behind the terrain, so this part of the cloud is visible
+                    cloudDensity += thisDensity * NarrowSampleSpacing;
+                    let phase = twoLobeHG(camDir, sunDir, 0.8, -0.5, 0.5);
+                    transmittance *= beersLaw(thisDensity * NarrowSampleSpacing);
 
-                cloudDensity += thisDensity * NarrowSampleSpacing;
-                let phase = twoLobeHG(camDir, sunDir, 0.8, -0.5, 0.5);
-                transmittance *= beersLaw(thisDensity * NarrowSampleSpacing);
+                    let incomingLight = beersLaw(15*thisObscurity);
 
-                let incomingLight = beersLaw(15*thisObscurity);
+                    sunIllumination += incomingLight * phase * transmittance * thisDensity * NarrowSampleSpacing;
 
-                sunIllumination += incomingLight * phase * transmittance * thisDensity * NarrowSampleSpacing;
-
-                samplingPos += NarrowSampleSpacing * camDir;
-
+                    samplingPos += NarrowSampleSpacing * camDir;
+                }
             }
             else { //we have just entered an area with density and should switch to narrow sampling
                 samplingPos -= WideSampleSpacing * camDir; //go back a bit so that stuff doesn't get missed
@@ -322,6 +327,7 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
 @fragment fn render(i: vertexShaderOutput) -> @location(0) vec4f {
     let fbmwValue = textureSample(fbmwTexture, linearSampler, vec3f(i.uv, u.time/10));
     let detailValue = textureSample(detailTexture, linearSampler, vec3f(i.uv, u.time/10));
+    let terrainDistance = textureSample(terrainTexture, linearSampler, vec2f(i.uv.x, 1-i.uv.y)).a; //the distance from the camera to the terrain at this pixel
 
     let screenDir = uvToScreenDir(i.uv, u.projDist, f32(u.screenSize.y)/f32(u.screenSize.x));
     let worldDir = rotateYaw(rotatePitch(screenDir, -u.dir.y), -u.dir.x);
@@ -344,7 +350,7 @@ fn getAmountToSubtract(value: f32, threshold: f32) -> f32{
         sampleStart = sampleEndPoints[0]; sampleEnd = sampleEndPoints[1];
     }
 
-    let cloudInfo = sampleCloud(u.pos, worldDir, sampleStart, sampleEnd, cTop, cBottom, sunDir, u.time/100); //should be /1000
+    let cloudInfo = sampleCloud(u.pos, worldDir, sampleStart, sampleEnd, cTop, cBottom, sunDir, u.time/100, terrainDistance); //should be /1000
 
     let cloudAlpha = cloudInfo.a; //? do something to it
     let cloudAlphaClamped = clamp(cloudAlpha, 0, 1);

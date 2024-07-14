@@ -6,6 +6,7 @@ import fbmwCode from "./shaders/noise/fbmWorleyGenerator.wgsl.js"
 import cloudRenderCode from "./shaders/cloudRenderer.wgsl.js"
 import terrainRenderCode from "./shaders/terrainRenderer.wgsl.js"
 
+import blurCode from "./shaders/twoPassBlur.wgsl.js"
 import compositeCode from "./shaders/composite.wgsl.js"
 
 const fbmwTextureSize = 128
@@ -339,6 +340,14 @@ async function main() {
         minFilter: "linear",
         mipmapFilter: "linear",
     })
+    const nearestSampler = device.createSampler({
+        addressModeU: "repeat",
+        addressModeV: "repeat",
+        addressModeW: "repeat",
+        magFilter: "nearest",
+        minFilter: "nearest",
+        mipmapFilter: "nearest",
+    })
 
     const mainCanvas = document.getElementById("mainCanvas")
     // sets it up so that when you click on the canvas it locks the cursor
@@ -469,7 +478,80 @@ async function main() {
             { binding: 0, resource: { buffer: cloudUniformsBuffer } },
             { binding: 1, resource: linearSampler },
             { binding: 2, resource: fbmwTexture.createView() },
-            { binding: 3, resource: worleyDetailTexture.createView() }
+            { binding: 3, resource: worleyDetailTexture.createView() },
+            { binding: 4, resource: terrainRenderTexture.createView() }
+        ]
+    })
+
+    // ------------------------blurring stuff------------------------
+    const blurIntermediateTexture = device.createTexture({ //the texture that stores the first (vertical) pass of the blur
+        label: "the texture that stores the first (vertical) pass of the blur",
+        format: "rgba8unorm",
+        dimension: "2d",
+        size: [mainCanvas.clientWidth, mainCanvas.clientHeight],
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+    const blurFinalTexture = device.createTexture({ //the texture that stores the final (horizontal) pass of the blur
+        label: "the texture that stores the final (horizontal) pass of the blur",
+        format: "rgba8unorm",
+        dimension: "2d",
+        size: [mainCanvas.clientWidth, mainCanvas.clientHeight],
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const blurModule = device.createShaderModule({
+        label: "blur filter shader",
+        code: blurCode
+    })
+
+    const blurPipeline = device.createRenderPipeline({
+        label: "blur filter pipeline",
+        layout: "auto",
+        vertex: { module: blurModule },
+        fragment: {
+            module: blurModule,
+            targets: [{ format: "rgba8unorm" }]
+        }
+    })
+    const blurRenderPassDescriptor = {
+        label: "blur filter render pass descriptor",
+        colorAttachments: [{
+            // view: <- to be filled out when we render
+            clearValue: [0.3, 0.3, 0.3, 1],
+            loadOp: "clear",
+            storeOp: "store"
+        }]
+    }
+
+    const blurUniformsBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const blurUniformsValues = new ArrayBuffer(16)
+    const blurUniformsViews = {
+        textureSize: new Uint32Array(blurUniformsValues, 0, 2),
+        radius: new Int32Array(blurUniformsValues, 8, 1),
+        ifHorizontalThen15: new Uint32Array(blurUniformsValues, 12, 1),
+    }
+    blurUniformsViews.textureSize[0] = mainCanvas.clientWidth; blurUniformsViews.textureSize[1] = mainCanvas.clientHeight
+    blurUniformsViews.radius[0] = 10
+    blurUniformsViews.ifHorizontalThen15[0] = 14
+    device.queue.writeBuffer(blurUniformsBuffer, 0, blurUniformsValues)
+
+    const blurBindGroup1 = device.createBindGroup({ //takes from the cloud texture
+        layout: blurPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: linearSampler },
+            { binding: 1, resource: cloudRenderTexture.createView() },
+            { binding: 2, resource: { buffer: blurUniformsBuffer } }
+        ]
+    })
+    const blurBindGroup2 = device.createBindGroup({ //takes from the blur intermediate texture
+        layout: blurPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: linearSampler },
+            { binding: 1, resource: blurIntermediateTexture.createView() },
+            { binding: 2, resource: { buffer: blurUniformsBuffer } }
         ]
     })
 
@@ -499,13 +581,12 @@ async function main() {
             }
         ]
     }
-
     const compositeBindGroup = device.createBindGroup({
         layout: compositePipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: linearSampler },
+            { binding: 0, resource: nearestSampler },
             { binding: 1, resource: terrainRenderTexture.createView() },
-            { binding: 2, resource: cloudRenderTexture.createView() }
+            { binding: 2, resource: blurFinalTexture.createView() }
         ]
     })
 
@@ -542,6 +623,7 @@ async function main() {
         const terrainCommandBuffer = terrainRenderEncoder.finish()
         device.queue.submit([terrainCommandBuffer])
 
+
         // ----------------cloud stuff----------------
 
         // get the current texture from the canvas context and set it as the texture to render to
@@ -569,6 +651,46 @@ async function main() {
 
         const cloudCommandBuffer = cloudRenderEncoder.finish()
         device.queue.submit([cloudCommandBuffer])
+
+
+        // ----------------blur stuff----------------
+
+        // vertical blur
+        blurUniformsViews.textureSize[0] = mainCanvas.clientWidth; blurUniformsViews.textureSize[1] = mainCanvas.clientHeight
+        blurUniformsViews.radius[0] = 5
+        blurUniformsViews.ifHorizontalThen15[0] = 14
+        device.queue.writeBuffer(blurUniformsBuffer, 0, blurUniformsValues)
+
+        blurRenderPassDescriptor.colorAttachments[0].view = blurIntermediateTexture.createView()
+        const blurEncoder = device.createCommandEncoder({
+            label: "vertical blur filter encoder"
+        })
+        const blurRenderPass = blurEncoder.beginRenderPass(blurRenderPassDescriptor)
+        blurRenderPass.setPipeline(blurPipeline)
+        blurRenderPass.setBindGroup(0, blurBindGroup1)
+        blurRenderPass.draw(6)
+        blurRenderPass.end()
+
+        const blurCommandBuffer = blurEncoder.finish()
+        device.queue.submit([blurCommandBuffer])
+
+        // then horizontal blur
+        blurUniformsViews.ifHorizontalThen15[0] = 15
+        device.queue.writeBuffer(blurUniformsBuffer, 0, blurUniformsValues)
+
+        blurRenderPassDescriptor.colorAttachments[0].view = blurFinalTexture.createView()
+        const blurEncoder2 = device.createCommandEncoder({
+            label: "horizontal blur filter encoder"
+        })
+        const blurRenderPass2 = blurEncoder2.beginRenderPass(blurRenderPassDescriptor)
+        blurRenderPass2.setPipeline(blurPipeline)
+        blurRenderPass2.setBindGroup(0, blurBindGroup2)
+        blurRenderPass2.draw(6)
+        blurRenderPass2.end()
+
+        const blurCommandBuffer2 = blurEncoder2.finish()
+        device.queue.submit([blurCommandBuffer2])
+
 
         // ----------------compositing stuff----------------
 
