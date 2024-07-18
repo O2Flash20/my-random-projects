@@ -66,10 +66,18 @@ fn rayleighIntensity(wavelength: f32) -> f32 {
     return 1000000 / (wavelength*wavelength*wavelength*wavelength);
 }
 
-// !not used rn
-fn mieIntensity(wavelength: f32, dotToSun: f32, g: f32, n: f32) -> f32 {
+fn henyeyGreenstein(dotToSun: f32, g: f32) -> f32 {
+    return 0.79577474*(1-g*g)/pow(1+g*g-2*g*dotToSun, 1.5);
+    // that first constant is 1/4π
+}
+fn twoLobeHG(dotToSun: f32, g1: f32, g2: f32, lerp: f32) -> f32 {
+    let a1 = henyeyGreenstein(dotToSun, g1);
+    let a2 = henyeyGreenstein(dotToSun, g2);
+    return lerp*a1 + (1-lerp)*a2;
+}
+fn mieIntensity(wavelength: f32, dotToSun: f32, g1: f32, g2: f32, lerp: f32, n: f32) -> f32 {
     let scatteringCoefficient = pow(wavelength, -n);
-    return scatteringCoefficient * (1-g*g) / pow(1+g*g-2*g*dotToSun, 1.5); //henyey-greenstein phase function
+    return scatteringCoefficient * twoLobeHG(dotToSun, g1, g2, lerp);
 }
 
 const numScatteringPoints = 10;
@@ -101,6 +109,13 @@ fn calculateLight(startPos: vec3f, dir: vec3f, sunDir: vec3f) -> vec4f {
 
         samplePoint += dir * stepSize;
     }
+
+    // add in mie scattering
+    inScatteredLight *= 2000*vec3f(
+        mieIntensity(650, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1),
+        mieIntensity(510, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1),
+        mieIntensity(475, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1)
+    );
 
     return vec4f(inScatteredLight, 1-transmittance.r);
 }
@@ -206,16 +221,8 @@ fn reinhard(lum: f32) -> f32 {
     }
 
     let a = calculateLight(u.camPos, worldDir, sunDir);
-    // return vec4f(
-    //     surroundingColor*(1-a.a) + a.rgb*a.a,
-    //     1
-    // );
-    // return vec4f(a.rgb, 1);
-    // return vec4f(a.a);
-
+    // maybe add in a bit of tonemapping in here
     return vec4f(surroundingColor*(1-a.a) + a.rgb, 1);
-
-    // return vec4f(1-a.a);
 }
 
 `
