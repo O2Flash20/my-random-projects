@@ -26,6 +26,7 @@ struct vertexShaderOutput {
     return output;
 }
 
+//-----------------------------------------------------------------------------
 
 struct uniforms {
     camPos: vec3f,
@@ -53,12 +54,6 @@ fn uvToScreenDir(uv: vec2f, projectionDist: f32, aspectRatio: f32) -> vec3f {
     return normalize(vec3f(x, y, z));
 }
 
-// angle 0 is looking straight up, pi/2 is the horizon
-fn getAirMass(zenithAngle: f32) -> f32 {
-    let theta = zenithAngle * 57.29577951;
-    return 1 / (cos(zenithAngle) + 0.50572 * pow(96.07995 - theta, -1.6364));
-}
-
 // !not used yet
 // im assuming cos theta is the dot project of the direction of the ray and the sun direction
 fn rayleighPhase(theta: f32) -> f32 {
@@ -66,49 +61,48 @@ fn rayleighPhase(theta: f32) -> f32 {
     return 3 * (1 + cosTheta*cosTheta) / (16 * 3.141592);
 }
 
-// fn rayleighIntensity(wavelength: f32, zenithAngle: f32) -> f32 {
-//     let airMass = getAirMass(zenithAngle);
-//     return airMass / pow(wavelength, 4);
-// }
 fn rayleighIntensity(wavelength: f32) -> f32 {
     let x = wavelength * 0.000000001;
-    return 10000000 / (wavelength*wavelength*wavelength*wavelength);
+    return 1000000 / (wavelength*wavelength*wavelength*wavelength);
 }
 
+// !not used rn
 fn mieIntensity(wavelength: f32, dotToSun: f32, g: f32, n: f32) -> f32 {
     let scatteringCoefficient = pow(wavelength, -n);
     return scatteringCoefficient * (1-g*g) / pow(1+g*g-2*g*dotToSun, 1.5); //henyey-greenstein phase function
 }
 
-// note: g and n are properties of the atmosphere
-// fn getWavelengthIntensity(wavelength: f32, zenithAngle: f32, dotToSun: f32, g: f32, n: f32) -> f32 {
-//     return rayleighIntensity(wavelength, zenithAngle) + mieIntensity(wavelength, dotToSun, g, n);
-// }
-
-// ray length can be air mass
 const numScatteringPoints = 10;
-fn calculateLight(startPos: vec3f, dir: vec3f, sunDir: vec3f, rayLength: f32) -> vec3f {
-    var samplePoint = startPos;
+fn calculateLight(startPos: vec3f, dir: vec3f, sunDir: vec3f) -> vec4f {
+    let camPos = vec3f(0, startPos.y+earthRadius, 0);
+    let atmosphereSampleInfo = getAtmosphereSampleInfo(camPos, dir);
+    if (atmosphereSampleInfo.x==0 && atmosphereSampleInfo.y==0 && atmosphereSampleInfo.z==0 && atmosphereSampleInfo.w==0) {return vec4f(0, 0, 0, 0);}
+    let rayLength = atmosphereSampleInfo[3];
     var stepSize = rayLength / f32(numScatteringPoints-1);
+
     var currentOpticalDepth = 0.;
     var transmittance = vec3f(1);
     var inScatteredLight = vec3f(0);
 
     let scatteringCoefficients = vec3f(rayleighIntensity(650), rayleighIntensity(510), rayleighIntensity(475));
 
+    var samplePoint = atmosphereSampleInfo.xyz;
     for (var i = 0; i < numScatteringPoints; i++) {
-        let rayToSunLength = 10000.; //it really shouldnt be this
+        let rayToSunLength = getAtmosphereSampleInfo(samplePoint, sunDir).a; //at this point i know i'm in the atmosphere, no need to use .xyz
         let rayToSunOpticalDepth = getOpticalDepth(samplePoint, sunDir, rayToSunLength);
         let thisDensity = getAtmosphereDensity(samplePoint);
         currentOpticalDepth += thisDensity * stepSize;
 
         transmittance = exp(-(rayToSunOpticalDepth + currentOpticalDepth) * scatteringCoefficients);
-        inScatteredLight += scatteringCoefficients * thisDensity * transmittance * stepSize;
+
+        if (!doesRayIntersectSphere(samplePoint, sunDir, vec3f(0), earthRadius)) { //only add light if this point can see the sun
+            inScatteredLight += scatteringCoefficients * thisDensity * transmittance * stepSize;
+        }
 
         samplePoint += dir * stepSize;
     }
 
-    return inScatteredLight;
+    return vec4f(inScatteredLight, 1-transmittance.r);
 }
 
 const numOpticalDepthPoints = 10;
@@ -127,12 +121,71 @@ fn getOpticalDepth(startPos: vec3f, dir: vec3f, rayLength: f32) -> f32 {
     return opticalDepth;
 }
 
-const earthRadius = 6378137.;
-const atmosphereThickness = 100000.;
+const earthRadius = 6378.;
+const atmosphereThickness = 300.;
+
 fn getAtmosphereDensity(pos: vec3f) -> f32 {
-    let heightAboveSurface = pos.y;
-    let heightNormalized = heightAboveSurface / 10000;
-    return exp(-5*heightNormalized); //5 is arbitrary
+    let heightAboveSurface = length(pos)-earthRadius;
+    let heightNormalized = (heightAboveSurface / atmosphereThickness);
+    return 200*exp(-5*heightNormalized); //5 is arbitrary
+}
+
+// returns the distance to a sphere
+fn raySphereIntersection(rayOrigin: vec3f, rayDir: vec3f, sphereCenter: vec3f, sphereRadius: f32) -> array<f32, 2> {
+    let a = pow(dot(rayDir, rayOrigin-sphereCenter), 2) - (pow(length(rayOrigin - sphereCenter), 2)-sphereRadius*sphereRadius);
+
+    if (a < 0) { return array<f32, 2>(-1, -1); } //not looking at the sphere, reject entirely
+
+    let d1 = -dot(rayDir, rayOrigin-sphereCenter) + sqrt(a);
+    let d2 = -dot(rayDir, rayOrigin-sphereCenter) - sqrt(a);
+
+    return array<f32, 2>(d1, d2);
+}
+
+fn doesRayIntersectSphere(rayOrigin: vec3f, rayDir: vec3f, sphereCenter: vec3f, sphereRadius: f32) -> bool {
+    let a = pow(dot(rayDir, rayOrigin-sphereCenter), 2) - (pow(length(rayOrigin - sphereCenter), 2)-sphereRadius*sphereRadius);
+    if (a < 0) { return false; }
+
+    let d1 = -dot(rayDir, rayOrigin-sphereCenter) + sqrt(a);
+    let d2 = -dot(rayDir, rayOrigin-sphereCenter) - sqrt(a);
+    return (d1 >= 0 || d2 >= 0); //if at least one solution is positive, there's an intersection
+}
+
+// the first 3 dimensions are the starting point, the last is the distance through the atmosphere
+fn getAtmosphereSampleInfo(camPos: vec3f, worldDir: vec3f) -> vec4f {
+    // arrays of 2 distance values, if a value is negative it should be rejected
+    let distToGround = raySphereIntersection(camPos, worldDir, vec3f(0), earthRadius);
+    let distToAtmosphereEdge = raySphereIntersection(camPos, worldDir, vec3f(0), earthRadius+atmosphereThickness);
+
+    // if it exists, the nearest non-negative distance to both the atmosphere and the ground. if it doesn't exist this wont be used anyways
+    let nearAtmosphereDist = sp(distToAtmosphereEdge[0], distToAtmosphereEdge[1]);
+    let nearGroundDist = sp(distToGround[0], distToGround[1]);
+
+    if (distToGround[0] < 0 && distToGround[1] < 0 && distToAtmosphereEdge[0] < 0 && distToAtmosphereEdge[1] < 0 ) {return vec4f(0);} //not looking at the atmosphere at all
+    else if (distToGround[0] < 0 && distToGround[1] < 0) { // looking at space through the atmosphere
+        if (distToAtmosphereEdge[0] < 0) {return vec4f(camPos, distToAtmosphereEdge[1]);}
+        else if (distToAtmosphereEdge[1] < 0) {return vec4f(camPos, distToAtmosphereEdge[0]);}
+        else { //looking into then back out of the atmosphere
+            let nearAtmosphereHitPos = vec3f(camPos + worldDir*min(distToAtmosphereEdge[0], distToAtmosphereEdge[1]));
+            let farAtmosphereHitPos = vec3f(camPos + worldDir*max(distToAtmosphereEdge[0], distToAtmosphereEdge[1]));
+            return vec4f(nearAtmosphereHitPos, distance(nearAtmosphereHitPos, farAtmosphereHitPos));
+        }
+    }
+    // im pretty sure it's impossible to be looking at the ground but not the atmosphere, because the ground is contained within the atmosphere
+    // at this point each distance should have at least one positive value
+    else if (nearGroundDist <= nearAtmosphereDist) {return vec4f(camPos, nearGroundDist);} //in the atmosphere but looking at the ground (or underground)
+    else { //in space, looking at the atmosphere and then the ground below it (distToAtmosphereEdge < distToGround)
+        let atmosphereHitPos = vec3f(camPos + worldDir*nearAtmosphereDist);
+        let groundHitPos = vec3f(camPos + worldDir*nearGroundDist);
+        return vec4f(atmosphereHitPos, distance(atmosphereHitPos, groundHitPos));
+    }
+}
+
+// "smallest positive" assumes at least one value is positive
+fn sp(value1: f32, value2: f32) -> f32 {
+    if (value1 < 0) {return value2;}
+    else if (value2 < 0) {return value1;}
+    else {return min(value1, value2);}
 }
 
 fn reinhard(lum: f32) -> f32 {
@@ -147,42 +200,22 @@ fn reinhard(lum: f32) -> f32 {
     let dotToSun = dot(worldDir, sunDir);
     let zenithAngle = atan2(length(worldDir.xz), worldDir.y);
 
-    // let rLum = 1000*getWavelengthIntensity(650, zenithAngle, dotToSun, 0.8, 1.3);
-    // let gLum = 1000*getWavelengthIntensity(510, zenithAngle, dotToSun, 0.8, 1.3);
-    // let bLum = 1000*getWavelengthIntensity(475, zenithAngle, dotToSun, 0.8, 1.3);
-
-    // let rLum = 10000000000*rayleighIntensity(650, zenithAngle);
-    // let gLum = 10000000000*rayleighIntensity(510, zenithAngle);
-    // let bLum = 10000000000*rayleighIntensity(475, zenithAngle);
-
-    // let rLum = 500*mieIntensity(650, dotToSun, 0.8, 1.3) + 5000000000*rayleighIntensity(650, zenithAngle);
-    // let gLum = 500*mieIntensity(510, dotToSun, 0.8, 1.3) + 5000000000*rayleighIntensity(510, zenithAngle);
-    // let bLum = 500*mieIntensity(475, dotToSun, 0.8, 1.3) + 5000000000*rayleighIntensity(475, zenithAngle); 
-
-    // let lumTot = rLum + gLum + bLum;
-
-    // return vec4f(reinhard(rLum), reinhard(gLum), reinhard(bLum), 1);
-    // return vec4f(dotToSun);
-
-    // return vec4f(getAirMass(zenithAngle)/100);
-
+    var surroundingColor = vec3f(0);
     if (dotToSun > 0.999) {
-        return vec4f(1);
-    }
-    else {
-        return vec4f(
-            normalize(calculateLight(u.camPos, worldDir, sunDir, 10000.)),
-            1
-        );
+        surroundingColor = vec3f(1);
     }
 
+    let a = calculateLight(u.camPos, worldDir, sunDir);
+    // return vec4f(
+    //     surroundingColor*(1-a.a) + a.rgb*a.a,
+    //     1
+    // );
+    // return vec4f(a.rgb, 1);
+    // return vec4f(a.a);
+
+    return vec4f(surroundingColor*(1-a.a) + a.rgb, 1);
+
+    // return vec4f(1-a.a);
 }
 
 `
-
-/*
-sample points in the view direction, for each of those points sample points towards the sun, get transmittance using beers law and multiply the depth by each colour's scattering coefficient
-color += density * transmittance * scattering coefficient * stepsize
-
-if i could estimate the result of sampling points on a ray for density, i could have no loops
-*/

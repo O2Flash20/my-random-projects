@@ -1,6 +1,6 @@
 const TurnSpeed = 1
 
-let cameraPosition = [0, 10, 0]
+let cameraPosition = [0, 1, 0]
 let cameraDirection = [0, 0]
 let projectionDist = 0.8
 
@@ -14,7 +14,7 @@ function keyPressed(key) {
 
 // key controls
 function updateCamera(dt) {
-    let MovementSpeed = 10
+    let MovementSpeed = 0.05
     if (keyPressed("shift")) { MovementSpeed *= 40 }
 
     if (keyPressed("w")) {
