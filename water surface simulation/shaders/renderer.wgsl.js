@@ -58,92 +58,70 @@ fn uvToScreenDir(uv: vec2f, projectionDist: f32, aspectRatio: f32) -> vec3f {
     return normalize(vec3f(x, y, z));
 }
 
-struct objectInfo {
-    dist: f32,
-    col: vec3f
+fn getWaterHeight(pos: vec3f) -> f32 {
+    let uv = pos.xz/waterPlaneSize + vec2f(0.5);
+    let textureValue = maxWaveHeight*textureSample(waveTexture, linearSampler, uv);
+    return textureValue.r - textureValue.g;
 }
 
-fn objUnion(obj1: objectInfo, obj2: objectInfo) -> objectInfo {
-    if (obj1.dist <= obj2.dist) { return obj1; }
-    else { return obj2; }
+fn getWaterGradient(pos:vec3f) -> vec3f {
+    let uv = pos.xz/waterPlaneSize + vec2f(0.5);
+    let textureValue = textureSample(gradientTexture, linearSampler, uv);
+    return textureValue.rgb;
 }
 
-fn sdfGround(p: vec3f, height: f32, color: vec3f) -> objectInfo {
-    var output: objectInfo;
-    output.dist = p.y-height;
-    output.col = color;
-    return output;
-}
+const sunDir = normalize(vec3f(1, 1, 0));
 
-fn sdfSphere(p: vec3f, center: vec3f, radius: f32, color: vec3f) -> objectInfo {
-    var output: objectInfo;
-    output.dist = distance(p, center) - radius;
-    output.col = color;
-    return output;
-}
-
-fn sdfBox(p: vec3f, center: vec3f, size: vec3f, color: vec3f) -> objectInfo {
-    var output: objectInfo;
-    let s = p - center;
-    let q = abs(s) - size;
-
-    output.dist = length(max(q, vec3f(0))) + min(max(s.x, max(q.y, q.z)), 0);
-    output.col = color;
-
-    return output;
-}
-
-fn sdfScene(p: vec3f) -> objectInfo {
-    // return sdfGround(p, 0, vec3f(0, 0, 1));
-    return sdfBox(p, vec3f(0, 0, 0), vec3f(600, 5, 600), vec3f(0, 0, 1));
-}
-
+const waterPlaneHeight = 0;
+const waterPlaneSize = vec2f(20);
+const maxWaveHeight = 0.5;
 @fragment fn render(i: vertexShaderOutput) -> @location(0) vec4f {
-
-    let a = textureSample(waveTexture, linearSampler, i.uv);
-    let b = textureSample(obstaclesTexture, linearSampler, i.uv);
-
     let screenDir = uvToScreenDir(i.uv, u.projDist, f32(u.screenSize.y)/f32(u.screenSize.x));
     let worldDir = rotateYaw(rotatePitch(screenDir, -u.camDir.y), -u.camDir.x);
 
-    var rayPos = u.camPos;
-    // var raycastDist = 1000000.;
-    // var raycastCol = vec3f(0);
-    // var didntFindHit = false;
-    // for (var i = 0; i < 1000; i++) {
-    //     let nearestObject = sdfScene(rayPos);
-    //     if (nearestObject.dist < 0.01) {
-    //         raycastCol = nearestObject.col; 
-    //         raycastDist = distance(u.camPos, rayPos);
-    //         break;
-    //     }
-    //     rayPos += nearestObject.dist * worldDir;
+    var lookingAtWaterPlane = (worldDir.y < 0 && u.camPos.y > waterPlaneHeight) || (worldDir.y >= 0 && u.camPos.y <= waterPlaneHeight);
 
-    //     if (i == 999) { didntFindHit=true; }
-    // }
+    // let planeProjPos = vec2f(
+    //     (u.camPos.y-waterPlaneHeight)/worldDir.y * worldDir.x - u.camPos.x,
+    //     (u.camPos.y-waterPlaneHeight)/worldDir.y * worldDir.z - u.camPos.z
+    // );
+    let planeProjPos = vec3f(
+        (u.camPos.y-(waterPlaneHeight+maxWaveHeight/2)) / worldDir.y * worldDir.x - u.camPos.x,
+        waterPlaneHeight + maxWaveHeight/2,
+        (u.camPos.y-(waterPlaneHeight+maxWaveHeight/2)) / worldDir.y * worldDir.z - u.camPos.z
+    );
 
-    // if (didntFindHit) { raycastCol = vec3f(100, 170, 255)/255;}
-
-    var nearestObject = objectInfo();
-    for (var i = 0; i < 1000; i++) {
-        nearestObject = sdfScene(rayPos);
-        nearestObject.dist -= textureSample(waveTexture, linearSampler, rayPos.xz).r; //barely visible at the moment
-
-        rayPos += nearestObject.dist * worldDir;
+    var samplePos = planeProjPos;
+    var stepSize = 0.05;
+    for (var i = 0; i < 100; i++){ //!something about this doesnt work from under
+        let waterHeight = getWaterHeight(samplePos) + waterPlaneHeight;
+        if (waterHeight < samplePos.y) {
+            // hasn't hit water, keep moving forward
+            samplePos += stepSize * worldDir;
+        }
+        else {
+            // sample pos is under the water, step back to find the boundary of air to water
+            stepSize *= 0.5;
+            samplePos -= stepSize * worldDir;
+        }
     }
-    // if (nearestObject.dist > 10000) {
-    //     return vec4f(vec3f(100, 170, 255)/255, 1.);
-    // }
-    // else {
-    //     return vec4f(nearestObject.col, 1.);
-    // }
 
-    let gradientValue = textureSample(gradientTexture, linearSampler, i.uv);
-    // return vec4f(gradientValue.r, gradientValue.g, 0, 1.);
-    return gradientValue;
+    let gradient = getWaterGradient(samplePos);
+    let dotToSun = pow(dot(gradient, sunDir), 5.);
 
-    // return vec4f(raycastCol, raycastDist);
-    // return vec4f(worldDir, 1.);
+    lookingAtWaterPlane = lookingAtWaterPlane && samplePos.x < waterPlaneSize.x/2 && samplePos.x > -waterPlaneSize.x/2 && samplePos.z < waterPlaneSize.y/2 && samplePos.z > -waterPlaneSize.y/2;
+
+    let obstacles = textureSample(obstaclesTexture, linearSampler, samplePos.xz/waterPlaneSize + vec2f(0.5)).r;
+
+    if (lookingAtWaterPlane) {
+        return vec4f(
+            vec3f(0, 179, 255)/255. + vec3f(dotToSun + obstacles),
+            1.
+        );
+    }
+    else {
+        return vec4f(0);
+    }
 }
 
 `

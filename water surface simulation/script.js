@@ -6,6 +6,9 @@ import renderCode from "./shaders/renderer.wgsl.js"
 const waveTextureX = 600
 const waveTextureY = 600
 
+const waterPlaneHeight = 0 //ideally this would be synced with the render shader
+const waterPlaneSize = { x: 20, z: 20 }
+
 async function loadTexture(url, device) {
 
     async function loadImageBitmap(url) {
@@ -88,7 +91,7 @@ async function main() {
         compute: { module: updateModule }
     })
 
-    const obstaclesTexture = await loadTexture("obstacles.png", device)
+    const obstaclesTexture = await loadTexture("rocks.png", device)
 
     let waveTextures = []
     let lastUpdatedTexture = 2
@@ -222,8 +225,39 @@ async function main() {
         updateCamera(deltaTime / 1000)
 
         // -----------------update stuff----------------- //
-        if (mouseIsDown) {
-            waveUniformsViews.clickPos[0] = cursorPos.x; waveUniformsViews.clickPos[1] = cursorPos.y
+        if (mouseIsDown) { //find where the cursor is clicking on the water surface
+            const clickUVx = cursorPos.x / canvas.clientWidth
+            const clickUVy = cursorPos.y / canvas.clientHeight
+            const aspectRatio = (canvas.clientHeight / canvas.clientWidth)
+            let d = { x: -2 * clickUVx + 1, y: -2 * clickUVy * aspectRatio + aspectRatio, z: projectionDist }
+            const clickScreenDirLength = Math.sqrt(d.x ** 2 + d.y ** 2 + d.z ** 2)
+            d = { //normalize
+                x: d.x / clickScreenDirLength,
+                y: d.y / clickScreenDirLength,
+                z: d.z / clickScreenDirLength
+            }
+            d = { //rotate pitch
+                x: d.x,
+                y: d.y * Math.cos(-cameraDirection[1]) - d.z * Math.sin(-cameraDirection[1]),
+                z: d.y * Math.sin(-cameraDirection[1]) + d.z * Math.cos(-cameraDirection[1])
+            }
+            d = { //rotate yaw
+                x: d.z * Math.sin(-cameraDirection[0]) + d.x * Math.cos(-cameraDirection[0]),
+                y: d.y,
+                z: d.z * Math.cos(-cameraDirection[0]) - d.x * Math.sin(-cameraDirection[0])
+            }
+
+            const projectionHit = {
+                x: (cameraPosition[1] - waterPlaneHeight) / d.y * d.x - cameraPosition[0],
+                z: (cameraPosition[1] - waterPlaneHeight) / d.y * d.z - cameraPosition[2]
+            }
+
+            const uv = {
+                x: projectionHit.x / waterPlaneSize.x + 0.5,
+                z: projectionHit.z / waterPlaneSize.z + 0.5
+            }
+
+            waveUniformsViews.clickPos[0] = uv.x * waveTextureX; waveUniformsViews.clickPos[1] = uv.z * waveTextureY
         }
         else {
             waveUniformsViews.clickPos[0] = -1; waveUniformsViews.clickPos[1] = -1
