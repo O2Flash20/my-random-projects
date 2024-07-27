@@ -70,14 +70,9 @@ fn henyeyGreenstein(dotToSun: f32, g: f32) -> f32 {
     return 0.79577474*(1-g*g)/pow(1+g*g-2*g*dotToSun, 1.5);
     // that first constant is 1/4π
 }
-fn twoLobeHG(dotToSun: f32, g1: f32, g2: f32, lerp: f32) -> f32 {
-    let a1 = henyeyGreenstein(dotToSun, g1);
-    let a2 = henyeyGreenstein(dotToSun, g2);
-    return lerp*a1 + (1-lerp)*a2;
-}
-fn mieIntensity(wavelength: f32, dotToSun: f32, g1: f32, g2: f32, lerp: f32, n: f32) -> f32 {
+fn mieIntensity(wavelength: f32, dotToSun: f32, g: f32, n: f32) -> f32 {
     let scatteringCoefficient = pow(wavelength, -n);
-    return scatteringCoefficient * twoLobeHG(dotToSun, g1, g2, lerp);
+    return scatteringCoefficient * henyeyGreenstein(dotToSun, g);
 }
 
 const numScatteringPoints = 10;
@@ -112,9 +107,9 @@ fn calculateLight(startPos: vec3f, dir: vec3f, sunDir: vec3f) -> vec4f {
 
     // add in mie scattering
     inScatteredLight *= 2000*vec3f(
-        mieIntensity(650, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1),
-        mieIntensity(510, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1),
-        mieIntensity(475, dot(dir, sunDir), 0.3, -0.3, 0.5, 1.1)
+        mieIntensity(650, dot(dir, sunDir), 0.3, 1.1),
+        mieIntensity(510, dot(dir, sunDir), 0.3, 1.1),
+        mieIntensity(475, dot(dir, sunDir), 0.3, 1.1)
     );
 
     return vec4f(inScatteredLight, 1-transmittance.r);
@@ -203,8 +198,8 @@ fn sp(value1: f32, value2: f32) -> f32 {
     else {return min(value1, value2);}
 }
 
-fn reinhard(lum: f32) -> f32 {
-    return lum/(lum+1);
+fn reinhardToneMapping(color: vec3<f32>) -> vec3<f32> {
+    return color / (color + vec3<f32>(1.0));
 }
 
 @fragment fn fs(i:vertexShaderOutput)->@location(0)vec4f{
@@ -217,12 +212,12 @@ fn reinhard(lum: f32) -> f32 {
 
     var surroundingColor = vec3f(0);
     if (dotToSun > 0.999) {
-        surroundingColor = vec3f(1);
+        surroundingColor = vec3f(10);
     }
 
     let a = calculateLight(u.camPos, worldDir, sunDir);
-    // maybe add in a bit of tonemapping in here
-    return vec4f(surroundingColor*(1-a.a) + a.rgb, 1);
+    let col = surroundingColor*(1-a.a) + a.rgb;
+    return vec4f(reinhardToneMapping(col), 1);
 }
 
 `
