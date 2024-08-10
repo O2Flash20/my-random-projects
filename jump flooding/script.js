@@ -1,12 +1,11 @@
-const imageWidth = 100
-const imageHeight = 100
+const imageSize = 256
 
-const maxEdgePixels = imageWidth * imageHeight / 2
-const pointsArrayLength = maxEdgePixels / 2 // divided by two because there are two points per buffer index (saved as vec4)
-
-import jumpFloodCode from "./jumpFlood.wgsl.js"
-import convertCode from "./convert.wgsl.js"
-import renderCode from "./render.wgsl.js"
+import drawCode from "./shaders/draw.wgsl.js"
+import edgeDetectCode from "./shaders/edgeDetect.wgsl.js"
+import jumpFloodCode from "./shaders/jumpFlood.wgsl.js"
+import debugCode from "./shaders/debug.wgsl.js"
+import convertCode from "./shaders/convert.wgsl.js"
+import renderCode from "./shaders/render.wgsl.js"
 
 async function main() {
     // set up the device (gpu)
@@ -19,13 +18,26 @@ async function main() {
 
     // set up the canvas
     const canvas = document.getElementById("mainCanvas")
-    canvas.width = imageWidth*10
-    canvas.height = imageHeight*10
+    canvas.width = imageSize
+    canvas.height = imageSize
     const context = canvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
     context.configure({
         device,
         format: presentationFormat,
+    })
+
+    let mouseIsDown = false
+    let altKey = 0
+    canvas.addEventListener("mousedown", function (event) { mouseIsDown = true; altKey = 1 ? event.altKey : 0 })
+    canvas.addEventListener("mouseup", function (event) { mouseIsDown = false; altKey = 1 ? event.altKey : 0 })
+    let cursorPos = { x: 0, y: 0 }
+    document.addEventListener("mousemove", function (e) {
+        const canvasBounds = canvas.getBoundingClientRect()
+        cursorPos = {
+            x: e.clientX - canvasBounds.left,
+            y: e.clientY - canvasBounds.top
+        }
     })
 
     const linearSampler = device.createSampler({
@@ -36,6 +48,92 @@ async function main() {
         minFilter: "linear",
         mipmapFilter: "linear",
     })
+
+
+
+    const drawModule = device.createShaderModule({
+        label: "drawing module",
+        code: drawCode
+    })
+
+    const drawPipeline = device.createComputePipeline({
+        label: "drawing pipeline",
+        layout: "auto",
+        compute: {
+            module: drawModule
+        }
+    })
+
+    const drawTexture = device.createTexture({
+        label: "a texture holding the drawn shape, should only be filled with 0 or 1",
+        format: "r32uint",
+        dimension: "2d",
+        size: [imageSize, imageSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const drawUniformsBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const drawUniformsValues = new ArrayBuffer(16)
+    const drawUniformsViews = {
+        drawMode: new Uint32Array(drawUniformsValues, 0, 1),
+        clickPos: new Uint32Array(drawUniformsValues, 8, 2),
+    }
+
+    const drawBindGroup = device.createBindGroup({
+        layout: drawPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer: drawUniformsBuffer } },
+            { binding: 1, resource: drawTexture.createView() }
+        ]
+    })
+
+
+
+    // textures that contain pixels whose color is the nearest seed point (edge point) or whatever the current state of the jump flooding is
+    const jfTextures = [
+        device.createTexture({
+            label: "jump flood texture 0",
+            format: "rg32uint",
+            dimension: "2d",
+            size: [imageSize, imageSize],
+            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+        }),
+        device.createTexture({
+            label: "jump flood texture 1",
+            format: "rg32uint",
+            dimension: "2d",
+            size: [imageSize, imageSize],
+            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+        }),
+    ]
+
+
+
+    const edgeDetectModule = device.createShaderModule({
+        label: "edge detect module",
+        code: edgeDetectCode
+    })
+
+    const edgeDetectPipeline = device.createComputePipeline({
+        label: "edge detect pipeline",
+        layout: "auto",
+        compute: {
+            module: edgeDetectModule
+        }
+    })
+
+    const edgeDetectBindGroup = device.createBindGroup({
+        layout: edgeDetectPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: drawTexture.createView() },
+            { binding: 1, resource: jfTextures[0].createView() }
+        ]
+    })
+
+
 
     // create the shader module
     const jumpFloodModule = device.createShaderModule({
@@ -51,42 +149,65 @@ async function main() {
         }
     })
 
-    const distancesTexture = device.createTexture({
-        label: "a texture holding the result of the jump flooding",
-        format: "r32float",
+    const jfUniformsBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const jfUniformsValues = new ArrayBuffer(4)
+    const jfUniformsViews = {
+        stepSize: new Uint32Array(jfUniformsValues),
+    }
+
+    // bind group set in render
+
+    // const jumpFloodBindGroup = device.createBindGroup({
+    //     layout: jumpFloodPipeline.getBindGroupLayout(0),
+    //     entries: [
+    //         { binding: 0, resource: edgeTexture.createView() },
+    //         { binding: 1, resource: { buffer: jfUniformsBuffer } },
+    //         { binding: 2, resource: distancesTexture.createView() }
+    //     ]
+    // })
+
+
+
+    // debugs results of jump flooding
+    const debugModule = device.createShaderModule({
+        label: "debug module",
+        code: debugCode
+    })
+
+    const debugPipeline = device.createComputePipeline({
+        label: "debug pipeline",
+        layout: "auto",
+        compute: { module: debugModule }
+    })
+
+    const debugColor = device.createTexture({
+        label: "a full-color texture for debugging",
+        format: "rgba8unorm",
         dimension: "2d",
-        size: [imageWidth, imageHeight],
+        size: [imageSize, imageSize],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
-    const pointsBuffer = device.createBuffer({
-        size: 16 + 16 * pointsArrayLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-    const pointsInfoValues = new ArrayBuffer(16 + 16 * pointsArrayLength)
-    const pointsInfoViews = {
-        numPoints: new Uint32Array(pointsInfoValues, 0, 1),
-        points: new Uint32Array(pointsInfoValues, 16, 4 * pointsArrayLength),
-    }
-    device.queue.writeBuffer(pointsBuffer, 0, pointsInfoValues)
-
-    const jumpFloodBindGroup = device.createBindGroup({
-        layout: jumpFloodPipeline.getBindGroupLayout(0),
+    const debugBindGroup = device.createBindGroup({
+        layout: debugPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: { buffer: pointsBuffer } },
-            { binding: 1, resource: distancesTexture.createView() }
+            { binding: 0, resource: jfTextures[0].createView() },
+            { binding: 1, resource: debugColor.createView() }
         ]
     })
 
 
 
     const converterModule = device.createShaderModule({
-        label: "convert to rgba module",
+        label: "convert distances to rgba module",
         code: convertCode
     })
 
     const converterPipeline = device.createComputePipeline({
-        label: "convert to rgba pipeline",
+        label: "convert distances to rgba pipeline",
         layout: "auto",
         compute: { module: converterModule }
     })
@@ -95,14 +216,14 @@ async function main() {
         label: "a full-color texture representing the distances",
         format: "rgba8unorm",
         dimension: "2d",
-        size: [imageWidth, imageHeight],
+        size: [imageSize, imageSize],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
     const converterBindGroup = device.createBindGroup({
         layout: converterPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: distancesTexture.createView() },
+            { binding: 0, resource: jfTextures[1].createView() },
             { binding: 1, resource: distancesColor.createView() }
         ]
     })
@@ -137,7 +258,8 @@ async function main() {
     const renderBindGroup = device.createBindGroup({
         layout: renderPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: distancesColor.createView() },
+            { binding: 0, resource: debugColor.createView() },
+            // { binding: 0, resource: distancesColor.createView() },
             { binding: 1, resource: linearSampler }
         ]
     })
@@ -147,22 +269,95 @@ async function main() {
         let deltaTime = time - lastTime
         lastTime = time
 
-        pointsInfoViews.numPoints[0] = 1
-        pointsInfoViews.points[0] = 10; pointsInfoViews.points[1] = 10
-        pointsInfoViews.points[2] = 20; pointsInfoViews.points[3] = 10 * Math.sin(time/1000) + 15
-        device.queue.writeBuffer(pointsBuffer, 0, pointsInfoValues)
+        drawUniformsViews.drawMode[0] = altKey
+        if (mouseIsDown) {
+            drawUniformsViews.clickPos[0] = cursorPos.x / 10; drawUniformsViews.clickPos[1] = cursorPos.y / 10 //should remove the /10 later
+        }
+        else {
+            drawUniformsViews.clickPos[0] = -1; drawUniformsViews.clickPos[1] = -1
+        }
+        device.queue.writeBuffer(drawUniformsBuffer, 0, drawUniformsValues)
 
+        const drawEncoder = device.createCommandEncoder({
+            label: "draw encoder"
+        })
+        const drawPass = drawEncoder.beginComputePass()
+        drawPass.setPipeline(drawPipeline)
+        drawPass.setBindGroup(0, drawBindGroup)
+        drawPass.dispatchWorkgroups(imageSize, imageSize)
+        drawPass.end()
+
+        const drawCommandBuffer = drawEncoder.finish()
+        device.queue.submit([drawCommandBuffer])
+
+
+
+        const edgeDetectEncoder = device.createCommandEncoder({
+            label: "edge detect encoder"
+        })
+        const edgeDetectPass = edgeDetectEncoder.beginComputePass()
+        edgeDetectPass.setPipeline(edgeDetectPipeline)
+        edgeDetectPass.setBindGroup(0, edgeDetectBindGroup)
+        edgeDetectPass.dispatchWorkgroups(imageSize, imageSize)
+        edgeDetectPass.end()
+
+        const edgeDetectCommandBuffer = edgeDetectEncoder.finish()
+        device.queue.submit([edgeDetectCommandBuffer])
+
+        for (let i = -1; i < Math.log2(imageSize); i++) {
+            let thisStepSize = 1 // { 1, N/2, N/4, N/16, ..., N/N }
+            if (i !== -1) {
+                thisStepSize = imageSize / Math.pow(2, i + 1)
+            }
+
+            const inputTextureIndex = (i+1)%2
+            const outputTextureIndex = (i+2)%2
+
+            console.log(inputTextureIndex, outputTextureIndex)
+
+            const thisBindGroup = device.createBindGroup({
+                layout: jumpFloodPipeline.getBindGroupLayout(0),
+                entries: [
+                    { binding: 0, resource: jfTextures[inputTextureIndex].createView() },
+                    { binding: 1, resource: { buffer: jfUniformsBuffer } },
+                    { binding: 2, resource: jfTextures[outputTextureIndex].createView() }
+                ]
+            })
+
+            const jumpFloodEncoder = device.createCommandEncoder({
+                label: "jump flood encoder, step" + thisStepSize
+            })
+            const jumpFloodPass = jumpFloodEncoder.beginComputePass()
+            jumpFloodPass.setPipeline(jumpFloodPipeline)
+            jumpFloodPass.setBindGroup //!not done
+
+        }
         const jumpFloodEncoder = device.createCommandEncoder({
             label: "jump flood encoder"
         })
         const jumpFloodPass = jumpFloodEncoder.beginComputePass()
         jumpFloodPass.setPipeline(jumpFloodPipeline)
         jumpFloodPass.setBindGroup(0, jumpFloodBindGroup)
-        jumpFloodPass.dispatchWorkgroups(imageWidth, imageHeight)
+        jumpFloodPass.dispatchWorkgroups(imageSize, imageSize)
         jumpFloodPass.end()
 
         const jumpFloodCommandBuffer = jumpFloodEncoder.finish()
         device.queue.submit([jumpFloodCommandBuffer])
+
+
+
+        const debugEncoder = device.createCommandEncoder({
+            label: "debug encoder"
+        })
+        const debugPass = debugEncoder.beginComputePass()
+        debugPass.setPipeline(debugPipeline)
+        debugPass.setBindGroup(0, debugBindGroup)
+        debugPass.dispatchWorkgroups(imageSize, imageSize)
+        debugPass.end()
+
+        const debugCommandBuffer = debugEncoder.finish()
+        device.queue.submit([debugCommandBuffer])
+
 
 
         const converterEncoder = device.createCommandEncoder({
@@ -171,7 +366,7 @@ async function main() {
         const converterPass = converterEncoder.beginComputePass()
         converterPass.setPipeline(converterPipeline)
         converterPass.setBindGroup(0, converterBindGroup)
-        converterPass.dispatchWorkgroups(imageWidth, imageHeight)
+        converterPass.dispatchWorkgroups(imageSize, imageSize)
         converterPass.end()
 
         const converterCommandBuffer = converterEncoder.finish()
@@ -192,7 +387,6 @@ async function main() {
         const renderCommandBuffer = renderEncoder.finish()
         device.queue.submit([renderCommandBuffer])
 
-        // console.log(1000/deltaTime) 
         document.getElementById("frameRateDisplay").innerText = (1000 / deltaTime).toFixed(1)
 
         requestAnimationFrame(render)
@@ -213,3 +407,12 @@ async function main() {
 main()
 
 // There will actually only be a max of width*height/2 points because of the edge detect
+
+/*
+draw a shape
+->edge detect
+->color the edge detected pixels with their location, the rest undefined
+->jump flooding: results in a texture where the color of each pixel is the location of the closest edge detected
+->write the distance from each pixel to its color (which we know is the closest point)
+->make the distance negative it the pixel was initially coloured in
+*/
