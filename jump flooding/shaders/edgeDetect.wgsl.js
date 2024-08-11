@@ -1,3 +1,5 @@
+const imageSize = 512
+
 export default /*wgsl*/ `
 
 @group(0) @binding(0) var drawTexture: texture_2d<u32>;
@@ -15,14 +17,14 @@ export default /*wgsl*/ `
             textureLoad(drawTexture, vec2i(i) + vec2i(-1, 0), 0).r == 1 &&
             textureLoad(drawTexture, vec2i(i) + vec2i(0, -1), 0).r == 1
         ) {
-            textureStore(outputTexture, i, vec4u(0, 0, 0, 0));
+            textureStore(outputTexture, i, vec4u(${imageSize+1}));
         }
         else {
             textureStore(outputTexture, i, vec4u(i.x, i.y, 0, 0));
         }
     }
     else {
-        textureStore(outputTexture, i, vec4u(0));
+        textureStore(outputTexture, i, vec4u(${imageSize+1}));
     }
 }
 

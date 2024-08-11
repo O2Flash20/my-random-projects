@@ -1,9 +1,10 @@
-const imageSize = 256
+const imageSize = 512
 
 import drawCode from "./shaders/draw.wgsl.js"
 import edgeDetectCode from "./shaders/edgeDetect.wgsl.js"
 import jumpFloodCode from "./shaders/jumpFlood.wgsl.js"
 import debugCode from "./shaders/debug.wgsl.js"
+import distanceCode from "./shaders/distance.wgsl.js"
 import convertCode from "./shaders/convert.wgsl.js"
 import renderCode from "./shaders/render.wgsl.js"
 
@@ -41,12 +42,9 @@ async function main() {
     })
 
     const linearSampler = device.createSampler({
-        // addressModeU: "repeat",
-        // addressModeV: "repeat",
-        // addressModeW: "repeat",
         magFilter: "linear",
         minFilter: "linear",
-        mipmapFilter: "linear",
+        mipmapFilter: "linear"
     })
 
 
@@ -157,49 +155,76 @@ async function main() {
     const jfUniformsViews = {
         stepSize: new Uint32Array(jfUniformsValues),
     }
-
     // bind group set in render
 
-    // const jumpFloodBindGroup = device.createBindGroup({
-    //     layout: jumpFloodPipeline.getBindGroupLayout(0),
-    //     entries: [
-    //         { binding: 0, resource: edgeTexture.createView() },
-    //         { binding: 1, resource: { buffer: jfUniformsBuffer } },
-    //         { binding: 2, resource: distancesTexture.createView() }
-    //     ]
-    // })
 
 
-
-    // debugs results of jump flooding
-    const debugModule = device.createShaderModule({
-        label: "debug module",
-        code: debugCode
+    const distanceModule = device.createShaderModule({
+        label: "distance calculation module",
+        code: distanceCode
     })
 
-    const debugPipeline = device.createComputePipeline({
-        label: "debug pipeline",
+    const distancePipeline = device.createComputePipeline({
+        label: "distance pipeline",
         layout: "auto",
-        compute: { module: debugModule }
+        compute: { module: distanceModule }
     })
 
-    const debugColor = device.createTexture({
-        label: "a full-color texture for debugging",
-        format: "rgba8unorm",
+    const distanceTexture = device.createTexture({
+        label: "a texture holding the signed distance of each pixel to the shape",
+        format: "r32float",
         dimension: "2d",
         size: [imageSize, imageSize],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
-    const debugBindGroup = device.createBindGroup({
-        layout: debugPipeline.getBindGroupLayout(0),
+    const distanceBindGroup = device.createBindGroup({
+        layout: distancePipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: jfTextures[0].createView() },
-            { binding: 1, resource: debugColor.createView() }
+            { binding: 0, resource: jfTextures[(Math.log2(imageSize)) % 2].createView() }, //the final jump flooding texture
+            { binding: 1, resource: drawTexture.createView() },
+            { binding: 2, resource: distanceTexture.createView() }
         ]
     })
 
 
+
+    // // debugs results of jump flooding
+    // const debugModule = device.createShaderModule({
+    //     label: "debug module",
+    //     code: debugCode
+    // })
+
+    // const debugPipeline = device.createComputePipeline({
+    //     label: "debug pipeline",
+    //     layout: "auto",
+    //     compute: { module: debugModule }
+    // })
+
+    // const debugColor = device.createTexture({
+    //     label: "a full-color texture for debugging",
+    //     format: "rgba8unorm",
+    //     dimension: "2d",
+    //     size: [imageSize, imageSize],
+    //     usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    // })
+
+    // const debugBindGroup = device.createBindGroup({
+    //     layout: debugPipeline.getBindGroupLayout(0),
+    //     entries: [
+    //         { binding: 0, resource: jfTextures[(Math.log2(imageSize)) % 2].createView() },
+    //         { binding: 1, resource: drawTexture.createView() },
+    //         { binding: 2, resource: debugColor.createView() }
+    //     ]
+    // })
+
+
+
+    const timeBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const timeValue = new Float32Array(1)
 
     const converterModule = device.createShaderModule({
         label: "convert distances to rgba module",
@@ -223,8 +248,9 @@ async function main() {
     const converterBindGroup = device.createBindGroup({
         layout: converterPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: jfTextures[1].createView() },
-            { binding: 1, resource: distancesColor.createView() }
+            { binding: 0, resource: distanceTexture.createView() },
+            { binding: 1, resource: { buffer: timeBuffer } },
+            { binding: 2, resource: distancesColor.createView() }
         ]
     })
 
@@ -248,7 +274,6 @@ async function main() {
     const renderPassDescriptor = {
         label: "render pass descriptor",
         colorAttachments: [{
-            // view: 
             clearValue: [0.3, 0.3, 0.3, 1],
             loadOp: "clear",
             storeOp: "store"
@@ -258,8 +283,7 @@ async function main() {
     const renderBindGroup = device.createBindGroup({
         layout: renderPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: debugColor.createView() },
-            // { binding: 0, resource: distancesColor.createView() },
+            { binding: 0, resource: distancesColor.createView() },
             { binding: 1, resource: linearSampler }
         ]
     })
@@ -271,7 +295,7 @@ async function main() {
 
         drawUniformsViews.drawMode[0] = altKey
         if (mouseIsDown) {
-            drawUniformsViews.clickPos[0] = cursorPos.x / 10; drawUniformsViews.clickPos[1] = cursorPos.y / 10 //should remove the /10 later
+            drawUniformsViews.clickPos[0] = cursorPos.x; drawUniformsViews.clickPos[1] = cursorPos.y
         }
         else {
             drawUniformsViews.clickPos[0] = -1; drawUniformsViews.clickPos[1] = -1
@@ -310,10 +334,11 @@ async function main() {
                 thisStepSize = imageSize / Math.pow(2, i + 1)
             }
 
-            const inputTextureIndex = (i+1)%2
-            const outputTextureIndex = (i+2)%2
+            const inputTextureIndex = (i + 1) % 2
+            const outputTextureIndex = (i + 2) % 2
 
-            console.log(inputTextureIndex, outputTextureIndex)
+            jfUniformsViews.stepSize[0] = thisStepSize
+            device.queue.writeBuffer(jfUniformsBuffer, 0, jfUniformsValues)
 
             const thisBindGroup = device.createBindGroup({
                 layout: jumpFloodPipeline.getBindGroupLayout(0),
@@ -329,37 +354,47 @@ async function main() {
             })
             const jumpFloodPass = jumpFloodEncoder.beginComputePass()
             jumpFloodPass.setPipeline(jumpFloodPipeline)
-            jumpFloodPass.setBindGroup //!not done
+            jumpFloodPass.setBindGroup(0, thisBindGroup)
+            jumpFloodPass.dispatchWorkgroups(imageSize, imageSize)
+            jumpFloodPass.end()
+
+            const jumpFloodCommandBuffer = jumpFloodEncoder.finish()
+            device.queue.submit([jumpFloodCommandBuffer])
 
         }
-        const jumpFloodEncoder = device.createCommandEncoder({
-            label: "jump flood encoder"
+
+
+
+        const distanceEncoder = device.createCommandEncoder({
+            label: "distance encoder"
         })
-        const jumpFloodPass = jumpFloodEncoder.beginComputePass()
-        jumpFloodPass.setPipeline(jumpFloodPipeline)
-        jumpFloodPass.setBindGroup(0, jumpFloodBindGroup)
-        jumpFloodPass.dispatchWorkgroups(imageSize, imageSize)
-        jumpFloodPass.end()
+        const distancePass = distanceEncoder.beginComputePass()
+        distancePass.setPipeline(distancePipeline)
+        distancePass.setBindGroup(0, distanceBindGroup)
+        distancePass.dispatchWorkgroups(imageSize, imageSize)
+        distancePass.end()
 
-        const jumpFloodCommandBuffer = jumpFloodEncoder.finish()
-        device.queue.submit([jumpFloodCommandBuffer])
-
-
-
-        const debugEncoder = device.createCommandEncoder({
-            label: "debug encoder"
-        })
-        const debugPass = debugEncoder.beginComputePass()
-        debugPass.setPipeline(debugPipeline)
-        debugPass.setBindGroup(0, debugBindGroup)
-        debugPass.dispatchWorkgroups(imageSize, imageSize)
-        debugPass.end()
-
-        const debugCommandBuffer = debugEncoder.finish()
-        device.queue.submit([debugCommandBuffer])
+        const distanceCommandBuffer = distanceEncoder.finish()
+        device.queue.submit([distanceCommandBuffer])
 
 
 
+        // const debugEncoder = device.createCommandEncoder({
+        //     label: "debug encoder"
+        // })
+        // const debugPass = debugEncoder.beginComputePass()
+        // debugPass.setPipeline(debugPipeline)
+        // debugPass.setBindGroup(0, debugBindGroup)
+        // debugPass.dispatchWorkgroups(imageSize, imageSize)
+        // debugPass.end()
+
+        // const debugCommandBuffer = debugEncoder.finish()
+        // device.queue.submit([debugCommandBuffer])
+
+
+
+        timeValue.set([time/1000], 0)
+        device.queue.writeBuffer(timeBuffer, 0, timeValue)
         const converterEncoder = device.createCommandEncoder({
             label: "convert to rgba encoder"
         })
@@ -371,6 +406,7 @@ async function main() {
 
         const converterCommandBuffer = converterEncoder.finish()
         device.queue.submit([converterCommandBuffer])
+
 
 
         renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
@@ -405,8 +441,6 @@ async function main() {
     observer.observe(canvas)
 }
 main()
-
-// There will actually only be a max of width*height/2 points because of the edge detect
 
 /*
 draw a shape

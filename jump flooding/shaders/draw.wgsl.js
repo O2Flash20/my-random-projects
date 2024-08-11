@@ -1,5 +1,4 @@
-const imageWidth = 256
-const imageHeight = 256
+const imageSize = 512
 
 export default /*wgsl*/ `
 
@@ -20,8 +19,8 @@ struct uniforms {
     if (u.drawMode == 0) {drawColor = 1;}
 
     // if the user clicked and this pixel is in a certain radius of the click, add density
-    if (u.clickPos.x >= 0 && u.clickPos.x < ${imageWidth} && u.clickPos.y >= 0 && u.clickPos.y < ${imageHeight}){
-        if (distance(vec2f(u.clickPos), i) < 4) {
+    if (u.clickPos.x >= 0 && u.clickPos.x < ${imageSize} && u.clickPos.y >= 0 && u.clickPos.y < ${imageSize}){
+        if (distance(vec2f(u.clickPos), i) < 14) {
             textureStore(outputTexture, id.xy, vec4u(drawColor));
         }
     }
