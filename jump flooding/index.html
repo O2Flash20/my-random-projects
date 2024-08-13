@@ -7,6 +7,7 @@
     <meta name="description" content="Calculates the signed distance field of any shape using the jump flood algorithm.">
 
     <script src="script.js" type="module"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
     <canvas id="mainCanvas"></canvas>
@@ -14,5 +15,25 @@
     <span>Frame rate:</span>
     <span id="frameRateDisplay"></span>
     <p>Click to draw, alt+click to erase</p>
+    <br><br>
+
+    <h1>How it Works</h1>
+    <p>This effect is accomplished in a series of shader steps that happen every frame:</p>
+    <ol>
+        <li>A black image texture is created. If the user's mouse is down, every frame a white circle is drawn under the mouse. If Alt is down, a black circle is drawn instead. This is how the user can draw custom shapes.</li>
+        <li>Edge detection is run on the drawing. This isolates the border of the drawn shape. If a pixel is on the border, it is colored with its position. If not, it is given a value considered "undefined".</li>
+        <li><a href="https://en.wikipedia.org/wiki/Jump_flooding_algorithm">Jump Flooding</a> is run on the texture from the previous step. Once it's done, every "undefined" pixel is given the color of the nearest edge pixel (with a bit of error). Since the color of each edge pixel represents its position, each previously undefined pixel now knows where the nearest edge is.</li>
+        <li>Each pixel has its distance to the nearest edge calculated. If this pixel was colored white by the drawing, it is inside the shape and therefore its distance is multiplied by -1 to denote that. This distance is recorded in a new texture.</li>
+        <li>To visualize the distances in an interesting way, a texture for displaying is created and the color of each pixel depends on the sine of time added to the distance to the drawn shape.</li>
+    </ol>
+    <br>
+    <h1>Problems</h1>
+    <p>Jump Flooding isn't perfect. However, if necessary, more steps can be done to clean it up more. In this project, I'm already doing an additional pass at the beginning but more can certainly be done.</p>
+    <p>This also isn't really a <i>field</i>. Signed distance fields are usually defined mathematically, so their information goes on for infinity. This method uses textures, so there will always be a border where the information stops, and making the textures larger would require more time and resources.</p>
+    <br>
+    <h1>Other Things I can do With This</h1>
+    <p>Firstly, I can remove some artifacts by doing more passes at the beginning and the end, and also do passes at a lower resolution to offset the performance hit that would entail.</p>
+    <p>This might be able to be used as a way to bake SDFs for raymarching. I imagine there are cases where a 3d texture lookup might be less expensive that evaluating a large amount of individual SDFs. There's also the advantage that to create and SDF this way, all you need is to define and inside and an outside. If you had a mathematical SDF and you wanted to deform it, its distance field might be so messed up that it becomes unusable. This method won't have that problem, as long as you deform it before you create a texture out of it.</p>
+    <p>The problem it would have, though, is that there will only be distance information in the close vicinity of the object. This could maybe be solved with a level of detail system, with each object having a series of textures which have fine-detail information for close up, but more low-detail information as you get further away.</p>
 </body>
 </html>
