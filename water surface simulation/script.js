@@ -1,4 +1,5 @@
 import updateCode from "./shaders/updateWave.wgsl.js"
+import thresholdCode from "./shaders/threshold.wgsl.js"
 import transcribeCode from "./shaders/transcribe.wgsl.js"
 import gradientCode from "./shaders/gradient.wgsl.js"
 import renderCode from "./shaders/renderer.wgsl.js"
@@ -6,8 +7,11 @@ import renderCode from "./shaders/renderer.wgsl.js"
 const waveTextureX = 600
 const waveTextureY = 600
 
-const waterPlaneHeight = 0 //ideally this would be synced with the render shader
 const waterPlaneSize = { x: 20, z: 20 }
+
+ //ideally this would be synced with the render shader
+const waterPlaneHeight = 0
+const maxWaveHeight = 1
 
 async function loadTexture(url, device) {
 
@@ -47,9 +51,9 @@ async function main() {
     }
 
     const linearSampler = device.createSampler({
-        addressModeU: "repeat",
-        addressModeV: "repeat",
-        addressModeW: "repeat",
+        // addressModeU: "repeat",
+        // addressModeV: "repeat",
+        // addressModeW: "repeat",
         magFilter: "linear",
         minFilter: "linear",
         mipmapFilter: "linear",
@@ -80,6 +84,52 @@ async function main() {
         }
     })
 
+    // -----------------threshold terrain setup----------------- //
+    //* thresholds a height map to get a 2d obstacles texture to be used in update
+    const thresholdModule = device.createShaderModule({
+        label: "terrain threshold shader module",
+        code: thresholdCode
+    })
+
+    const thresholdPipeline = device.createComputePipeline({
+        label: "terrain threshold pipeline",
+        layout: "auto",
+        compute: {module: thresholdModule}
+    })
+
+    const terrainTexture = await loadTexture("terrain.png", device)
+
+    const obstaclesTexture = device.createTexture({
+        label: "wave obstacles texture",
+        format: "rgba8unorm",
+        dimension: "2d",
+        size: [waveTextureX, waveTextureY],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const thresholdBindGroup = device.createBindGroup({
+        layout: thresholdPipeline.getBindGroupLayout(0),
+        entries: [
+            {binding: 0, resource: terrainTexture.createView()},
+            {binding: 1, resource: obstaclesTexture.createView()}
+        ]
+    })
+
+    const thresholdEncoder = device.createCommandEncoder({
+        label: "terrain threshold command encoder"
+    })
+    const thresholdComputePass = thresholdEncoder.beginComputePass({
+        label: "terrain threshold compute pass"
+    })
+    thresholdComputePass.setPipeline(thresholdPipeline)
+    thresholdComputePass.setBindGroup(0, thresholdBindGroup)
+    thresholdComputePass.dispatchWorkgroups(waveTextureX, waveTextureY)
+    thresholdComputePass.end()
+    const thresholdCommandBuffer = thresholdEncoder.finish()
+    device.queue.submit([thresholdCommandBuffer])
+
+    // -----------------update setup----------------- //
+
     const updateModule = device.createShaderModule({
         label: "wave update shader module",
         code: updateCode
@@ -91,7 +141,7 @@ async function main() {
         compute: { module: updateModule }
     })
 
-    const obstaclesTexture = await loadTexture("rocks.png", device)
+    // const obstaclesTexture = await loadTexture("rocks.png", device) //going to be computed with a threshold of the terrain
 
     let waveTextures = []
     let lastUpdatedTexture = 2
@@ -181,6 +231,8 @@ async function main() {
         }
     })
 
+    const cloudsTexture = await loadTexture("clouds.png", device)
+
     const renderUniformsBuffer = device.createBuffer({
         size: 48,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -201,7 +253,9 @@ async function main() {
             { binding: 1, resource: transcribedWaveTexture.createView() },
             { binding: 2, resource: waveGradientTexture.createView() },
             { binding: 3, resource: obstaclesTexture.createView() },
-            { binding: 4, resource: linearSampler }
+            { binding: 4, resource: terrainTexture.createView() },
+            { binding: 5, resource: cloudsTexture.createView()},
+            { binding: 6, resource: linearSampler }
         ]
     })
 
@@ -247,9 +301,10 @@ async function main() {
                 z: d.z * Math.cos(-cameraDirection[0]) - d.x * Math.sin(-cameraDirection[0])
             }
 
+            const opw = waterPlaneHeight+maxWaveHeight/2
             const projectionHit = {
-                x: (cameraPosition[1] - waterPlaneHeight) / d.y * d.x - cameraPosition[0],
-                z: (cameraPosition[1] - waterPlaneHeight) / d.y * d.z - cameraPosition[2]
+                x: d.x * (opw-cameraPosition[1])/d.y + cameraPosition[0],
+                z: d.z * (opw-cameraPosition[1])/d.y + cameraPosition[2]
             }
 
             const uv = {

@@ -75,3 +75,6 @@ fn sampleRebound(texture: texture_2d<f32>, pos: vec2i) -> f32 {
 }
 
 `
+
+//* idea: multiply by something to do with the amount of terrain under the water to weaken waves in shallow parts
+// will that make the idea of an obstacle buffer unnecessary? it might just work out

@@ -25,9 +25,9 @@ export default /*wgsl*/ `
         vec4f(
             normalize(vec3f(
                 // x and z should be multiplied by the height of the wave in the 3d render
-                0.5 * (textureLoad(originalTexture, vec2u(id.x-1, id.y), 0).r - textureLoad(originalTexture, vec2u(id.x+1, id.y), 0).r) / 2.,
+                (textureLoad(originalTexture, vec2u(id.x-1, id.y), 0).r - textureLoad(originalTexture, vec2u(id.x+1, id.y), 0).r) / 2.,
                 1,
-                0.5 * (textureLoad(originalTexture, vec2u(id.x, id.y-1), 0).r - textureLoad(originalTexture, vec2u(id.x, id.y+1), 0).r) / 2.
+                (textureLoad(originalTexture, vec2u(id.x, id.y-1), 0).r - textureLoad(originalTexture, vec2u(id.x, id.y+1), 0).r) / 2.
             )),
             1.
         )
