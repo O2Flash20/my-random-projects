@@ -46,16 +46,17 @@ fn sampleRebound(texture: texture_2d<f32>, pos: vec2i) -> f32 {
 
     // if the user clicked and this pixel is in a certain radius of the click, add density
     if (u.clickPos.x >= 0 && u.clickPos.x < u.textureSize.x && u.clickPos.y >= 0 && u.clickPos.y < u.textureSize.y){
-        if (distance(vec2f(u.clickPos), vec2f(i)) < 4) {nextValue += 0.1;}
+        let distToCursor = distance(vec2f(u.clickPos), vec2f(i));
+        if (distToCursor < 10) {nextValue -= (10-distToCursor)/400;}
     }
 
     if (textureLoad(obstaclesTexture, i, 0).r == 1.) {
         var obstacleAvg = 0.;
 
-        let rightIsObstacle = sampleRebound(obstaclesTexture, i+vec2i(1, 0));
-        let leftIsObstacle = sampleRebound(obstaclesTexture, i+vec2i(-1, 0));
-        let topIsObstacle = sampleRebound(obstaclesTexture, i+vec2i(0, 1));
-        let bottomIsObstacle = sampleRebound(obstaclesTexture, i+vec2i(0, -1));
+        let rightIsObstacle = sampleRebound(obstaclesTexture, (i+vec2i(1, 0)));
+        let leftIsObstacle = sampleRebound(obstaclesTexture, (i+vec2i(-1, 0)));
+        let topIsObstacle = sampleRebound(obstaclesTexture, (i+vec2i(0, 1)));
+        let bottomIsObstacle = sampleRebound(obstaclesTexture, (i+vec2i(0, -1)));
 
         let totalObstacles = rightIsObstacle+leftIsObstacle+topIsObstacle+bottomIsObstacle;
 

@@ -32,7 +32,7 @@ struct uniforms {
     camPos: vec3f,
     camDir: vec2f,
     projDist: f32,
-    sunDir: vec2f,
+    sunDir: vec3f,
     screenSize: vec2u
 }
 
@@ -40,9 +40,11 @@ struct uniforms {
 @group(0) @binding(1) var waveTexture: texture_2d<f32>;
 @group(0) @binding(2) var gradientTexture: texture_2d<f32>;
 @group(0) @binding(3) var obstaclesTexture: texture_2d<f32>;
-@group(0) @binding(4) var terrainTexture: texture_2d<f32>;
-@group(0) @binding(5) var cloudsTexture: texture_2d<f32>;
-@group(0) @binding(6) var linearSampler: sampler;
+@group(0) @binding(4) var terrainHeightTexture: texture_2d<f32>;
+@group(0) @binding(5) var terrainColorTexture: texture_2d<f32>;
+@group(0) @binding(6) var dampTexture: texture_2d<f32>;
+@group(0) @binding(7) var cloudsTexture: texture_2d<f32>;
+@group(0) @binding(8) var linearSampler: sampler;
 
 fn rotateYaw(position: vec3f, yaw:f32) -> vec3f {
     return vec3f( position.z * sin(yaw) + position.x * cos(yaw), position.y, position.z * cos(yaw) - position.x * sin(yaw) );
@@ -74,11 +76,37 @@ fn getWaterGradient(pos:vec3f) -> vec3f {
 
 fn getTerrainHeight(pos: vec3f) -> f32 {
     let uv = pos.xz/waterPlaneSize + vec2f(0.5);
-    let textureValue = maxTerrainHeight*(textureSample(terrainTexture, linearSampler, uv)-0.5);
-    return textureValue.r;
+    return maxTerrainHeight*(textureSample(terrainHeightTexture, linearSampler, uv).r-0.5);
 }
 
-const sunDir = normalize(vec3f(1, 1, 0));
+fn getTerrainNormal(pos: vec3f) -> vec3f {
+    return normalize( vec3f(
+        (getTerrainHeight(pos+vec3f(-0.1, 0, 0)) - getTerrainHeight(pos+vec3f(0.1, 0, 0)))/0.2,
+        1,
+        (getTerrainHeight(pos+vec3f(0, 0, -0.1)) - getTerrainHeight(pos+vec3f(0, 0, 0.1)))/0.2
+    ) );
+}
+
+fn getTerrainColor(pos: vec3f) -> vec3f {
+    let uv = pos.xz/waterPlaneSize + vec2f(0.5);
+
+    let a = 0.5;
+    let b = 0.5;
+    var dampMultiplier = b;
+    if (0 < pos.y && pos.y < a) {
+        dampMultiplier = -(1-b)/2 * sin(3.14159265 * (pos.y / a + 0.5)) + (1+b)/2;
+    }
+    else if (pos.y > a) {
+        dampMultiplier = 1.;
+    }
+
+    return textureSample(terrainColorTexture, linearSampler, uv).rgb;
+}
+
+fn getTerrainDampness(pos: vec3f) -> f32 {
+    let uv = pos.xz/waterPlaneSize + vec2f(0.5);
+    return textureSample(dampTexture, linearSampler, uv).r;
+}
 
 fn mapRange(value: f32, inMin: f32, inMax: f32, outMin: f32, outMax: f32) -> f32 {
     return (value-inMin)/(inMax-inMin)*(outMax-outMin) + outMin;
@@ -97,6 +125,7 @@ fn colorRamp(mix: f32, col1: vec4f, col2: vec4f, col3: vec4f, col4: vec4f) -> ve
 }
 
 fn getSkyColor(lookDir: vec3f) -> vec3f {
+    if (dot(lookDir, u.sunDir) > 0.999) {return vec3f(10, 10, 10);}
     let angleUp = atan2(lookDir.y, length(lookDir.xz));
     let skyIndex = 2*angleUp/3.14159265; //-1 to 1
     let skyColor = colorRamp(
@@ -109,6 +138,7 @@ fn getSkyColor(lookDir: vec3f) -> vec3f {
     return vec3f(skyColor);
 }
 
+// it would feel more real if they faded into the atmosphere
 fn getClouds(lookDir: vec3f) -> vec4f {
     // project onto some plane in the sky
     let a = 0.05 / lookDir.y;
@@ -128,17 +158,17 @@ fn getSkyAndClouds(lookDir: vec3f) -> vec3f {
     let c = getClouds(lookDir);
 
     if (lookDir.y > 0) {
-        return c.a*(c.rgb) + (1-c.a)*s;
+        return 1*(c.a*(c.rgb) + (1-c.a)*s);
     }
     else {
-        return s;
+        return 1*s;
     }
 }
 
 const waterPlaneSize = vec2f(20); //also applies for terrain
 
 const waterPlaneHeight = 0.;
-const maxWaveHeight = 0.2;
+const maxWaveHeight = 0.4;
 fn raycastWater(startPos:vec3f, dir: vec3f, startStepSize: f32, iterations: i32) -> vec3f {
     var pos = startPos;
     var step = startStepSize;
@@ -159,8 +189,8 @@ fn raycastWater(startPos:vec3f, dir: vec3f, startStepSize: f32, iterations: i32)
     return pos;
 }
 
-const terrainPlaneHeight = -1;
-const maxTerrainHeight = 4.; //distance from lowest to highest point
+const terrainPlaneHeight = -0.75;
+const maxTerrainHeight = 3.; //distance from lowest to highest point
 fn raycastTerrain(startPos:vec3f, dir: vec3f, startStepSize: f32, iterations: i32) -> vec3f {
     var pos = startPos;
     var step = startStepSize;
@@ -181,6 +211,21 @@ fn raycastTerrain(startPos:vec3f, dir: vec3f, startStepSize: f32, iterations: i3
     return pos;
 }
 
+fn getTerrainShadow(pos: vec3f, sunDir: vec3f, stepSize: f32, iterations: i32) -> f32 {
+    var p = pos;
+    var shadowColor = 1.;
+    for (var i = 1; i <= iterations; i++) {
+        p += sunDir * stepSize;
+        let h = getTerrainHeight(p) + terrainPlaneHeight;
+        let distToTerrain = p.y - h;
+        let thisShadowAmount = clamp(10*(distToTerrain+0.05), 0, 1);
+        shadowColor = min(shadowColor, thisShadowAmount);
+        // if (p.y < h) { shadowColor = 0.5; }
+    }
+
+    return shadowColor;
+}
+
 // 1: all reflection, 0: all refraction
 fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
     let n = n1/n2;
@@ -193,6 +238,12 @@ fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
     return clamp((rOrthogonal * rOrthogonal + rParallel * rParallel) / 2, 0, 1);
 }
 
+fn ACES(x: f32) -> f32 {
+    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+}
+fn toneMap(col: vec3f) -> vec3f {
+    return vec3f(ACES(col.r), ACES(col.g), ACES(col.b));
+}
 
 @fragment fn render(i: vertexShaderOutput) -> @location(0) vec4f {
     let screenDir = uvToScreenDir(i.uv, u.projDist, f32(u.screenSize.y)/f32(u.screenSize.x));
@@ -221,7 +272,6 @@ fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
     var gradient = getWaterGradient(waterSamplePos);
     gradient *= vec3f(maxWaveHeight, 1, maxWaveHeight);
     gradient = normalize(gradient);
-    let dotToSun = pow(dot(gradient, sunDir), 5.);
 
     lookingAtWaterPlane = lookingAtWaterPlane && waterSamplePos.x < waterPlaneSize.x/2 && waterSamplePos.x > -waterPlaneSize.x/2 && waterSamplePos.z < waterPlaneSize.y/2 && waterSamplePos.z > -waterPlaneSize.y/2;
     lookingAtTerrainPlane = lookingAtTerrainPlane && terrainSamplePos.x < waterPlaneSize.x/2 && terrainSamplePos.x > -waterPlaneSize.x/2 && terrainSamplePos.z < waterPlaneSize.y/2 && terrainSamplePos.z > -waterPlaneSize.y/2;
@@ -230,11 +280,24 @@ fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
 
     let sky = getSkyAndClouds(worldDir);
 
+    let terrainCol = getTerrainColor(terrainSamplePos);
+    let terrainShadow = getTerrainShadow(terrainSamplePos, u.sunDir, 0.05, 20);
+
+    let terrainDampness = clamp(getTerrainDampness(terrainSamplePos)-0.1, 0, 1);
+    let terrainNormal = getTerrainNormal(terrainSamplePos);
+    let dampTerrainReflectDirection = reflect(worldDir, terrainNormal);
+    let dampTerrainShine = clamp( pow( dot(u.sunDir, dampTerrainReflectDirection), terrainDampness*terrainDampness*terrainDampness*400 ), 0, 0.7)*terrainShadow;
+
+    let waterShadow = getTerrainShadow(waterSamplePos, u.sunDir, 0.1, 10);
+
     let reflectDirection = reflect(worldDir, gradient);
     let skyReflectionColor = getSkyAndClouds(reflectDirection);
 
     let refractDirection = refract(worldDir, gradient, 1./1.333);
     let refractHit = raycastTerrain(waterSamplePos, refractDirection, 0.05, 50);
+    let refractShadow = getTerrainShadow(refractHit, u.sunDir, 0.1, 10);
+
+    let terrainColRefracted = 0.5*getTerrainColor(refractHit);
 
     let distanceToWater = distance(u.camPos, waterSamplePos);
     let distanceToTerrain = distance(u.camPos, terrainSamplePos);
@@ -246,20 +309,29 @@ fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
     ) { //looking at water
         let reflectance = reflectance(worldDir, gradient, 1., 1.333);
 
-        let refractColor = vec3f(-refractHit.y-0.2)*vec3f(0.2, 0.2, 0);
-        col = skyReflectionColor * reflectance + refractColor * (1-reflectance);
+        let distThroughWater = distance(waterSamplePos, refractHit);
+        let waterTransmission = exp(-distThroughWater*3);
+        let waterColor = vec3f(24, 28, 5)/255;
+        var refractColor = terrainColRefracted*waterTransmission + waterColor*(1-waterTransmission);
+        refractColor *= pow(clamp(refractShadow+0.8, 0, 1), 0.3);
+
+        // sky color is multiplied because the sky is bright
+        col = 2*skyReflectionColor * reflectance + refractColor * (1-reflectance);
+        col *= clamp(waterShadow+0.8, 0, 1);
     }
     else if (
         (!lookingAtWaterPlane && lookingAtTerrainPlane) ||
         ((lookingAtWaterPlane && lookingAtTerrainPlane) && (distanceToWater > distanceToTerrain))
     ) { //looking at terrain
-        col = vec3f(terrainSamplePos.y+0.5);
+        let dampCol = vec3f(24, 28, 5)/255 + dampTerrainShine;
+        col = (1-terrainDampness) * terrainCol  + terrainDampness * dampCol;
+        col *= terrainShadow;
     }
     else { //looking at sky
         col = sky;
     }
 
-    return vec4f(col, 1.);
+    return vec4f(toneMap(col), 1.);
 }
 
 `

@@ -1,4 +1,4 @@
-const thresholdValue = 0.75
+const thresholdValue = 0.8 //should be 0.75 considering where the terrain plane is but this looks better
 
 export default /*wgsl*/ `
 

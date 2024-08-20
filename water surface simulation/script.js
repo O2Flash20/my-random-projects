@@ -2,16 +2,16 @@ import updateCode from "./shaders/updateWave.wgsl.js"
 import thresholdCode from "./shaders/threshold.wgsl.js"
 import transcribeCode from "./shaders/transcribe.wgsl.js"
 import gradientCode from "./shaders/gradient.wgsl.js"
+import dampCode from "./shaders/damp.wgsl.js"
 import renderCode from "./shaders/renderer.wgsl.js"
 
-const waveTextureX = 600
-const waveTextureY = 600
+const waveTextureX = 1024
+const waveTextureY = 1024
 
 const waterPlaneSize = { x: 20, z: 20 }
 
  //ideally this would be synced with the render shader
 const waterPlaneHeight = 0
-const maxWaveHeight = 1
 
 async function loadTexture(url, device) {
 
@@ -60,11 +60,8 @@ async function main() {
     })
 
     const canvas = document.getElementById("mainCanvas")
-    // sets it up so that when you click on the canvas it locks the cursor
+    // sets it up so that when you click on the canvas it locks the cursor (more of this is in controlsHandler)
     mainCanvas.requestPointerLock = mainCanvas.requestPointerLock || mainCanvas.mozRequestPointerLock
-    mainCanvas.addEventListener('click', () => {
-        mainCanvas.requestPointerLock()
-    })
     const context = canvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
     context.configure({
@@ -97,7 +94,7 @@ async function main() {
         compute: {module: thresholdModule}
     })
 
-    const terrainTexture = await loadTexture("terrain.png", device)
+    const terrainHeightTexture = await loadTexture("heightMap.png", device)
 
     const obstaclesTexture = device.createTexture({
         label: "wave obstacles texture",
@@ -110,7 +107,7 @@ async function main() {
     const thresholdBindGroup = device.createBindGroup({
         layout: thresholdPipeline.getBindGroupLayout(0),
         entries: [
-            {binding: 0, resource: terrainTexture.createView()},
+            {binding: 0, resource: terrainHeightTexture.createView()},
             {binding: 1, resource: obstaclesTexture.createView()}
         ]
     })
@@ -212,6 +209,35 @@ async function main() {
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING
     })
 
+    // -----------------damp effect setup----------------- //
+    const dampModule = device.createShaderModule({
+        label: "dampness effect module",
+        code: dampCode
+    })
+
+    const dampPipeline = device.createComputePipeline({
+        label: "dampness pipeline",
+        layout: "auto",
+        compute: { module: dampModule }
+    })
+
+    const dampTextures = [
+        device.createTexture({
+            label: "damp texture 0",
+            format: "rgba8unorm",
+            dimension: "2d",
+            size: [waveTextureX, waveTextureY],
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING
+        }),
+        device.createTexture({
+            label: "damp texture 1",
+            format: "rgba8unorm",
+            dimension: "2d",
+            size: [waveTextureX, waveTextureY],
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING
+        })
+    ]
+
     // -----------------render setup----------------- //
 
     const renderModule = device.createShaderModule({
@@ -233,31 +259,20 @@ async function main() {
 
     const cloudsTexture = await loadTexture("clouds.png", device)
 
+    const terrainColorTexture = await loadTexture("colorMap.png", device)
+
     const renderUniformsBuffer = device.createBuffer({
-        size: 48,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
-    const renderUniformsValues = new ArrayBuffer(48)
+    const renderUniformsValues = new ArrayBuffer(64)
     const renderUniformsViews = {
         camPos: new Float32Array(renderUniformsValues, 0, 3),
         camDir: new Float32Array(renderUniformsValues, 16, 2),
         projectionDist: new Float32Array(renderUniformsValues, 24, 1),
-        sunDir: new Float32Array(renderUniformsValues, 32, 2),
-        screenSize: new Uint32Array(renderUniformsValues, 40, 2),
+        sunDir: new Float32Array(renderUniformsValues, 32, 3),
+        screenSize: new Uint32Array(renderUniformsValues, 48, 2),
     }
-
-    const renderBindGroup = device.createBindGroup({
-        layout: renderPipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: { buffer: renderUniformsBuffer } },
-            { binding: 1, resource: transcribedWaveTexture.createView() },
-            { binding: 2, resource: waveGradientTexture.createView() },
-            { binding: 3, resource: obstaclesTexture.createView() },
-            { binding: 4, resource: terrainTexture.createView() },
-            { binding: 5, resource: cloudsTexture.createView()},
-            { binding: 6, resource: linearSampler }
-        ]
-    })
 
     const renderPassDescriptor = {
         label: "water render renderPass",
@@ -272,9 +287,12 @@ async function main() {
     }
 
     let lastTime = 0
+    let thisDampTexture = 1
     function render(time) {
         let deltaTime = time - lastTime
         lastTime = time
+
+        thisDampTexture = (thisDampTexture + 1) % 2
 
         updateCamera(deltaTime / 1000)
 
@@ -301,7 +319,7 @@ async function main() {
                 z: d.z * Math.cos(-cameraDirection[0]) - d.x * Math.sin(-cameraDirection[0])
             }
 
-            const opw = waterPlaneHeight+maxWaveHeight/2
+            const opw = waterPlaneHeight
             const projectionHit = {
                 x: d.x * (opw-cameraPosition[1])/d.y + cameraPosition[0],
                 z: d.z * (opw-cameraPosition[1])/d.y + cameraPosition[2]
@@ -390,15 +408,68 @@ async function main() {
         const gradientCommandBuffer = gradientEncoder.finish()
         device.queue.submit([gradientCommandBuffer])
 
+        // -----------------damp effect stuff----------------- //
+        const dampBindGroup = device.createBindGroup({
+            layout: dampPipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: transcribedWaveTexture.createView() },
+                { binding: 1, resource: terrainHeightTexture.createView() },
+                { binding: 2, resource: dampTextures[(thisDampTexture + 1) % 2].createView() },
+                { binding: 3, resource: dampTextures[thisDampTexture].createView() },
+            ]
+        })
+
+        const dampEncoder = device.createCommandEncoder({
+            label: "damp effect command encoder"
+        })
+        const dampComputePass = dampEncoder.beginComputePass({
+            label: "damp effect compute pass"
+        })
+        dampComputePass.setPipeline(dampPipeline)
+        dampComputePass.setBindGroup(0, dampBindGroup)
+        dampComputePass.dispatchWorkgroups(waveTextureX, waveTextureY)
+        dampComputePass.end()
+        const dampCommandBuffer = dampEncoder.finish()
+        device.queue.submit([dampCommandBuffer])
+
         // -----------------render stuff----------------- //
         renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
+
+        const sunPitch = -Number(document.getElementById("testVal2").value)
+        const sunYaw = Number(document.getElementById("testVal1").value)
+        let sunDir = {x: 0, y: 0, z: 1}
+        sunDir = { //rotate pitch
+            x: sunDir.x,
+            y: sunDir.y * Math.cos(sunPitch) - sunDir.z * Math.sin(sunPitch),
+            z: sunDir.y * Math.sin(sunPitch) + sunDir.z * Math.cos(sunPitch)
+        }
+        sunDir = { //rotate yaw
+            x: sunDir.z * Math.sin(sunYaw) + sunDir.x * Math.cos(sunYaw),
+            y: sunDir.y,
+            z: sunDir.z * Math.cos(sunYaw) - sunDir.x * Math.sin(sunYaw)
+        }
 
         renderUniformsViews.camPos[0] = cameraPosition[0]; renderUniformsViews.camPos[1] = cameraPosition[1]; renderUniformsViews.camPos[2] = cameraPosition[2]
         renderUniformsViews.camDir[0] = cameraDirection[0]; renderUniformsViews.camDir[1] = cameraDirection[1]; renderUniformsViews.camDir[2] = cameraDirection[2]
         renderUniformsViews.projectionDist[0] = projectionDist
-        renderUniformsViews.sunDir[0] = 0; renderUniformsViews.sunDir[1] = Number(document.getElementById("testVal1").value)
+        renderUniformsViews.sunDir[0] = sunDir.x; renderUniformsViews.sunDir[1] = sunDir.y; renderUniformsViews.sunDir[2] = sunDir.z
         renderUniformsViews.screenSize[0] = mainCanvas.clientWidth; renderUniformsViews.screenSize[1] = mainCanvas.clientHeight
         device.queue.writeBuffer(renderUniformsBuffer, 0, renderUniformsValues)
+
+        const renderBindGroup = device.createBindGroup({
+            layout: renderPipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: renderUniformsBuffer } },
+                { binding: 1, resource: transcribedWaveTexture.createView() },
+                { binding: 2, resource: waveGradientTexture.createView() },
+                { binding: 3, resource: obstaclesTexture.createView() },
+                { binding: 4, resource: terrainHeightTexture.createView() },
+                { binding: 5, resource: terrainColorTexture.createView() },
+                { binding: 6, resource: dampTextures[thisDampTexture].createView() },
+                { binding: 7, resource: cloudsTexture.createView()},
+                { binding: 8, resource: linearSampler }
+            ]
+        })
 
         const renderEncoder = device.createCommandEncoder({
             label: "water render command encoder"

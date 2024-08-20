@@ -5,7 +5,10 @@ let cameraDirection = [0, 0]
 let projectionDist = 1.2
 
 let pressedKeys = []
-window.onkeydown = function (e) { pressedKeys[e.key.toLowerCase()] = true }
+window.onkeydown = function (e) {
+    if (e.key == "x") { mainCanvas.requestPointerLock() }
+    pressedKeys[e.key.toLowerCase()] = true
+}
 window.onkeyup = function (e) { pressedKeys[e.key.toLowerCase()] = false }
 
 function keyPressed(key) {
@@ -43,7 +46,7 @@ function updateCamera(dt) {
     }
 
     if (keyPressed("q")) {
-        cameraPosition[1] -= MovementSpeed * dt
+        cameraPosition[1] = Math.max(cameraPosition[1] - MovementSpeed * dt, 1.5) 
     }
     if (keyPressed("e")) {
         cameraPosition[1] += MovementSpeed * dt
