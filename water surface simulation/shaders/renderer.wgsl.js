@@ -226,6 +226,96 @@ fn getTerrainShadow(pos: vec3f, sunDir: vec3f, stepSize: f32, iterations: i32) -
     return shadowColor;
 }
 
+// from ChatGPT
+fn wavelengthToRGB(wavelength: f32) -> vec3<f32> {
+    var gamma: f32 = 0.8;
+    var intensity_max: f32 = 1.0;
+    var factor: f32 = 0.0;
+    var R: f32 = 0.0;
+    var G: f32 = 0.0;
+    var B: f32 = 0.0;
+
+    if (wavelength >= 380.0 && wavelength < 440.0) {
+        R = -(wavelength - 440.0) / (440.0 - 380.0);
+        G = 0.0;
+        B = 1.0;
+    } else if (wavelength >= 440.0 && wavelength < 490.0) {
+        R = 0.0;
+        G = (wavelength - 440.0) / (490.0 - 440.0);
+        B = 1.0;
+    } else if (wavelength >= 490.0 && wavelength < 510.0) {
+        R = 0.0;
+        G = 1.0;
+        B = -(wavelength - 510.0) / (510.0 - 490.0);
+    } else if (wavelength >= 510.0 && wavelength < 580.0) {
+        R = (wavelength - 510.0) / (580.0 - 510.0);
+        G = 1.0;
+        B = 0.0;
+    } else if (wavelength >= 580.0 && wavelength < 645.0) {
+        R = 1.0;
+        G = -(wavelength - 645.0) / (645.0 - 580.0);
+        B = 0.0;
+    } else if (wavelength >= 645.0 && wavelength <= 700.0) {
+        R = 1.0;
+        G = 0.0;
+        B = 0.0;
+    } else {
+        R = 0.0;
+        G = 0.0;
+        B = 0.0;
+    }
+
+    // Intensity correction
+    if (wavelength >= 380.0 && wavelength < 420.0) {
+        factor = 0.3 + 0.7 * (wavelength - 380.0) / (420.0 - 380.0);
+    } else if (wavelength >= 420.0 && wavelength < 645.0) {
+        factor = 1.0;
+    } else if (wavelength >= 645.0 && wavelength <= 700.0) {
+        factor = 0.3 + 0.7 * (700.0 - wavelength) / (700.0 - 645.0);
+    }
+
+    R = pow(R * factor, gamma);
+    G = pow(G * factor, gamma);
+    B = pow(B * factor, gamma);
+
+    return vec3<f32>(R, G, B) * intensity_max;
+}
+
+fn getCaustics(pos: vec3f) -> vec3f {
+    var outputColor = vec3f(0.);
+    const numberOfColors = 100.;
+    let step = i32((700. - 380.)/numberOfColors);
+
+    for (var i = 380; i < 700; i += step) {
+        let wavelength = f32(i)/1000;
+        let w = wavelength*wavelength;
+
+        // the index of refraction of water at this wavelength
+        var n = sqrt(
+            1 +
+            0.5675888*w / (w-0.200491) +
+            0.1720842*w / (w-0.563916) +
+            0.0041020*w / (w-0.1314967)
+        );
+
+        n = 0.05*n + (1-0.05) * 1.;
+        // n = 1.;
+
+        let causticDir = refract(u.sunDir, vec3f(0, 1, 0), n);
+        let causticSource = vec3f(
+            (pos.y-waterPlaneHeight)/causticDir.y * causticDir.x + pos.x,
+            waterPlaneHeight,
+            (pos.y-waterPlaneHeight)/causticDir.y * causticDir.z + pos.z
+        );
+        let sourceGradient = getWaterGradient(causticSource);
+        let causticAmount = pow(maxWaveHeight*length(sourceGradient.xz)*200, 2.);
+        let causticColor = wavelengthToRGB(f32(i)) * causticAmount;
+        outputColor += causticColor*f32(step);
+    }
+
+    return outputColor / (700. - 380.);
+}
+
 // 1: all reflection, 0: all refraction
 fn reflectance(incident: vec3f, normal: vec3f, n1: f32, n2: f32) -> f32 {
     let n = n1/n2;
@@ -297,7 +387,11 @@ fn toneMap(col: vec3f) -> vec3f {
     let refractHit = raycastTerrain(waterSamplePos, refractDirection, 0.05, 50);
     let refractShadow = getTerrainShadow(refractHit, u.sunDir, 0.1, 10);
 
-    let terrainColRefracted = 0.5*getTerrainColor(refractHit);
+    let terrainColRefracted = getTerrainColor(refractHit);
+
+    var causticColor = getCaustics(refractHit);
+    causticColor *= refractShadow;
+    causticColor = max(vec3f(0.5), causticColor);
 
     let distanceToWater = distance(u.camPos, waterSamplePos);
     let distanceToTerrain = distance(u.camPos, terrainSamplePos);
@@ -312,13 +406,14 @@ fn toneMap(col: vec3f) -> vec3f {
         let distThroughWater = distance(waterSamplePos, refractHit);
         let waterTransmission = exp(-distThroughWater*3);
         let waterColor = vec3f(24, 28, 5)/255;
-        var refractColor = terrainColRefracted*waterTransmission + waterColor*(1-waterTransmission);
+        var refractColor = (terrainColRefracted*causticColor)*waterTransmission + waterColor*(1-waterTransmission);
         refractColor *= pow(clamp(refractShadow+0.8, 0, 1), 0.3);
 
         // sky color is multiplied because the sky is bright
         col = 2*skyReflectionColor * reflectance + refractColor * (1-reflectance);
         col *= clamp(waterShadow+0.8, 0, 1);
     }
+
     else if (
         (!lookingAtWaterPlane && lookingAtTerrainPlane) ||
         ((lookingAtWaterPlane && lookingAtTerrainPlane) && (distanceToWater > distanceToTerrain))
@@ -327,6 +422,7 @@ fn toneMap(col: vec3f) -> vec3f {
         col = (1-terrainDampness) * terrainCol  + terrainDampness * dampCol;
         col *= terrainShadow;
     }
+
     else { //looking at sky
         col = sky;
     }
