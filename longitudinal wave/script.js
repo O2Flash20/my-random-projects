@@ -31,6 +31,17 @@ async function main() {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
+    const waveControlsValues = new ArrayBuffer(12)
+    const waveControlsViews = {
+        wavelength: new Float32Array(waveControlsValues, 0, 1),
+        period: new Float32Array(waveControlsValues, 4, 1),
+        amplitude: new Float32Array(waveControlsValues, 8, 1),
+    }
+    const waveControlsBuffer = device.createBuffer({
+        size: 12,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+
     // ---------------------------------------------------
 
     const drawTexture = device.createTexture({
@@ -52,7 +63,8 @@ async function main() {
         layout: bgPipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: timeBuffer } },
-            { binding: 1, resource: drawTexture.createView() }
+            { binding: 1, resource: { buffer: waveControlsBuffer } },
+            { binding: 2, resource: drawTexture.createView() }
         ]
     })
 
@@ -100,7 +112,8 @@ async function main() {
         entries: [
             { binding: 0, resource: { buffer: originsBuffer } },
             { binding: 1, resource: { buffer: pointsBuffer } },
-            { binding: 2, resource: { buffer: timeBuffer } }
+            { binding: 2, resource: { buffer: timeBuffer } },
+            { binding: 3, resource: { buffer: waveControlsBuffer } }
         ]
     })
 
@@ -176,6 +189,11 @@ async function main() {
         // set the time
         timeValue.set([t])
         device.queue.writeBuffer(timeBuffer, 0, timeValue)
+
+        waveControlsViews.wavelength[0] = document.getElementById("wavelengthSlider").value
+        waveControlsViews.period[0] = document.getElementById("periodSlider").value
+        waveControlsViews.amplitude[0] = document.getElementById("amplitudeSlider").value
+        device.queue.writeBuffer(waveControlsBuffer, 0, waveControlsValues)
 
         // ---------------------------------------------------
 
