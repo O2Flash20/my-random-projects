@@ -190,9 +190,9 @@ async function main() {
         timeValue.set([t])
         device.queue.writeBuffer(timeBuffer, 0, timeValue)
 
-        waveControlsViews.wavelength[0] = document.getElementById("wavelengthSlider").value
-        waveControlsViews.period[0] = document.getElementById("periodSlider").value
-        waveControlsViews.amplitude[0] = document.getElementById("amplitudeSlider").value
+        document.getElementById("wavelengthValue").innerText = (waveControlsViews.wavelength[0] = document.getElementById("wavelengthSlider").value) + " pix"
+        document.getElementById("periodValue").innerText = (waveControlsViews.period[0] = document.getElementById("periodSlider").value) + " s"
+        document.getElementById("amplitudeValue").innerText = (waveControlsViews.amplitude[0] = document.getElementById("amplitudeSlider").value) + " pix"
         device.queue.writeBuffer(waveControlsBuffer, 0, waveControlsValues)
 
         // ---------------------------------------------------
