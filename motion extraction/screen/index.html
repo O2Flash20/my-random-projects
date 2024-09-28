@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Motion Extraction [Screen]</title>
+    <meta name="description" content="A real time effect to extract the motion from the user's screen">
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <p>To get a version that uses the camera instead of the screen, <a href="../camera/index.html">click here</a>.</p>
+    <h1>Motion Extraction [Screen]</h1>
+    <p>Inspired by <a href="https://youtu.be/NSS6yAMZF78?si=PZ8xB8wYelJKrNuy">this video</a> (and the desire to cheat at
+        video games by seeing players moving from far away), this my quick and easy solution to motion extraction in
+        real time: by subtracting the current frame from one a few milliseconds before, all the pixels that stayed the
+        same color in that time will go to black, letting the user see only what changed.</p>
+    <p>I find it cool to have my second monitor capture the motion of my main monitor, but if only have one, you could
+        set it to stream a youtube video in another tab to really appreciate the effect.</p>
+    <p>Your browser might say something scary about this website seeing what's on your screen, but I assure you that
+        once each frame is processed and displayed for you, it's gone forever (you can check the code <a
+            href="https://o2flash20.github.io/my-random-projects/motion%20extraction/sketch.js">here</a>)</p>
+    <p>If the videos don't fit on your screen, you could do [CTRL -] or [CTRL +] until they do.</p>
+    <video id="inputVideo" width="1920" height="1080"></video>
+    <canvas id="inputCanvas" width="1920" height="1080"></canvas>
+    <h2>Only the motion shown:</h2>
+    <canvas id="compositeCanvas" width="1920" height="1080"></canvas>
+    <canvas id="filterCanvas" width="1920" height="1080"></canvas>
+    <h2>Motion used as a glow effect over the original image:</h2>
+    <canvas id="finalCanvas" width="1920" height="1080"></canvas>
+    <script src="sketch.js"></script>
+</body>
+
+</html>
