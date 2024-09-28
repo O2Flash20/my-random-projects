@@ -6,9 +6,9 @@ let ctxI = cI.getContext("2d")
 let c = document.getElementById("compositeCanvas")
 let ctx = c.getContext("2d")
 
+const filters = "brightness(5) contrast(2) brightness(20) blur(5px)"
 let cf = document.getElementById("filterCanvas")
 let ctxf = cf.getContext("2d")
-ctxf.filter = "blur(5px) brightness(10)"
 
 let cF = document.getElementById("finalCanvas")
 let ctxF = cF.getContext("2d")
@@ -27,7 +27,20 @@ navigator.mediaDevices.getUserMedia({
     })
     .catch(function (err) { console.log(err.name + ": " + err.message) })
 
+oldWidth = 0
+oldHeight = 0
 setInterval(function () {
+    if (oldWidth !== v.videoWidth) {
+        v.width = cI.width = c.width = cf.width = cF.width = v.videoWidth
+        ctxf.filter = filters
+    }
+    oldWidth = v.videoWidth
+    if (oldHeight !== v.videoHeight) {
+        v.height = cI.height = c.height = cf.height = cF.height = v.videoHeight
+        ctxf.filter = filters
+    }
+    oldHeight = v.videoHeight
+
     ctx.globalCompositeOperation = 'source-over'
     ctx.drawImage(cI, 0, 0) //put the old video on the screen
     ctxI.drawImage(v, 0, 0) //update the video
