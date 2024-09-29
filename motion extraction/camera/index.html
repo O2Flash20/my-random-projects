@@ -9,9 +9,10 @@
     <meta name="description" content="A real time effect to extract the motion from the user's camera">
 
     <link rel="stylesheet" type="text/css" href="style.css">
-    
+
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/context-filter-polyfill/dist/index.min.js"></script>
 </head>
 
 <body>
@@ -22,7 +23,7 @@
         real time: by subtracting the current frame from one a few milliseconds before, all the pixels that stayed the
         same color in that time will go to black, letting the user see only what changed.</p>
     <p>If the videos don't fit on your screen, you could do [CTRL -] or [CTRL +] until they do.</p>
-    
+
     <video id="inputVideo" width="1920" height="1080"></video>
     <canvas id="inputCanvas" width="1920" height="1080"></canvas>
 
