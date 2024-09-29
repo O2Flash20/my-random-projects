@@ -12,7 +12,6 @@
 
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/context-filter-polyfill/dist/index.min.js"></script>
 </head>
 
 <body>
@@ -24,18 +23,9 @@
         same color in that time will go to black, letting the user see only what changed.</p>
     <p>If the videos don't fit on your screen, you could do [CTRL -] or [CTRL +] until they do.</p>
 
-    <video id="inputVideo" width="1920" height="1080"></video>
-    <canvas id="inputCanvas" width="1920" height="1080"></canvas>
-
     <h2>Only the motion shown:</h2>
-    <canvas id="compositeCanvas" width="1920" height="1080"></canvas>
 
-    <canvas id="accumulatorCanvas" width="1920" height="1080"></canvas>
-
-    <canvas id="filterCanvas" width="1920" height="1080"></canvas>
-
-    <h2>Motion used as a glow effect over the original image:</h2>
-    <canvas id="finalCanvas" width="1920" height="1080"></canvas>
+    <!-- <h2>Motion used as a glow effect over the original image:</h2> -->
 
     <script src="sketch.js"></script>
 </body>
