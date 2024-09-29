@@ -29,6 +29,10 @@ a {
     display: none;
 }
 
-#filterCanvas {
+#compositeCanvas {
+    display: none;
+}
+
+#accumulatorCanvas {
     display: none;
 }
