@@ -12,11 +12,13 @@ uniform float uScale;
 uniform int uDegree;
 uniform float uCoefficients[100];
 
-float powerInt(float base, int exponent){
+float powerInt(float base, int exponent) {
     float v = 1.;
     for (int i = 0; i < 100; i++) {
-        if (i >= exponent) {break;}
-        v*= base;
+        if (i >= exponent) {
+            break;
+        }
+        v *= base;
     }
     return v;
 }
@@ -33,7 +35,7 @@ void main() {
 
     float functionOutput = 0.;
     for (int i = 0; i < 100; i++) {
-        if (i > uDegree) {
+        if (i >= uDegree) {
             break;
         }
 

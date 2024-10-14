@@ -8,13 +8,13 @@ body {
 }
 
 canvas {
-    display: block !important;
+    /* display: block !important; */
     margin: 20px;
     outline: rgb(146, 255, 255);
     outline-style: solid;
     outline-width: 7px;
     border-radius: 5px;
-    /* position: fixed; */
+    position: fixed;
 }
 
 #info {
@@ -26,8 +26,23 @@ canvas {
 
 #inputsFrame {
     position: fixed;
+    left: 1050px;
+    width: 500px;
+    height: 350px;
+    border-radius: 10px;
+    margin: 20px;
+    padding: 10px;
+
+    border-radius: 10px;
+    outline: rgb(146, 255, 255);
+    outline-style: solid;
+    outline-width: 3px;
+}
+
+#equationFrame {
+    position: fixed;
     top: 650px;
-    width: 600px;
+    width: 975px;
     height: 150px;
     border-radius: 10px;
     margin: 20px;
@@ -37,6 +52,10 @@ canvas {
     outline: rgb(146, 255, 255);
     outline-style: solid;
     outline-width: 3px;
+}
+
+#equationsHolder {
+    color: white;
 }
 
 .pointInput {

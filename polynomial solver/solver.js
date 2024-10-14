@@ -27,6 +27,9 @@ class Matrix {
     }
 
     determinant() {
+        // if the matrix is just a number, return that number
+        if (this.rows == 1 && this.columns == 1) { return this.entries[0][0] }
+
         // if the number of rows and columns is 2, just get the number the quick way
         if (this.rows == 2 && this.columns == 2) {
             return this.entries[0][0] * this.entries[1][1] - this.entries[0][1] * this.entries[1][0]

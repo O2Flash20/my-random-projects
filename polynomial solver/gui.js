@@ -1,6 +1,8 @@
 let originPos = { x: 500, y: 300 }
 let scale = 100 //pixels per unit on the plane
 
+let coefficients = [] // the coefficients of the solved polynomial, the first is the highest order
+
 let mouseIsDraggingGraph = false
 
 let mouseIsDraggingPoint = false
@@ -12,9 +14,14 @@ let mousePos = { x: 0, y: 0 }
 let pointsInputsDiv
 
 let overUnderShader
+let edgeShader
+let dilateShader
 let functionCanvas
+let functionCanvasColor
 function preload() {
     overUnderShader = loadShader("shaders/basic.vert", "shaders/overUnder.frag")
+    edgeShader = loadShader("shaders/basic.vert", "shaders/edge.frag")
+    dilateShader = loadShader("shaders/basic.vert", "shaders/dilate.frag")
 }
 
 function setup() {
@@ -26,9 +33,9 @@ function setup() {
         const scaleMultiplier = 1 - event.deltaY / 1000
         scale *= scaleMultiplier //zoom in or out
 
-        const originRelativeToCursor = { x: originPos.x - event.clientX, y: originPos.y - event.clientY }
+        const originRelativeToCursor = { x: originPos.x - mouseX, y: originPos.y - mouseY }
         const originRelativeToCursorAfterScroll = { x: originRelativeToCursor.x * scaleMultiplier, y: originRelativeToCursor.y * scaleMultiplier }
-        const newOrigin = { x: originRelativeToCursorAfterScroll.x + event.clientX, y: originRelativeToCursorAfterScroll.y + event.clientY }
+        const newOrigin = { x: originRelativeToCursorAfterScroll.x + mouseX, y: originRelativeToCursorAfterScroll.y + mouseY }
         originPos = newOrigin
     })
 
@@ -70,13 +77,13 @@ function setup() {
         if (!(mouseIsDraggingPoint || mouseIsDraggingSlope)) { mouseIsDraggingGraph = true }
     })
     canvas.addEventListener("mouseup", function (event) {
-        if (mouseIsDraggingPoint || mouseIsDraggingSlope) { updateInputsFromPoints() }
+        if (mouseIsDraggingPoint || mouseIsDraggingSlope) { updateInputsFromPoints(); calculateCoefficients(points) }
         mouseIsDraggingGraph = false
         mouseIsDraggingPoint = false
         mouseIsDraggingSlope = false
     })
     canvas.addEventListener("mouseleave", function (event) {
-        if (mouseIsDraggingPoint || mouseIsDraggingSlope) { updateInputsFromPoints() }
+        if (mouseIsDraggingPoint || mouseIsDraggingSlope) { updateInputsFromPoints(); calculateCoefficients(points) }
         mouseIsDraggingGraph = false
         mouseIsDraggingPoint = false
         mouseIsDraggingSlope = false
@@ -98,12 +105,29 @@ function setup() {
             const newSlope = mouseToPoint.y / mouseToPoint.x
             p.slope = newSlope
         }
+
+        const numberOfEquations = formatPoints().length
+        if (numberOfEquations > 1 && numberOfEquations <= 6) { calculateCoefficients() }
     })
 
     functionCanvas = createGraphics(width, height, WEBGL)
+    functionCanvasColor = createGraphics(width, height, WEBGL)
+
+    // set up the css file to the iframes to avoid flickering
+    let frameStyles1 = document.createElement("link")
+    frameStyles1.rel = "styleSheet"
+    frameStyles1.href = "style.css"
+    document.getElementById("equationFrame").contentWindow.document.head.appendChild(frameStyles1)
+    let frameStyles2 = document.createElement("link")
+    frameStyles2.rel = "styleSheet"
+    frameStyles2.href = "style.css"
+    document.getElementById("inputsFrame").contentWindow.document.head.appendChild(frameStyles2)
 }
 
+let t = 0
 function draw() {
+    t += deltaTime / 1000
+
     background(25)
 
     // render the grid
@@ -129,7 +153,7 @@ function draw() {
         const label = Math.ceil(i - verticalLinesUntilOrigin) * gridScale
 
         strokeWeight(2)
-        stroke(255)
+        stroke(150)
         line(firstVerticalLine + i * gridScale * scale, 0, firstVerticalLine + i * gridScale * scale, height)
 
 
@@ -146,7 +170,7 @@ function draw() {
         const label = -Math.ceil(i - horizontalLinesUntilOrigin) * gridScale
 
         strokeWeight(2)
-        stroke(255)
+        stroke(150)
         line(0, firstHorizontalLine + i * gridScale * scale, width, firstHorizontalLine + i * gridScale * scale)
 
 
@@ -180,24 +204,32 @@ function draw() {
         }
     }
 
-    if (points.length <= 0) { return } //only continue if points have been placed
+    const pointsFormatted = formatPoints(points)
 
-    // first one is the lowest order
-    const coefficients = pointsToPolynomialParameters(formatPoints(points)).entries.reverse()
+    if (pointsFormatted.length <= 1) { return } //only continue if points have been placed
 
     overUnderShader.setUniform("uSize", [width, height])
     overUnderShader.setUniform("uOrigin", [originPos.x, originPos.y])
     overUnderShader.setUniform("uScale", scale)
-
     overUnderShader.setUniform("uDegree", coefficients.length)
     overUnderShader.setUniform("uCoefficients", coefficients)
-
     functionCanvas.shader(overUnderShader)
     functionCanvas.rect(1, 1, 1, 1)
 
-    // blendMode(MULTIPLY)
-    // image(functionCanvas, 0, 0, width, height)
-    // blendMode(BLEND)
+
+    edgeShader.setUniform("uSize", [width, height])
+    edgeShader.setUniform("uTex", functionCanvas)
+    functionCanvas.shader(edgeShader)
+    functionCanvas.rect(1, 1, 1, 1)
+
+    functionCanvasColor.clear()
+    dilateShader.setUniform("uSize", [width, height])
+    dilateShader.setUniform("uTex", functionCanvas)
+    dilateShader.setUniform("uTime", t)
+    functionCanvasColor.shader(dilateShader)
+    functionCanvasColor.rect(1, 1, 1, 1)
+
+    image(functionCanvasColor, 0, 0, width, height)
 }
 
 function graphPosToCanvasPos(point) {
@@ -262,7 +294,7 @@ document.addEventListener("keypress", function (event) {
             addPoint()
         }
 
-        updateInputsFromPoints()
+        updateInputsFromPoints(); calculateCoefficients(points)
     }
 
     else if (k == "s") { //show the ui element to control the slope of this point
@@ -285,9 +317,31 @@ document.addEventListener("keypress", function (event) {
             points[nearestPoint].slope == undefined ? points[nearestPoint].slope = 0 : points[nearestPoint].slope = undefined
         }
 
-        updateInputsFromPoints()
+        updateInputsFromPoints(); calculateCoefficients(points)
     }
 })
+
+function calculateCoefficients(points) {
+    coefficients = vectorToArray(pointsToPolynomialParameters(formatPoints(points))).reverse() //updating the global
+    updateCanvasDisplay()
+}
+
+function updateCanvasDisplay() {
+    const d = document.getElementById("equationFrame").contentWindow.document.body
+    d.innerHTML = ""
+
+    const equationsHolder = document.createElement("div")
+    equationsHolder.id = "equationsHolder"
+    d.appendChild(equationsHolder)
+
+    const pretty = document.createElement("p")
+    pretty.innerText = coefficientsToDisplay(coefficients)
+    equationsHolder.appendChild(pretty)
+
+    const mathJax = document.createElement("p")
+    mathJax.innerText = coefficientsToMathJax(coefficients)
+    equationsHolder.appendChild(mathJax)
+}
 
 // updates the js points array using the input elements on the page
 function updatePointsFromInputs() {
@@ -296,20 +350,14 @@ function updatePointsFromInputs() {
         const inputs = pointsElements[i].querySelectorAll("input")
         points[i].pos.x = inputs[0].value
         points[i].pos.y = inputs[1].value
-        points[i].slope = inputs[2].value
+        points[i].slope = inputs[2].value == "" ? undefined : inputs[2].value
     }
 }
-
 
 // updates the input elements on the page using the js points array
 function updateInputsFromPoints() {
     const d = document.getElementById("inputsFrame").contentWindow.document.body
     d.innerHTML = ""
-
-    const frameStyles = document.createElement("link")
-    frameStyles.rel = "styleSheet"
-    frameStyles.href = "style.css"
-    d.appendChild(frameStyles)
 
     const title = document.createElement("h3")
     title.innerText = "Points"
@@ -330,7 +378,7 @@ function updateInputsFromPoints() {
         xInput.type = "number"
         xInput.style = "width: 85px; float:right"
         xInput.value = p.pos.x
-        xInput.addEventListener("change", (event) => { updatePointsFromInputs() })
+        xInput.addEventListener("change", (event) => { updatePointsFromInputs(); calculateCoefficients(points) })
         e.appendChild(xInput)
 
         e.appendChild(document.createElement("br"))
@@ -342,7 +390,7 @@ function updateInputsFromPoints() {
         yInput.type = "number"
         yInput.style = "width: 85px; float:right"
         yInput.value = p.pos.y
-        yInput.addEventListener("change", (event) => { updatePointsFromInputs() })
+        yInput.addEventListener("change", (event) => { updatePointsFromInputs(); calculateCoefficients(points) })
         e.appendChild(yInput)
 
         e.appendChild(document.createElement("br"))
@@ -354,12 +402,75 @@ function updateInputsFromPoints() {
         slopeInput.type = "number"
         slopeInput.style = "width: 85px; float:right"
         slopeInput.value = p.slope
-        slopeInput.addEventListener("change", (event) => { updatePointsFromInputs() })
+        slopeInput.addEventListener("change", (event) => { updatePointsFromInputs(); calculateCoefficients(points) })
         e.appendChild(slopeInput)
     }
 }
 
+function vectorToArray(vector) {
+    let output = []
+    for (let i = 0; i < vector.entries.length; i++) {
+        output.push(vector.entries[i][0])
+    }
+    return output
+}
+
+function coefficientsToDisplay(coefficients) {
+
+    function styleAsExponent(number) {
+        let output = ""
+
+        const exponentCharacters = "⁰¹²³⁴⁵⁶⁷⁸⁹".split("") //an array containing all 10 digits in superscript
+
+        let s = String(number).split("")
+        for (let character of s) {
+            output += exponentCharacters[Number(character)]
+        }
+
+        return output
+    }
+
+
+    let output = "y = "
+    let terms = []
+    for (let i = coefficients.length - 1; i >= 0; i--) {
+        const c = coefficients[i]
+        let thisTerm = String(c)
+        if (i !== 0) { i == 1 ? thisTerm += `x` : thisTerm += `x${styleAsExponent(i)}` }
+        terms.push(thisTerm)
+    }
+
+    output += terms[0]
+    for (let i = 1; i < terms.length - 1; i++) {
+        output += coefficients[terms.length - 1 - i] >= 0 ? "+" + terms[i] : terms[i]
+    }
+    output += coefficients[0] >= 0 ? "+" + terms[terms.length - 1] : terms[terms.length - 1]
+
+    return output
+}
+
+function coefficientsToMathJax(coefficients) {
+    let output = "f(x) = "
+    let terms = []
+    for (let i = coefficients.length - 1; i >= 0; i--) {
+        const c = coefficients[i]
+        let thisTerm = String(c)
+        if (i !== 0) { i == 1 ? thisTerm += `x` : thisTerm += `x^{${i}}` }
+        terms.push(thisTerm)
+    }
+
+    output += terms[0]
+    for (let i = 1; i < terms.length - 1; i++) {
+        output += coefficients[terms.length - 1 - i] >= 0 ? "+" + terms[i] : terms[i]
+    }
+    output += coefficients[0] >= 0 ? "+" + terms[terms.length - 1] : terms[terms.length - 1]
+
+    return output
+}
+
 /*
 TODO:
-compute the graph very often and draw it each frame
+controls
+explanation of how it works (via a link?)
+pretty stuff up a bit
 */
