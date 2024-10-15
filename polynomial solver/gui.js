@@ -13,6 +13,14 @@ let mousePos = { x: 0, y: 0 }
 
 let pointsInputsDiv
 
+let backdropImg
+function uploadBackdrop(){
+    const fileInput = document.getElementById("fileInput")
+    const imageFile = fileInput.files[0]
+    const imageURL = URL.createObjectURL(new Blob([imageFile]))
+    backdropImg = loadImage(imageURL)
+}
+
 let overUnderShader
 let edgeShader
 let dilateShader
@@ -24,8 +32,14 @@ function preload() {
     dilateShader = loadShader("shaders/basic.vert", "shaders/dilate.frag")
 }
 
+function windowResized(){
+    resizeCanvas(innerWidth*0.70, innerHeight*0.75)
+    functionCanvas.resizeCanvas(width, height)
+    functionCanvasColor.resizeCanvas(width, height)
+}
+
 function setup() {
-    createCanvas(1000, 600)
+    createCanvas(innerWidth*0.70, innerHeight*0.75)
     stroke("white")
     textSize(20)
 
@@ -122,6 +136,14 @@ function setup() {
     frameStyles2.rel = "styleSheet"
     frameStyles2.href = "style.css"
     document.getElementById("inputsFrame").contentWindow.document.head.appendChild(frameStyles2)
+
+    // add their titles
+    const equationTitle = document.createElement("h2")
+    equationTitle.innerText = "Equation"
+    document.getElementById("equationFrame").contentWindow.document.body.appendChild(equationTitle)
+    const pointsTitle = document.createElement("h2")
+    pointsTitle.innerText = "Points"
+    document.getElementById("inputsFrame").contentWindow.document.body.appendChild(pointsTitle)
 }
 
 let t = 0
@@ -129,6 +151,12 @@ function draw() {
     t += deltaTime / 1000
 
     background(25)
+
+    if (backdropImg) {
+        const imageWidth = document.getElementById("backdropWidthInput").value*scale
+        const imageHeight = backdropImg.height/backdropImg.width*imageWidth
+        image(backdropImg, originPos.x, originPos.y-imageHeight, imageWidth, imageHeight)
+    }
 
     // render the grid
     stroke(255)
@@ -330,6 +358,10 @@ function updateCanvasDisplay() {
     const d = document.getElementById("equationFrame").contentWindow.document.body
     d.innerHTML = ""
 
+    const title = document.createElement("h2")
+    title.innerText = "Equation"
+    d.appendChild(title)
+
     const equationsHolder = document.createElement("div")
     equationsHolder.id = "equationsHolder"
     d.appendChild(equationsHolder)
@@ -359,7 +391,7 @@ function updateInputsFromPoints() {
     const d = document.getElementById("inputsFrame").contentWindow.document.body
     d.innerHTML = ""
 
-    const title = document.createElement("h3")
+    const title = document.createElement("h2")
     title.innerText = "Points"
 
     d.appendChild(title)
@@ -470,7 +502,5 @@ function coefficientsToMathJax(coefficients) {
 
 /*
 TODO:
-controls
 explanation of how it works (via a link?)
-pretty stuff up a bit
 */
