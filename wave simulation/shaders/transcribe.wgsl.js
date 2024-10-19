@@ -13,8 +13,8 @@ export default /*wgsl*/ `
     textureStore(
         outputTexture, i, 
         vec4f(
-            originalValue,
-            -originalValue,
+            100*originalValue, //make positive values red and brighter
+            -100*originalValue, //make negative values green and brighter
             0,
             1
         )
@@ -22,3 +22,5 @@ export default /*wgsl*/ `
 }
 
 `
+
+// on to renderWave.wgsl.js

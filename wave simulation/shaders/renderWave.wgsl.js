@@ -5,7 +5,7 @@ struct vertexShaderOutput {
     @location(0) uv: vec2f
 };
 
-@vertex fn vs(
+@vertex fn vs( //the vertices
     @builtin(vertex_index) vertexIndex : u32
 ) -> vertexShaderOutput {
     let pos = array( //two triangles making a quad that covers the whole screen
@@ -32,7 +32,7 @@ struct vertexShaderOutput {
 @group(0) @binding(1) var linearSampler: sampler;
 @group(0) @binding(2) var obstaclesTexture: texture_2d<f32>;
 
-@fragment fn fs(i:vertexShaderOutput)->@location(0)vec4f{
+@fragment fn fs(i:vertexShaderOutput)->@location(0)vec4f{ //the pixels, just the sum of the wave texture and the obstacles texture (which is black and white)
     return textureSample(waveTexture, linearSampler, i.uv) + textureSample(obstaclesTexture, linearSampler, i.uv);
 }
 
