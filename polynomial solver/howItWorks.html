@@ -5,9 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How it works</title>
     <link rel="stylesheet" href="style.css">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
 </head>
 <body>
     <h1>How it Works</h1>
-    <p>this page is under construction :)</p>
+    <p>The goal is to create a polynomial function, \(f(x)\), that perfectly fits what the user draws out.</p>
+    <p>When the user inputs a point or a slope control, that's one piece of information and therefore one equation like</p>
+    <ul>
+        <li>\(a=f(b)\) for a point (meaning that when the function gets an input of \(b\), it returns \(a\))</li>
+        <li>\(a=f'(b)\) for a slope control (meaning that the slope, or first derivative, at position \(b\) is \(a\)).</li>
+    </ul>
+    <p>So the question now is, what does \(f(x)\) look like?</p>
+    <p>So solve \(n\) equations with only one solution, we need \(n\) unknowns. Any more and there might be infinitely many, and any less and there might not be any solutions.</p>
+    <p>I'll be using the general form of a polynomial, that can be written: \(f(x)=a_0+a_1x+a_2x^2+a_3x^3 +...+a_nx^n\) where \(a_0, a_1, a_2, a_3, ...\) are the unknowns and \(x\) is the input to the function.</p>
+    <br>
+    <p><u>Let's do an example</u></p>
+    <p>If the user inputs 3 pieces of information, I'll stop at 3 unknowns: \(f(x)=a_0+a_1x+a_2x^2\). Taking the derivative of this, \(f'(x)=a_1+a_2x\)</p>
+    <p>Let's say the user inputted \(f(0)=1\), \(f(1)=0.5\), and \(f'(1)==0\), which would look like this: </p>
+    <img src="example.png">
+    <p>It gives us 3 equations:</p>
+    <ul>
+        <li>\(f(0)=a_0+a_1(0)+a_2(0^2)=1\)</li>
+        <li>\(f(1)=a_0+a_1(1)+a_2(1^2)=0.5\)</li>
+        <li>\(f'(1)=a_1+a_2(0.5)=0\)</li>
+    </ul>
+    <p>To make it more clear for the next step we can rewrite it as</p>
+    <ul>
+        <li>\((1)a_0+(0)a_1+(0)a_2 = 1\)</li>
+        <li>\((1)a_0+(1)a_1+(1)a_2 = 1\)</li>
+        <li>\((0)a_0+(1)a_1+(0.5)a_2 = 1\)</li>
+    </ul>
+    <p>This system of linear equations can be rewritten using a matrix and vectors, in the form \(A\vec{x}=\vec{b}\):</p>
+    $${ \begin{bmatrix}1&0&0\\1&1&1\\0&1&0.5\end{bmatrix} \begin{bmatrix}a_0\\a_1\\a_2\end{bmatrix} = \begin{bmatrix}1\\0.5\\0\end{bmatrix} }$$
+    $${ \begin{bmatrix}a_0\\a_1\\a_2\end{bmatrix} =  \begin{bmatrix}1&0&0\\1&1&1\\0&1&0.5\end{bmatrix}^{-1}  \begin{bmatrix}1\\0.5\\0\end{bmatrix} }$$
+    <p>So to find the coefficients, we have to find the inverse of \(\begin{bmatrix}1&0&0\\1&1&1\\0&1&0.5\end{bmatrix}\) and then multiply it with \(\begin{bmatrix}1\\0.5\\0\end{bmatrix}\).</p>
+    <p>A way to get a computer to find the inverse of a matrix is with the equation \(A^{-1}=\frac{1}{|A|}adj(A)\), since a computer can find a determinant and adjoint by following simple instructions.</p>
+    <p>We end up with \(\begin{bmatrix}a_0\\a_1\\a_2\end{bmatrix} = \begin{bmatrix}1\\-1\\0.5\end{bmatrix}\), meaning \(a_0=1\), \(a_1=-1\), and \(a_2=0.5\).</p>
+    <p>So finally, we have the function \(f(x)=\frac{1}{2}x^2-x+1\) which perfectly fits the user's input.</p>
 </body>
 </html>
