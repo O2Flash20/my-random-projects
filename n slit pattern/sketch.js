@@ -1,15 +1,30 @@
-const NumSlits = 4
-const SlitSpacing = 7.60e-6
-const SlitWidth = 2.54e-6
-const DistToScreen = 1.25
-const ScreenRange = 0.5 //how much you see to on each side of the screen before it restarts
-const Wavelength = 405e-9
-const TimePerSweep = 5 // how much time it takes to go over the whole screen range
+let animationPlaying = false
+let P = {} // the parameters object
+function startSimulation() {
+    animationPlaying = true
+    t = 0
+    interferencePlot = []; diffractionPlot = []
+    sCanvas.background(0)
+    P = getParameters()
+}
+
+function stopSimulation() {
+    animationPlaying = false
+}
+
+function getParameters() {
+    return {
+        NumSlits: document.getElementById("numInput").value,
+        SlitSpacing: document.getElementById("dInput").value,
+        SlitWidth: document.getElementById("aInput").value,
+        DistToScreen: document.getElementById("distInput").value,
+        ScreenRange: document.getElementById("sizeInput").value,
+        Wavelength: document.getElementById("wavelengthInput").value,
+        TimePerSweep: document.getElementById("tInput").value
+    }
+}
 
 const NumDiffractionPhasers = 30 //this should technically be infinity
-
-
-const lengthInfoElt = document.getElementById("lengthInfo")
 
 let phasersCanvasSize = 400
 
@@ -17,14 +32,19 @@ let phasersCanvasSize = 400
 let iCanvas
 let dCanvas
 let gCanvas
+let sCanvas
 let startPos //will just be set once,  the center of the screen
 function setup() {
-    // mainCanvas = createCanvas(800, 400)
+    noCanvas()
 
     iCanvas = createGraphics(phasersCanvasSize, phasersCanvasSize)
     dCanvas = createGraphics(phasersCanvasSize, phasersCanvasSize)
 
+    createElement("br")
+
     gCanvas = createGraphics(2 * phasersCanvasSize, phasersCanvasSize)
+    createElement("br")
+    sCanvas = createGraphics(2 * phasersCanvasSize, phasersCanvasSize)
 
     startPos = createVector(phasersCanvasSize / 2, phasersCanvasSize / 2)
 }
@@ -34,25 +54,26 @@ let diffractionPlot = []
 
 t = 0
 function draw() {
-    if (t>TimePerSweep) {
-        t= 0
-        interferencePlot=[]; diffractionPlot=[]
+    if (!animationPlaying) { return }
+    if (t > P.TimePerSweep) {
+        t = 0
+        interferencePlot = []; diffractionPlot = []
     }
     else {
-        t+= deltaTime/1000
+        t += deltaTime / 1000
     }
 
-    const ScreenPos = t * ScreenRange / TimePerSweep
-    const AngularPos = Math.atan2(ScreenPos, DistToScreen)
+    const ScreenPos = t * P.ScreenRange / P.TimePerSweep
+    const AngularPos = Math.atan2(ScreenPos, P.DistToScreen)
 
     // ---------- INTERFERENCE ----------
-    iCanvas.background(51)
+    iCanvas.background(25)
 
     let iArrowPoints = [startPos]
-    const iAngleDiff = 2 * Math.PI * SlitSpacing * Math.sin(AngularPos) / Wavelength //phi
-    for (let i = 0; i < NumSlits; i++) {
+    const iAngleDiff = 2 * Math.PI * P.SlitSpacing * Math.sin(AngularPos) / P.Wavelength //phi
+    for (let i = 0; i < P.NumSlits; i++) {
         const thisAngle = -iAngleDiff * i
-        iArrowPoints.push(getArrowEnd(iArrowPoints[i], (phasersCanvasSize / 2) / NumSlits, thisAngle))
+        iArrowPoints.push(getArrowEnd(iArrowPoints[i], (phasersCanvasSize / 2) / P.NumSlits, thisAngle))
     }
 
     iCanvas.stroke(255)
@@ -66,14 +87,15 @@ function draw() {
     arrow(iCanvas, iArrowPoints[0], iArrowPoints[iArrowPoints.length - 1])
 
     const interferenceValue = iArrowPoints[0].dist(iArrowPoints[iArrowPoints.length - 1]) / (phasersCanvasSize / 2)
+    const interferenceIntensity = interferenceValue ** 2
 
-    interferencePlot.push({ x: ScreenPos, y: interferenceValue })
+    interferencePlot.push({ x: ScreenPos, y: interferenceIntensity })
 
     // ---------- DIFFRACTION ----------
-    dCanvas.background(51)
+    dCanvas.background(25)
 
     let dPoints = [startPos]
-    const dAngleDiff = 2 * Math.PI * SlitWidth * Math.sin(AngularPos) / Wavelength //this is sigma
+    const dAngleDiff = 2 * Math.PI * P.SlitWidth * Math.sin(AngularPos) / P.Wavelength //this is sigma
     const dAngleDiffPerLine = dAngleDiff / (NumDiffractionPhasers - 1)
     for (let i = 0; i < NumDiffractionPhasers; i++) {
         const thisAngle = -dAngleDiffPerLine * i
@@ -92,11 +114,25 @@ function draw() {
     arrow(dCanvas, dPoints[0], dPoints[dPoints.length - 1])
 
     const diffractionValue = dPoints[0].dist(dPoints[dPoints.length - 1]) / (phasersCanvasSize / 2)
+    const diffractionIntensity = diffractionValue ** 2
 
-    diffractionPlot.push({ x: ScreenPos, y: diffractionValue })
+    diffractionPlot.push({ x: ScreenPos, y: diffractionIntensity })
 
     // ---------- GRAPH ----------
-    gCanvas.background(51)
+    gCanvas.background(25)
+
+    gCanvas.stroke(255, 255, 255)
+    gCanvas.strokeWeight(5)
+    for (let i = 0; i < Math.min(interferencePlot.length, diffractionPlot.length) - 1; i++) {
+        const thisIntensity = interferencePlot[i].y * diffractionPlot[i].y
+        const thisGraphPos = toGraphPos({ x: interferencePlot[i].x, y: thisIntensity })
+
+        const nextIntensity = interferencePlot[i + 1].y * diffractionPlot[i + 1].y
+        const nextGraphPos = toGraphPos({ x: interferencePlot[i + 1].x, y: nextIntensity })
+
+        gCanvas.line(thisGraphPos.x, thisGraphPos.y, nextGraphPos.x, nextGraphPos.y)
+        gCanvas.line(-thisGraphPos.x + gCanvas.width, thisGraphPos.y, -nextGraphPos.x + gCanvas.width, nextGraphPos.y)
+    }
 
     gCanvas.strokeWeight(1)
     gCanvas.stroke(255, 0, 0)
@@ -105,7 +141,7 @@ function draw() {
         const nextGraphPos = toGraphPos(interferencePlot[i + 1])
 
         gCanvas.line(thisGraphPos.x, thisGraphPos.y, nextGraphPos.x, nextGraphPos.y)
-        gCanvas.line(-thisGraphPos.x+gCanvas.width, thisGraphPos.y, -nextGraphPos.x+gCanvas.width, nextGraphPos.y)
+        gCanvas.line(-thisGraphPos.x + gCanvas.width, thisGraphPos.y, -nextGraphPos.x + gCanvas.width, nextGraphPos.y)
     }
 
     gCanvas.stroke(0, 255, 0)
@@ -114,21 +150,21 @@ function draw() {
         const nextGraphPos = toGraphPos(diffractionPlot[i + 1])
 
         gCanvas.line(thisGraphPos.x, thisGraphPos.y, nextGraphPos.x, nextGraphPos.y)
-        gCanvas.line(-thisGraphPos.x+gCanvas.width, thisGraphPos.y, -nextGraphPos.x+gCanvas.width, nextGraphPos.y)
+        gCanvas.line(-thisGraphPos.x + gCanvas.width, thisGraphPos.y, -nextGraphPos.x + gCanvas.width, nextGraphPos.y)
     }
 
-    gCanvas.stroke(255, 255, 255)
-    gCanvas.strokeWeight(5)
-    for (let i = 0; i < Math.min(interferencePlot.length, diffractionPlot.length)-1; i++) {
-        const thisIntensity = interferencePlot[i].y * diffractionPlot[i].y
-        const thisGraphPos = toGraphPos({ x: interferencePlot[i].x, y: thisIntensity })
+    // ---------- SCREEN ----------
+    const latestInterference = interferencePlot[interferencePlot.length - 1].y
+    const latestDiffraction = diffractionPlot[diffractionPlot.length - 1].y
+    const latestIntensity = latestInterference * latestDiffraction *100
 
-        const nextIntensity = interferencePlot[i + 1].y * diffractionPlot[i + 1].y
-        const nextGraphPos = toGraphPos({ x: interferencePlot[i + 1].x, y: nextIntensity })
+    const latestPosX = toGraphPos(interferencePlot[interferencePlot.length - 1]).x
 
-        gCanvas.line(thisGraphPos.x, thisGraphPos.y, nextGraphPos.x, nextGraphPos.y)
-        gCanvas.line(-thisGraphPos.x+gCanvas.width, thisGraphPos.y, -nextGraphPos.x+gCanvas.width, nextGraphPos.y)
-    }
+    let col = displayColor(P.Wavelength, latestIntensity, 0.5)
+    if (col[0]==0 && col[1]==0 &&col[2]==0) {col = [255, 255, 255]}
+    sCanvas.stroke(col[0], col[1], col[2])
+    sCanvas.line(latestPosX, sCanvas.height / 2 + 100, latestPosX, sCanvas.height / 2 - 100)
+    sCanvas.line(-latestPosX+sCanvas.width, sCanvas.height / 2 + 100, -latestPosX+sCanvas.width, sCanvas.height / 2 - 100)
 }
 
 function getArrowEnd(start, length, angle) {
@@ -153,7 +189,74 @@ function headlessArrow(canvas, start, end) {
 
 function toGraphPos(point) {
     return {
-        x: point.x / ScreenRange * (gCanvas.width / 2) + gCanvas.width / 2,
+        x: point.x / P.ScreenRange * (gCanvas.width / 2) + gCanvas.width / 2,
         y: gCanvas.height * (1 - point.y)
     }
+}
+
+function wavelengthToColor(wavelength) { //https://gist.github.com/hypercompetent/cad598361683b10c5bc6787aa9951d64
+    var Gamma = 0.80,
+        IntensityMax = 255,
+        factor, red, green, blue
+    if ((wavelength >= 380) && (wavelength < 440)) {
+        red = -(wavelength - 440) / (440 - 380)
+        green = 0.0
+        blue = 1.0
+    } else if ((wavelength >= 440) && (wavelength < 490)) {
+        red = 0.0
+        green = (wavelength - 440) / (490 - 440)
+        blue = 1.0
+    } else if ((wavelength >= 490) && (wavelength < 510)) {
+        red = 0.0
+        green = 1.0
+        blue = -(wavelength - 510) / (510 - 490)
+    } else if ((wavelength >= 510) && (wavelength < 580)) {
+        red = (wavelength - 510) / (580 - 510)
+        green = 1.0
+        blue = 0.0
+    } else if ((wavelength >= 580) && (wavelength < 645)) {
+        red = 1.0
+        green = -(wavelength - 645) / (645 - 580)
+        blue = 0.0
+    } else if ((wavelength >= 645) && (wavelength < 781)) {
+        red = 1.0
+        green = 0.0
+        blue = 0.0
+    } else {
+        red = 0.0
+        green = 0.0
+        blue = 0.0
+    };
+    // Let the intensity fall off near the vision limits
+    if ((wavelength >= 380) && (wavelength < 420)) {
+        factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380)
+    } else if ((wavelength >= 420) && (wavelength < 701)) {
+        factor = 1.0
+    } else if ((wavelength >= 701) && (wavelength < 781)) {
+        factor = 0.3 + 0.7 * (780 - wavelength) / (780 - 700)
+    } else {
+        factor = 0.0
+    };
+    if (red !== 0) {
+        red = Math.round(IntensityMax * Math.pow(red * factor, Gamma))
+    }
+    if (green !== 0) {
+        green = Math.round(IntensityMax * Math.pow(green * factor, Gamma))
+    }
+    if (blue !== 0) {
+        blue = Math.round(IntensityMax * Math.pow(blue * factor, Gamma))
+    }
+    return [red, green, blue]
+}
+
+function displayColor(wavelength, intensity, exposure) {
+    let col = wavelengthToColor(wavelength*1e9)
+    col[0] = 255*toneMap(exposure*intensity*col[0]/255)
+    col[1] = 255*toneMap(exposure*intensity*col[1]/255)
+    col[2] = 255*toneMap(exposure*intensity*col[2]/255)
+    return col
+}
+
+function toneMap(v){
+    return 1-(1/(v+1))
 }
