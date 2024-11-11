@@ -1,21 +1,11 @@
 import renderCode from "./shaders/rasterize.wgsl.js"
+import textureCode from "./shaders/texture.wgsl.js"
 import testCode from "./shaders/display.wgsl.js"
 
 import Camera from "./camera.js"
 import Scene from "./scene.js"
 import { CubeVertices, Object } from "./object.js"
-
-function createDepthBuffer(device, canvas) {
-    return device.createTexture({
-        size: [
-            canvas.clientWidth,
-            canvas.clientHeight
-        ],
-        format: "depth24plus-stencil8", //a special format to be used as a depth stencil
-        usage: GPUTextureUsage.RENDER_ATTACHMENT
-    })
-}
-
+import { Materials, compileMaterials } from "./materials.js"
 
 async function main() {
     // set up the device (gpu)
@@ -43,6 +33,9 @@ async function main() {
         minFilter: "linear",
         mipmapFilter: "linear",
     })
+
+    // ---------- MATERIALS ----------
+    const materialInformation = await compileMaterials(Materials, device)
 
     // ---------- SCENE SETUP ----------
 
@@ -133,6 +126,93 @@ async function main() {
         }
     }
 
+    // ---------- TEXTURING STEP ----------
+    const textureModule = device.createShaderModule({
+        label: "texturing module",
+        code:
+            textureCode
+                .replace("_TEXTURE_INPUT", materialInformation.textureImportCode)
+                .replace("_TEXTURE_SAMPLE", materialInformation.textureSampleCode)
+                .replace("_MATERIALS", materialInformation.materialsCode)
+    })
+
+    const colorBuffer = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+    const normalBuffer = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "rgba32float",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+    const roughnessBuffer = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "r8unorm",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+    const metallicBuffer = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "r8unorm",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const texturePipeline = device.createRenderPipeline({
+        layout: "auto",
+        vertex: { module: textureModule },
+        fragment: {
+            module: textureModule,
+            targets: [
+                { format: "rgba8unorm" }, //color
+                { format: "rgba32float" }, //normal (after normal map)
+                { format: "r8unorm" }, //roughness
+                { format: "r8unorm" } //metallic
+            ]
+        }
+    })
+
+    const textureRenderPassDescriptor = {
+        colorAttachments: [
+            {
+                view: colorBuffer.createView(),
+                clearValue: [0, 0, 0, 0],
+                loadOp: "clear",
+                storeOp: "store"
+            },
+            {
+                view: normalBuffer.createView(),
+                clearValue: [0, 0, 0, 0],
+                loadOp: "clear",
+                storeOp: "store"
+            },
+            {
+                view: roughnessBuffer.createView(),
+                clearValue: [0, 0, 0, 0],
+                loadOp: "clear",
+                storeOp: "store"
+            },
+            {
+                view: metallicBuffer.createView(),
+                clearValue: [0, 0, 0, 0],
+                loadOp: "clear",
+                storeOp: "store"
+            }
+        ]
+    }
+
+    // an array containing both the necessary textures and the ones coming from the materials
+    const textureBindGroupEntries = [
+        { binding: 0, resource: linearSampler },
+        { binding: 1, resource: rasterizeTargets.material.createView() },
+        { binding: 2, resource: rasterizeTargets.normal.createView() },
+        { binding: 3, resource: rasterizeTargets.uv.createView() }
+    ].concat(materialInformation.bindGroupEntries)
+
+    const textureBindGroup = device.createBindGroup({
+        layout: texturePipeline.getBindGroupLayout(0),
+        entries: textureBindGroupEntries
+    })
+
     // ---------- DISPLAY STEP ----------
     const displayModule = device.createShaderModule({
         label: "display module",
@@ -159,11 +239,20 @@ async function main() {
     const displayBindGroup = device.createBindGroup({
         layout: displayPipeline.getBindGroupLayout(0),
         entries: [
+            // { binding: 0, resource: linearSampler },
+            // { binding: 1, resource: rasterizeTargets.material.createView() },
+            // { binding: 2, resource: rasterizeTargets.normal.createView() },
+            // { binding: 3, resource: rasterizeTargets.uv.createView() },
+            // { binding: 4, resource: depthBuffer.createView({ aspect: "depth-only" }) }
+
             { binding: 0, resource: linearSampler },
-            { binding: 1, resource: rasterizeTargets.material.createView() },
+            { binding: 1, resource: rasterizeTargets.uv.createView() },
             { binding: 2, resource: rasterizeTargets.normal.createView() },
-            { binding: 3, resource: rasterizeTargets.uv.createView() },
-            { binding: 4, resource: depthBuffer.createView({aspect: "depth-only"}) }
+            { binding: 3, resource: colorBuffer.createView() },
+            { binding: 4, resource: normalBuffer.createView() },
+            { binding: 5, resource: roughnessBuffer.createView() },
+            { binding: 6, resource: metallicBuffer.createView() }
+
         ]
     })
 
@@ -184,8 +273,6 @@ async function main() {
         const cameraMatrix = camera.getCameraMatrix(canvas.clientWidth / canvas.clientHeight)
         device.queue.writeBuffer(cameraUniformBuffer, 0, cameraMatrix.buffer, cameraMatrix.byteOffset, cameraMatrix.byteLength)
 
-        //? renderPassDescriptor.colorAttachments[0].view = rasterizeOutput.createView()
-
         // ---------- RASTERIZING THE SCENE ----------
         const rasterizeCommandEncoder = device.createCommandEncoder()
         const rasterizeRenderPass = rasterizeCommandEncoder.beginRenderPass(rasterizePassDescriptor)
@@ -194,6 +281,16 @@ async function main() {
 
         rasterizeRenderPass.end()
         device.queue.submit([rasterizeCommandEncoder.finish()])
+
+        // ---------- TEXTURING THE SCENE ----------
+        const textureCommandEncoder = device.createCommandEncoder()
+        const textureRenderPass = textureCommandEncoder.beginRenderPass(textureRenderPassDescriptor)
+        textureRenderPass.setPipeline(texturePipeline)
+        textureRenderPass.setBindGroup(0, textureBindGroup)
+        textureRenderPass.draw(6)
+        textureRenderPass.end()
+
+        device.queue.submit([textureCommandEncoder.finish()])
 
         // ---------- DISPLAYING THE SCENE ----------
         displayRenderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView()
@@ -205,6 +302,7 @@ async function main() {
         displayRenderPass.end()
 
         device.queue.submit([displayCommandEncoder.finish()])
+
 
         requestAnimationFrame(render)
     }

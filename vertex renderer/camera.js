@@ -67,7 +67,7 @@ export default class Camera {
     getProjectionMatrix(aspectRatio) {
         let projectionMatrix = mat4.create()
 
-        return mat4.perspective(projectionMatrix, Math.PI * (this.fov) / 180, aspectRatio, 0.1, 1000)
+        return mat4.perspective(projectionMatrix, Math.PI * (this.fov) / 180, aspectRatio, 0.01, 1000)
     }
 
     // returns a float32Array that is a 4x4 matrix with all the transformations and rotations the camera needs
