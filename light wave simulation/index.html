@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Wave Simulation</title>
+    <meta name="description" content="A simulation of complex and beautiful light phenomena.">
+    <link rel="stylesheet" href="style.css">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
+</head>
+<body>
+    <h1>Light Wave Simulation</h1>
+    <b><p><a href="https://o2flash20.github.io/Hackathon-2024/">Click here</a> to try it out!</p></b>
+    <p>This project was made for the 2024 McGill Physics Hackathon, and won third place out of 44 projects.</p>
+    <p>It was made by my friend and I, in 24 hours.</p>
+
+    <br>
+
+    <h2>Gallery</h2>
+    
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_103636.png?raw=true">
+    <p>Something like water caustics</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_103720.png?raw=true">
+    <p>Diffraction around a ball</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_103740.png?raw=true">
+    <p>Light bouncing around a scene with a glass trapezoid in the middle</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_103905.png?raw=true">
+    <p>Interference within a fractal shape</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_103938.png?raw=true">
+    <p>Single slit diffraction</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_104221.png?raw=true">
+    <p>Double slit interference</p><br>
+
+    <img src="https://github.com/O2Flash20/Hackathon-2024/blob/main/gallery/Screenshot_20241117_104431.png?raw=true">
+    <p>Light focusing in front of a mirror</p>
+
+    <br>
+
+    <h2>How it works</h2>
+    <p>We start off with the differential equation describing light waves (waves in the electric and magnetic field). We can say that \(u\) is the electric field in the direction coming out of the screen. In 2D, it's:</p>
+    $${ \frac{\partial^2 u}{\partial t^2} = v^2\Big[\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2}\Big] }$$
+    <p>We can then rewrite this as a limit instead. Note that I'm describing the wave as a function \(u(x, y, t)\) that takes in position on the x-axis, position on the y-axis, and time.</p>
+    $${ \lim_{\Delta t \to 0} \frac{ u(x, y, t+\Delta t) - 2u(x, y, t) + u(x, y, t-\Delta t)}{\Delta t^2} = v^2 \Big[ \lim_{\Delta x \to 0} \frac{ u(x+\Delta x, y, t) - 2u(x, y, t) + u(x-\Delta x, y, t)}{\Delta x^2} + \lim_{\Delta y \to 0} \frac{ u(x, y+\Delta y, t) - 2u(x, y, t) + u(x, y-\Delta y, t)}{\Delta y^2} \Big] }$$
+    <p>Computers can't calculate a limit approaching 0 like that, but what we can do is just say that \(\Delta y\), \(\Delta x\), and \(\Delta y\) will be small enough numbers that it's practically a limit to 0. This is called the "finite difference method" of approximating differential equations.</p>
+    $${ \frac{ u(x, y, t+\Delta t) - 2u(x, y, t) + u(x, y, t-\Delta t)}{\Delta t^2} = v^2 \Big[ \frac{ u(x+\Delta x, y, t) - 2u(x, y, t) + u(x-\Delta x, y, t)}{\Delta x^2} + \frac{ u(x, y+\Delta y, t) - 2u(x, y, t) + u(x, y-\Delta y, t)}{\Delta y^2} \Big] }$$
+    <p>So now it looks ugly, but it's no longer a differential equation, which is hugely important.</p>
+    <p>What we want out of this is a formula to update the wave over time. Looking above, we can notice that there's the term \(u(x, y, t+\Delta t)\), meaning "what the wave will be next time step". This is exactly what we want to find. Let's solve for that.</p>
+    $${ u(x, y, t+\Delta t) = (\frac{v \Delta t}{\Delta x})^2 \cdot \Big[ u(x+\Delta x, y, t) - 2u(x, y, t) + u(x-\Delta x, y, t) \Big] + (\frac{v \Delta t}{\Delta y})^2 \Big[ u(x, y+\Delta y, t) - 2u(x, y, t) + u(x, y-\Delta y, t) \Big] +2u(x, y, t) - u(x, y, t-\Delta t)}$$
+    <p>Again, it doesn't look pretty, but this is a formula that we can use to update the wave over time, while making it look very real, because it mostly adheres to the real wave equation.</p>
+    <p>Looking at the formula, we can see that to calculate this new value of the wave, we need 6 bits of information about the wave:</p>
+    <ul>
+        <li>\(u(x, y, t)\): the current value</li>
+        <li>\(u(x, y, t-\Delta t)\): the previous value</li>
+        <li>\(u(x-\Delta x, y, t)\): the value to the left of this one</li>
+        <li>\(u(x+\Delta x, y, t)\): the value to the right of this one</li>
+        <li>\(u(x, y-\Delta y, t)\): the value below this one</li>
+        <li>\(u(x, y+\Delta y, t)\): the value above this one</li>
+    </ul>
+    <p>And we need to make some decisions:</p>
+    <ul>
+        <li>\(\Delta t\): the time step</li>
+        <li>\(\Delta x\): the space between two points on the x axis</li>
+        <li>\(\Delta y\): the space between two points on the y axis</li>
+    </ul>
+    <p>The smaller those values are, the more accurate the simulation will be.</p>
+    <p>Finally, there's the constant \(v\), meaning the speed of the wave. For light, \(v=\frac{c}{n}\), where \(c\) is the speed of light in a vacuum and \(n\) is the index of refraction of the material that the light is passing through.</p>
+
+    <br>
+
+    <h2>Implementation</h2>
+    <p>I decided to do this simulation on the GPU so that all points in space can be updated simultaneously, and then have their values be stored in textures.</p>
+    <p>We want a source of the wave, and a nice way to do that is by forcing a certain pixel/certain pixels to have a value that follows a sine wave over time: \(u(x, y, t) = sin(ft)\). From then on, our formula will deal with it, and we'll see that source propagate.</p>
+    <p>But for light, what we see in our everyday lives are not the wave values, they're meaningless to us. What we see is the frequency of the light (\(f\)), which we interpret as color, and the square of the amplitude of the wave (\(A^2\)), which we interpret as brightness.</p>
+    <p>The light we see in our everyday lives is a combination of a whole bunch of different frequencies, each with their own amplitude, and our eyes figure it all out for us.  However, I don't want to mix up all the frequencies, because it will be very difficult to get the colors back out of that. So I decided that each frequency will have its own simulation, but with the same emitter location and scene. At every frame, all of these separate simulations are put together, and the final color is the average of them all.</p>
+    <p>When getting the color out of a simulation, the frequency is known because I explicitly set it, but the amplitude at each pixel is an issue. This is not the value of the wave \(u\), but instead the maximum \(u\) that the wave will reach over time.</p>
+    <p>To solve this, we can think of a wave in a particular way: </p>
+    <canvas id="complexVis" width="200" height="200"></canvas>
+    <script>
+        const c = document.getElementById("complexVis")
+        const ctx = c.getContext("2d")
+        ctx.fillStyle = "rgb(0, 100, 100)"
+        ctx.strokeStyle = "rgb(0, 255, 255)"
+        ctx.lineWidth = 7
+
+        let t = 0
+
+        setInterval(
+            function() {
+                t += 16/1000
+                ctx.beginPath()
+                ctx.arc(c.width/2, c.width/2, c.width/2, 0, 2 * Math.PI, false);
+                ctx.fill()
+
+
+                ctx.strokeStyle = "rgb(255, 255, 0)"
+                ctx.beginPath()
+                ctx.moveTo(c.width/2, c.width/2)
+                ctx.lineTo(c.width/2+(c.width/2 - 4)*Math.cos(-t), c.width/2+(c.width/2 - 4)*Math.sin(-t))
+                ctx.stroke()
+
+                ctx.strokeStyle = "rgb(255, 0, 0)"
+                ctx.beginPath()
+                ctx.moveTo(c.width/2+(c.width/2 - 4)*Math.cos(-t), c.width/2+(c.width/2 - 4)*Math.sin(-t))
+                ctx.lineTo(c.width/2, c.width/2+(c.width/2 - 4)*Math.sin(-t))
+                ctx.stroke()
+
+                ctx.strokeStyle = "rgb(0, 255, 0)"
+                ctx.beginPath()
+                ctx.moveTo(c.width/2, c.width/2)
+                ctx.lineTo(c.width/2, c.width/2+(c.width/2 - 4)*Math.sin(-t))
+                ctx.stroke()
+            }
+            , 16
+        )
+    </script>
+    <p>In the visualization above, imagine the green line as our wave value, with its length following a sine function as our emitter already does. Once in a while, it hits a high point, when \(u=A\). But I've also added the red line, which oscillates at the same rate, but follows the cosine function instead.</p>
+    <p>Notice that if we place the red line at the end of the green line, and then connect the tip of the red line with the center, we get a yellow line that always has length \(A\). In fact, \(L_{green}^2+L_{red}^2=A^2\) by the Pythagorean theorem.</p>
+    <p>Therefore, \(u_{sin}^2+u_{cos}^2=A^2\), gets us our brightness (\(A^2\)). All it takes is to run even more simulations, so that we have one going with a sine-emitter, and another with a cosine-emitter. Almost magically, this works even if the amplitude is changing with time, and \(u_{sin}\) and \(u_{cos}\) don't follow their perfect waves. So finally, our amplitude problem is solved.</p>
+
+    <br>
+
+    <h2>Boundaries 😭</h2>
+    <p>One final thing that I haven't talked about yet is boundaries, meaning the objects that make up the scene and the borders of the simulated area.</p>
+    <p>Ideally, we would be able to control how much a wave is absorbed or reflected by a surface, since that's what happens when light waves hit materials in real life. However, we couldn't fully figure out absorption, so all surfaces are somewhat reflective and somewhat absorptive (since that's more visually pleasing than completely reflective, I find).</p>
+    <p>The way to get the waves to fully reflect is quite simple though. Just force all of the boundaries to be \(u=0\). You can see that this works by trying one end of a Slinky to something solid, sending a wave pulse though it, and watching as the pulse rebounds back.</p>
+    <p>If I can figure out absorption, I'd love to come back and finish this.</p>
+</body>
+</html>
