@@ -9,18 +9,19 @@ fn posToDist(pos: vec2i) -> f32 {
 }
 
 fn distToHeight(dist: f32) -> f32 {
-    const waveDist = 50.;
+    // const waveDist = 50.;
     if (dist < 0) {
         return pow(-dist/5, 3);
     }
     else {
-        if (dist < waveDist) {
-            let d = dist/waveDist;
-            return 0.5*(d*d-2*d+1) * sin(2*dist + 1.5*time);
-        }
-        else {
-            return 0;
-        }
+        // if (dist < waveDist) {
+        //     let d = dist/waveDist;
+        //     return 0.5*(d*d-2*d+1) * sin(2*dist + 1.5*time);
+        // }
+        // else {
+        //     return 0;
+        // }
+        return 0;
     }
 }
 

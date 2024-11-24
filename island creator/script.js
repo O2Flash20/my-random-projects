@@ -15,6 +15,34 @@ document.getElementById("brushSizeInput").addEventListener("change", function ()
     brushSize = v
 })
 
+async function loadTexture(url, device) {
+
+    async function loadImageBitmap(url) {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        return await createImageBitmap(blob, { colorSpaceConversion: "none" })
+    }
+
+    const source = await loadImageBitmap(url)
+    const texture = device.createTexture({ // this is the actual texture object that webgpu know what to do with
+        label: url,
+        format: "rgba8unorm", // <- rgba means red, green, blue, and alpha; 8 means each of those is 8 bits; unorm means unsigned and normalized (values from 0 to 1)
+        size: [source.width, source.height],
+        usage:
+            GPUTextureUsage.TEXTURE_BINDING | //we want to use it as a texture in a bind group
+            GPUTextureUsage.COPY_DST | //we want to copy something to it (the next thing we do)
+            GPUTextureUsage.RENDER_ATTACHMENT //also need this to copy something to it
+    })
+
+    device.queue.copyExternalImageToTexture(
+        { source, flipY: false },
+        { texture },
+        { width: source.width, height: source.height }
+    )
+
+    return texture
+}
+
 async function main() {
     // set up the device (gpu)
     const adapter = await navigator.gpu?.requestAdapter()
@@ -54,6 +82,8 @@ async function main() {
         mipmapFilter: "linear"
     })
 
+
+    const noiseTexture = await loadTexture("textures/noise.png", device)
 
 
     const drawModule = device.createShaderModule({
@@ -259,7 +289,8 @@ async function main() {
             { binding: 0, resource: distanceTexture.createView() },
             { binding: 1, resource: normalTexture.createView() },
             { binding: 2, resource: { buffer: timeBuffer } },
-            { binding: 3, resource: colorTexture.createView() }
+            { binding: 3, resource: noiseTexture.createView() },
+            { binding: 4, resource: colorTexture.createView() }
         ]
     })
 
