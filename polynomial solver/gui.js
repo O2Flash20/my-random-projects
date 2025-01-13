@@ -497,10 +497,8 @@ function coefficientsToMathJax(coefficients) {
     }
     output += coefficients[0] >= 0 ? "+" + terms[terms.length - 1] : terms[terms.length - 1]
 
+    // replacing e-10 with /cdot10^{-10}
+    output = output.replace(/e-(\d+)/g, "\\cdot10^{-\$1}")
+
     return output
 }
-
-/*
-TODO:
-explanation of how it works (via a link?)
-*/
