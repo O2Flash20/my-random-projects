@@ -7,7 +7,7 @@ export default /*wgsl*/ `
 @compute @workgroup_size(1) fn offsetHeight(
     @builtin(global_invocation_id) id: vec3u
 ) {
-    const offsetAmount = 0.1;
+    const offsetAmount = 8;
     textureStore(
         outputTexture, id.xy, 
         vec4f(

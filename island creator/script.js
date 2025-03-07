@@ -7,7 +7,7 @@ import jumpFloodCode from "./shaders/jumpFlood.wgsl.js"
 import distanceCode from "./shaders/distance.wgsl.js"
 import groundHeightCode from "./shaders/groundHeight.wgsl.js"
 import upscaleCode from "./shaders/upscale.wgsl.js"
-import groundHeightOffsetCode from "./shaders/groundHeightOffset.wgsl.js"
+import distanceOffsetCode from "./shaders/distanceOffset.wgsl.js"
 import colorCode from "./shaders/color.wgsl.js"
 import renderCode from "./shaders/render.wgsl.js"
 
@@ -87,7 +87,7 @@ async function main() {
 
 
     const noiseTexture = await loadTexture("textures/noise.png", device)
-    const groundHeightOffsetTexture = await loadTexture("textures/groundHeightOffset.png", device)
+    const distanceOffsetTexture = await loadTexture("textures/distanceOffset.png", device)
 
 
     const drawModule = device.createShaderModule({
@@ -231,33 +231,6 @@ async function main() {
 
 
 
-    const groundHeightModule = device.createShaderModule({
-        code: groundHeightCode
-    })
-
-    const groundHeightPipeline = device.createComputePipeline({
-        layout: "auto",
-        compute: { module: groundHeightModule }
-    })
-
-    const groundHeightTexture = device.createTexture({
-        label: "texture holding the ground height",
-        format: "r32float",
-        dimension: "2d",
-        size: [jumpFloodSize, jumpFloodSize],
-        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
-    })
-
-    const groundHeightBindGroup = device.createBindGroup({
-        layout: groundHeightPipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: distanceTexture.createView() },
-            { binding: 1, resource: groundHeightTexture.createView() }
-        ]
-    })
-
-
-
     const scaleModule = device.createShaderModule({
         code: upscaleCode.replaceAll("_SCALE", displayScale)
     })
@@ -275,14 +248,6 @@ async function main() {
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
-    const groundHeightScaledTexture = device.createTexture({
-        label: "texture holding the ground height but scaled up",
-        format: "r32float",
-        dimension: "2d",
-        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
-        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
-    })
-
     const scaleDistanceBindGroup = device.createBindGroup({
         layout: scalePipeline.getBindGroupLayout(0),
         entries: [
@@ -291,38 +256,57 @@ async function main() {
         ]
     })
 
-    const scaleHeightBindGroup = device.createBindGroup({
-        layout: scalePipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: groundHeightTexture.createView() },
-            { binding: 1, resource: groundHeightScaledTexture.createView() }
-        ]
+
+
+    const distanceOffsetModule = device.createShaderModule({
+        code: distanceOffsetCode
     })
 
-
-
-    const groundHeightOffsetModule = device.createShaderModule({
-        code: groundHeightOffsetCode
-    })
-
-    const groundHeightOffsetPipeline = device.createComputePipeline({
+    const distanceOffsetPipeline = device.createComputePipeline({
         layout: "auto",
-        compute: {module: groundHeightOffsetModule}
+        compute: {module: distanceOffsetModule}
     })
 
-    const groundHeightFinalTexture = device.createTexture({
+    const distanceFinalTexture = device.createTexture({
         format: "r32float",
         dimension: "2d",
         size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
-    const groundHeightOffsetBindGroup = device.createBindGroup({
-        layout: groundHeightOffsetPipeline.getBindGroupLayout(0),
+    const distanceOffsetBindGroup = device.createBindGroup({
+        layout: distanceOffsetPipeline.getBindGroupLayout(0),
         entries: [
-            {binding: 0, resource: groundHeightScaledTexture.createView()},
-            {binding: 1, resource: groundHeightOffsetTexture.createView()},
-            {binding: 2, resource: groundHeightFinalTexture.createView()}
+            {binding: 0, resource: distanceScaledTexture.createView()},
+            {binding: 1, resource: distanceOffsetTexture.createView()},
+            {binding: 2, resource: distanceFinalTexture.createView()}
+        ]
+    })
+
+
+
+    const groundHeightModule = device.createShaderModule({
+        code: groundHeightCode
+    })
+
+    const groundHeightPipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: { module: groundHeightModule }
+    })
+
+    const groundHeightTexture = device.createTexture({
+        label: "texture holding the ground height",
+        format: "r32float",
+        dimension: "2d",
+        size: [jumpFloodSize*displayScale, jumpFloodSize*displayScale],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const groundHeightBindGroup = device.createBindGroup({
+        layout: groundHeightPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: distanceFinalTexture.createView() },
+            { binding: 1, resource: groundHeightTexture.createView() }
         ]
     })
 
@@ -359,8 +343,8 @@ async function main() {
         layout: colorPipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: timeBuffer } },
-            { binding: 1, resource: distanceScaledTexture.createView() },
-            { binding: 2, resource: groundHeightFinalTexture.createView() },
+            { binding: 1, resource: distanceFinalTexture.createView() },
+            { binding: 2, resource: groundHeightTexture.createView() },
             { binding: 3, resource: noiseTexture.createView() },
             { binding: 4, resource: colorTexture.createView() }
         ]
@@ -492,28 +476,6 @@ async function main() {
 
 
 
-        const groundHeightEncoder = device.createCommandEncoder()
-        const groundHeightPass = groundHeightEncoder.beginComputePass()
-        groundHeightPass.setPipeline(groundHeightPipeline)
-        groundHeightPass.setBindGroup(0, groundHeightBindGroup)
-        groundHeightPass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
-        groundHeightPass.end()
-
-        const groundHeightCommandBuffer = groundHeightEncoder.finish()
-        device.queue.submit([groundHeightCommandBuffer])
-
-
-
-        const upscaleHeightEncoder = device.createCommandEncoder()
-        const upscaleHeightPass = upscaleHeightEncoder.beginComputePass()
-        upscaleHeightPass.setPipeline(scalePipeline)
-        upscaleHeightPass.setBindGroup(0, scaleHeightBindGroup)
-        upscaleHeightPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
-        upscaleHeightPass.end()
-
-        const upscaleHeightCommandBuffer = upscaleHeightEncoder.finish()
-        device.queue.submit([upscaleHeightCommandBuffer])
-
         const upscaleDistanceEncoder = device.createCommandEncoder()
         const upscaleDistancePass = upscaleDistanceEncoder.beginComputePass()
         upscaleDistancePass.setPipeline(scalePipeline)
@@ -526,15 +488,27 @@ async function main() {
 
 
 
-        const groundHeightOffsetEncoder = device.createCommandEncoder()
-        const groundHeightOffsetPass = groundHeightOffsetEncoder.beginComputePass()
-        groundHeightOffsetPass.setPipeline(groundHeightOffsetPipeline)
-        groundHeightOffsetPass.setBindGroup(0, groundHeightOffsetBindGroup)
-        groundHeightOffsetPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
-        groundHeightOffsetPass.end()
+        const distanceOffsetEncoder = device.createCommandEncoder()
+        const distanceOffsetPass = distanceOffsetEncoder.beginComputePass()
+        distanceOffsetPass.setPipeline(distanceOffsetPipeline)
+        distanceOffsetPass.setBindGroup(0, distanceOffsetBindGroup)
+        distanceOffsetPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
+        distanceOffsetPass.end()
 
-        const groundHeightOffsetCommandBuffer = groundHeightOffsetEncoder.finish()
-        device.queue.submit([groundHeightOffsetCommandBuffer])
+        const distanceOffsetCommandBuffer = distanceOffsetEncoder.finish()
+        device.queue.submit([distanceOffsetCommandBuffer])
+
+
+
+        const groundHeightEncoder = device.createCommandEncoder()
+        const groundHeightPass = groundHeightEncoder.beginComputePass()
+        groundHeightPass.setPipeline(groundHeightPipeline)
+        groundHeightPass.setBindGroup(0, groundHeightBindGroup)
+        groundHeightPass.dispatchWorkgroups(jumpFloodSize* displayScale, jumpFloodSize* displayScale)
+        groundHeightPass.end()
+
+        const groundHeightCommandBuffer = groundHeightEncoder.finish()
+        device.queue.submit([groundHeightCommandBuffer])
 
 
 

@@ -61,14 +61,14 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
 
     if (aboveWater) {
         col = colorMix6(
-            groundHeight*221,
+            groundHeight,
             array<vec4f, 6>(
-                vec4f(1, 1, 0.7, 5),
-                vec4f(0.2, 0.8, 0.1, 15),
-                vec4f(0, 0.7, 0, 120),
-                vec4f(0.5, 0.5, 0.5, 135),
-                vec4f(1, 1, 1, 220),
-                vec4f(1, 1, 1, 221),
+                vec4f(1, 1, 0.7, 0.02),
+                vec4f(0.2, 0.8, 0.1, 0.06),
+                vec4f(0, 0.7, 0, 0.54),
+                vec4f(0.5, 0.5, 0.5, 0.61),
+                vec4f(1, 1, 1, 0.99),
+                vec4f(1, 1, 1, 1),
             )
         );
     }
@@ -90,7 +90,7 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
             let waveDist = textureLoad(distanceTexture, waveSample, 0).r;
             let wd = waveDist/waveMaxDist;
             waveAmount = wd*wd-2*wd+1;
-            waveCrest = waveAmount*0.5*(sin(1*waveDist+2*time)+1);
+            waveCrest = waveAmount*0.4*(sin(1.5*waveDist+2*time)+1);
         }
         // col = waterCol+pow(waveCrest, 2);
         col = colorMix(pow(waveCrest, 2), waterCol, vec3f(1.6));
