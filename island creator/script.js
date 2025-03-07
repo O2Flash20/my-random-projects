@@ -1,15 +1,18 @@
-const imageSize = 512
+const jumpFloodSize = 256
+const displayScale = 4
 
 import drawCode from "./shaders/draw.wgsl.js"
 import edgeDetectCode from "./shaders/edgeDetect.wgsl.js"
 import jumpFloodCode from "./shaders/jumpFlood.wgsl.js"
 import distanceCode from "./shaders/distance.wgsl.js"
-import surfaceNormalCode from "./shaders/surfaceNormal.wgsl.js"
+import groundHeightCode from "./shaders/groundHeight.wgsl.js"
+import upscaleCode from "./shaders/upscale.wgsl.js"
+import groundHeightOffsetCode from "./shaders/groundHeightOffset.wgsl.js"
 import colorCode from "./shaders/color.wgsl.js"
 import renderCode from "./shaders/render.wgsl.js"
 
 let brushSize = 15
-document.getElementById("brushSizeInput").addEventListener("change", function () {
+document.getElementById("brushSizeInput").addEventListener("input", function () {
     const v = document.getElementById("brushSizeInput").value
     document.getElementById("brushSizeDisplay").innerText = v
     brushSize = v
@@ -54,8 +57,8 @@ async function main() {
 
     // set up the canvas
     const canvas = document.getElementById("mainCanvas")
-    canvas.width = imageSize
-    canvas.height = imageSize
+    canvas.width = jumpFloodSize * displayScale
+    canvas.height = jumpFloodSize * displayScale
     const context = canvas.getContext("webgpu")
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat()
     context.configure({
@@ -71,8 +74,8 @@ async function main() {
     document.addEventListener("mousemove", function (e) {
         const canvasBounds = canvas.getBoundingClientRect()
         cursorPos = {
-            x: e.clientX - canvasBounds.left,
-            y: e.clientY - canvasBounds.top
+            x: (e.clientX - canvasBounds.left) / displayScale,
+            y: (e.clientY - canvasBounds.top) / displayScale
         }
     })
 
@@ -84,11 +87,12 @@ async function main() {
 
 
     const noiseTexture = await loadTexture("textures/noise.png", device)
+    const groundHeightOffsetTexture = await loadTexture("textures/groundHeightOffset.png", device)
 
 
     const drawModule = device.createShaderModule({
         label: "drawing module",
-        code: drawCode.replace("_IS", imageSize)
+        code: drawCode.replace("_IS", jumpFloodSize)
     })
 
     const drawPipeline = device.createComputePipeline({
@@ -103,7 +107,7 @@ async function main() {
         label: "a texture holding the drawn shape, should only be filled with 0 or 1",
         format: "r32uint",
         dimension: "2d",
-        size: [imageSize, imageSize],
+        size: [jumpFloodSize, jumpFloodSize],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
@@ -134,14 +138,14 @@ async function main() {
             label: "jump flood texture 0",
             format: "rg32uint",
             dimension: "2d",
-            size: [imageSize, imageSize],
+            size: [jumpFloodSize, jumpFloodSize],
             usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
         }),
         device.createTexture({
             label: "jump flood texture 1",
             format: "rg32uint",
             dimension: "2d",
-            size: [imageSize, imageSize],
+            size: [jumpFloodSize, jumpFloodSize],
             usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
         }),
     ]
@@ -150,7 +154,7 @@ async function main() {
 
     const edgeDetectModule = device.createShaderModule({
         label: "edge detect module",
-        code: edgeDetectCode.replace("_IS", imageSize)
+        code: edgeDetectCode.replace("_IS", jumpFloodSize)
     })
 
     const edgeDetectPipeline = device.createComputePipeline({
@@ -174,7 +178,7 @@ async function main() {
     // create the shader module
     const jumpFloodModule = device.createShaderModule({
         label: "jump flooding module",
-        code: jumpFloodCode.replace("_IS", imageSize)
+        code: jumpFloodCode.replace("_IS", jumpFloodSize)
     })
 
     const jumpFloodPipeline = device.createComputePipeline({
@@ -199,7 +203,7 @@ async function main() {
 
     const distanceModule = device.createShaderModule({
         label: "distance calculation module",
-        code: distanceCode.replace("_IS", imageSize)
+        code: distanceCode.replace("_IS", jumpFloodSize)
     })
 
     const distancePipeline = device.createComputePipeline({
@@ -212,16 +216,113 @@ async function main() {
         label: "a texture holding the signed distance of each pixel to the shape",
         format: "r32float",
         dimension: "2d",
-        size: [imageSize, imageSize],
+        size: [jumpFloodSize, jumpFloodSize],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
     const distanceBindGroup = device.createBindGroup({
         layout: distancePipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: jfTextures[(Math.log2(imageSize)) % 2].createView() }, //the final jump flooding texture
+            { binding: 0, resource: jfTextures[(Math.log2(jumpFloodSize)) % 2].createView() }, //the final jump flooding texture
             { binding: 1, resource: drawTexture.createView() },
             { binding: 2, resource: distanceTexture.createView() }
+        ]
+    })
+
+
+
+    const groundHeightModule = device.createShaderModule({
+        code: groundHeightCode
+    })
+
+    const groundHeightPipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: { module: groundHeightModule }
+    })
+
+    const groundHeightTexture = device.createTexture({
+        label: "texture holding the ground height",
+        format: "r32float",
+        dimension: "2d",
+        size: [jumpFloodSize, jumpFloodSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const groundHeightBindGroup = device.createBindGroup({
+        layout: groundHeightPipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: distanceTexture.createView() },
+            { binding: 1, resource: groundHeightTexture.createView() }
+        ]
+    })
+
+
+
+    const scaleModule = device.createShaderModule({
+        code: upscaleCode.replaceAll("_SCALE", displayScale)
+    })
+
+    const scalePipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: { module: scaleModule }
+    })
+
+    const distanceScaledTexture = device.createTexture({
+        label: "the distance texture but scaled up",
+        format: "r32float",
+        dimension: "2d",
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const groundHeightScaledTexture = device.createTexture({
+        label: "texture holding the ground height but scaled up",
+        format: "r32float",
+        dimension: "2d",
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const scaleDistanceBindGroup = device.createBindGroup({
+        layout: scalePipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: distanceTexture.createView() },
+            { binding: 1, resource: distanceScaledTexture.createView() }
+        ]
+    })
+
+    const scaleHeightBindGroup = device.createBindGroup({
+        layout: scalePipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: groundHeightTexture.createView() },
+            { binding: 1, resource: groundHeightScaledTexture.createView() }
+        ]
+    })
+
+
+
+    const groundHeightOffsetModule = device.createShaderModule({
+        code: groundHeightOffsetCode
+    })
+
+    const groundHeightOffsetPipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: {module: groundHeightOffsetModule}
+    })
+
+    const groundHeightFinalTexture = device.createTexture({
+        format: "r32float",
+        dimension: "2d",
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const groundHeightOffsetBindGroup = device.createBindGroup({
+        layout: groundHeightOffsetPipeline.getBindGroupLayout(0),
+        entries: [
+            {binding: 0, resource: groundHeightScaledTexture.createView()},
+            {binding: 1, resource: groundHeightOffsetTexture.createView()},
+            {binding: 2, resource: groundHeightFinalTexture.createView()}
         ]
     })
 
@@ -235,38 +336,9 @@ async function main() {
 
 
 
-    const normalModule = device.createShaderModule({
-        label: "distances to surface normal module",
-        code: surfaceNormalCode
-    })
-
-    const normalPipeline = device.createComputePipeline({
-        label: "distances to surface normal pipeline",
-        layout: "auto",
-        compute: { module: normalModule }
-    })
-
-    const normalTexture = device.createTexture({
-        label: "texture storing normals for the terrain",
-        format: "rg32float",
-        size: [imageSize, imageSize],
-        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
-    })
-
-    const normalBindGroup = device.createBindGroup({
-        layout: normalPipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: distanceTexture.createView() },
-            { binding: 1, resource: { buffer: timeBuffer } },
-            { binding: 2, resource: normalTexture.createView() }
-        ]
-    })
-
-
-
     const colorModule = device.createShaderModule({
         label: "convert distances to rgba module",
-        code: colorCode.replace("_IS", imageSize)
+        code: colorCode.replace("_IS", jumpFloodSize).replace("_DISPLAYSCALE", displayScale)
     })
 
     const colorPipeline = device.createComputePipeline({
@@ -279,16 +351,16 @@ async function main() {
         label: "a full-color texture representing the distances",
         format: "rgba8unorm",
         dimension: "2d",
-        size: [imageSize, imageSize],
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
     const colorBindGroup = device.createBindGroup({
         layout: colorPipeline.getBindGroupLayout(0),
         entries: [
-            { binding: 0, resource: distanceTexture.createView() },
-            { binding: 1, resource: normalTexture.createView() },
-            { binding: 2, resource: { buffer: timeBuffer } },
+            { binding: 0, resource: { buffer: timeBuffer } },
+            { binding: 1, resource: distanceScaledTexture.createView() },
+            { binding: 2, resource: groundHeightFinalTexture.createView() },
             { binding: 3, resource: noiseTexture.createView() },
             { binding: 4, resource: colorTexture.createView() }
         ]
@@ -298,7 +370,7 @@ async function main() {
 
     const renderModule = device.createShaderModule({
         label: "render module",
-        code: renderCode.replace("_IS", imageSize)
+        code: renderCode.replace("_IS", jumpFloodSize)
     })
 
     const renderPipeline = device.createRenderPipeline({
@@ -352,7 +424,7 @@ async function main() {
         const drawPass = drawEncoder.beginComputePass()
         drawPass.setPipeline(drawPipeline)
         drawPass.setBindGroup(0, drawBindGroup)
-        drawPass.dispatchWorkgroups(imageSize, imageSize)
+        drawPass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
         drawPass.end()
 
         const drawCommandBuffer = drawEncoder.finish()
@@ -365,16 +437,16 @@ async function main() {
         const edgeDetectPass = edgeDetectEncoder.beginComputePass()
         edgeDetectPass.setPipeline(edgeDetectPipeline)
         edgeDetectPass.setBindGroup(0, edgeDetectBindGroup)
-        edgeDetectPass.dispatchWorkgroups(imageSize, imageSize)
+        edgeDetectPass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
         edgeDetectPass.end()
 
         const edgeDetectCommandBuffer = edgeDetectEncoder.finish()
         device.queue.submit([edgeDetectCommandBuffer])
 
-        for (let i = -1; i < Math.log2(imageSize); i++) {
+        for (let i = -1; i < Math.log2(jumpFloodSize); i++) {
             let thisStepSize = 1 // { 1, N/2, N/4, N/16, ..., N/N }
             if (i >= 0) {
-                thisStepSize = imageSize / Math.pow(2, i + 1)
+                thisStepSize = jumpFloodSize / Math.pow(2, i + 1)
             }
 
             const inputTextureIndex = (i + 1) % 2
@@ -398,7 +470,7 @@ async function main() {
             const jumpFloodPass = jumpFloodEncoder.beginComputePass()
             jumpFloodPass.setPipeline(jumpFloodPipeline)
             jumpFloodPass.setBindGroup(0, thisBindGroup)
-            jumpFloodPass.dispatchWorkgroups(imageSize, imageSize)
+            jumpFloodPass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
             jumpFloodPass.end()
 
             const jumpFloodCommandBuffer = jumpFloodEncoder.finish()
@@ -412,7 +484,7 @@ async function main() {
         const distancePass = distanceEncoder.beginComputePass()
         distancePass.setPipeline(distancePipeline)
         distancePass.setBindGroup(0, distanceBindGroup)
-        distancePass.dispatchWorkgroups(imageSize, imageSize)
+        distancePass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
         distancePass.end()
 
         const distanceCommandBuffer = distanceEncoder.finish()
@@ -420,15 +492,50 @@ async function main() {
 
 
 
-        const normalEncoder = device.createCommandEncoder()
-        const normalPass = normalEncoder.beginComputePass()
-        normalPass.setPipeline(normalPipeline)
-        normalPass.setBindGroup(0, normalBindGroup)
-        normalPass.dispatchWorkgroups(imageSize, imageSize)
-        normalPass.end()
+        const groundHeightEncoder = device.createCommandEncoder()
+        const groundHeightPass = groundHeightEncoder.beginComputePass()
+        groundHeightPass.setPipeline(groundHeightPipeline)
+        groundHeightPass.setBindGroup(0, groundHeightBindGroup)
+        groundHeightPass.dispatchWorkgroups(jumpFloodSize, jumpFloodSize)
+        groundHeightPass.end()
 
-        const normalCommandBuffer = normalEncoder.finish()
-        device.queue.submit([normalCommandBuffer])
+        const groundHeightCommandBuffer = groundHeightEncoder.finish()
+        device.queue.submit([groundHeightCommandBuffer])
+
+
+
+        const upscaleHeightEncoder = device.createCommandEncoder()
+        const upscaleHeightPass = upscaleHeightEncoder.beginComputePass()
+        upscaleHeightPass.setPipeline(scalePipeline)
+        upscaleHeightPass.setBindGroup(0, scaleHeightBindGroup)
+        upscaleHeightPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
+        upscaleHeightPass.end()
+
+        const upscaleHeightCommandBuffer = upscaleHeightEncoder.finish()
+        device.queue.submit([upscaleHeightCommandBuffer])
+
+        const upscaleDistanceEncoder = device.createCommandEncoder()
+        const upscaleDistancePass = upscaleDistanceEncoder.beginComputePass()
+        upscaleDistancePass.setPipeline(scalePipeline)
+        upscaleDistancePass.setBindGroup(0, scaleDistanceBindGroup)
+        upscaleDistancePass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
+        upscaleDistancePass.end()
+
+        const upscaleDistanceCommandBuffer = upscaleDistanceEncoder.finish()
+        device.queue.submit([upscaleDistanceCommandBuffer])
+
+
+
+        const groundHeightOffsetEncoder = device.createCommandEncoder()
+        const groundHeightOffsetPass = groundHeightOffsetEncoder.beginComputePass()
+        groundHeightOffsetPass.setPipeline(groundHeightOffsetPipeline)
+        groundHeightOffsetPass.setBindGroup(0, groundHeightOffsetBindGroup)
+        groundHeightOffsetPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
+        groundHeightOffsetPass.end()
+
+        const groundHeightOffsetCommandBuffer = groundHeightOffsetEncoder.finish()
+        device.queue.submit([groundHeightOffsetCommandBuffer])
+
 
 
         const colorEncoder = device.createCommandEncoder({
@@ -437,7 +544,7 @@ async function main() {
         const colorPass = colorEncoder.beginComputePass()
         colorPass.setPipeline(colorPipeline)
         colorPass.setBindGroup(0, colorBindGroup)
-        colorPass.dispatchWorkgroups(imageSize, imageSize)
+        colorPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
         colorPass.end()
 
         const colorCommandBuffer = colorEncoder.finish()

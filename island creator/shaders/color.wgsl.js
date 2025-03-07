@@ -2,11 +2,13 @@
 
 export default /*wgsl*/ `
 
-@group(0) @binding(0) var distance: texture_2d<f32>;
-@group(0) @binding(1) var normal: texture_2d<f32>;
-@group(0) @binding(2) var<uniform> time: f32;
+@group(0) @binding(0) var<uniform> time: f32;
+@group(0) @binding(1) var distanceTexture: texture_2d<f32>;
+@group(0) @binding(2) var groundHeightTexture: texture_2d<f32>;
 @group(0) @binding(3) var noise: texture_2d<f32>;
 @group(0) @binding(4) var outputTexture: texture_storage_2d<rgba8unorm, write>;
+
+const displayScale = _DISPLAYSCALE;
 
 fn colorMix(v: f32, col1: vec3f, col2: vec3f) -> vec3f {
     let mixFactor = -2*v*v*v+3*v*v;
@@ -43,39 +45,26 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
     return col;
 }
 
-fn getHeight(samplePos: vec2u) -> f32 {
-    let dist = textureLoad(distance, samplePos, 0).r;
-
-    if (dist < 0) {
-        return pow(-dist/5, 3);
-    }
-    else {
-        return 0;
-    }
-}
-
 @compute @workgroup_size(1) fn convert(
     @builtin(global_invocation_id) id: vec3<u32>
 ) {
-    let dist = textureLoad(distance, id.xy, 0).r;
-    let isInside = dist < 0;
+    let dist = textureLoad(distanceTexture, id.xy, 0).r;
+
+    let groundHeight = textureLoad(groundHeightTexture, id.xy, 0).r;
+    let aboveWater = groundHeight >= 0;
 
     let t = time;
 
-    let n = normalize(vec3f(textureLoad(normal, id.xy, 0).rg, 1));
-
     let sunDir = normalize(vec3f(sin(0.5*time), cos(0.5*time), 1));
-
-    let sunIllumination = 0.5*clamp(dot(n, sunDir), 0, 1)+0.5;
 
     var col = vec3f(0);
 
-    if (isInside) {
+    if (aboveWater) {
         col = colorMix6(
-            -dist,
+            groundHeight*221,
             array<vec4f, 6>(
-                vec4f(1, 1, 0.7, 3),
-                vec4f(0.2, 0.8, 0.1, 7),
+                vec4f(1, 1, 0.7, 5),
+                vec4f(0.2, 0.8, 0.1, 15),
                 vec4f(0, 0.7, 0, 120),
                 vec4f(0.5, 0.5, 0.5, 135),
                 vec4f(1, 1, 1, 220),
@@ -89,39 +78,27 @@ fn getHeight(samplePos: vec2u) -> f32 {
         let waterCol = colorMix(waterColMix, vec3f(0, 0.8, 0.467), vec3f(0, 0.1, 0.6));
 
         var waveAmount = 0.;
-        let waveMaxDist = 20.;
+        let waveMaxDist = 50.;
         var waveCrest = 0.;
         if (dist < waveMaxDist) {
             let d = dist/waveMaxDist;
 
-            let offsetAmount = 10*d+1;
-            let sampleOffset = vec2u(2*offsetAmount*textureLoad(noise, id.xy, 0).rg-offsetAmount);
-            let waveSample = id.xy+sampleOffset;
+            let offsetAmount = 20*d+1;
+            let sampleOffset = vec2i(2*offsetAmount*(textureLoad(noise, id.xy, 0).rg-0.5));
+            let waveSample = vec2i(id.xy)+sampleOffset;
 
-            let waveDist = textureLoad(distance, waveSample, 0).r;
+            let waveDist = textureLoad(distanceTexture, waveSample, 0).r;
             let wd = waveDist/waveMaxDist;
             waveAmount = wd*wd-2*wd+1;
-            waveCrest = waveAmount*0.5*(sin(2*waveDist+2*time)+1);
+            waveCrest = waveAmount*0.5*(sin(1*waveDist+2*time)+1);
         }
         // col = waterCol+pow(waveCrest, 2);
         col = colorMix(pow(waveCrest, 2), waterCol, vec3f(1.6));
     }
 
-    let shadowSampleStep = sunDir/(length(sunDir.xy));
-    var h = vec3f(vec2f(id.xy), getHeight(id.xy)+2);
-    var isInShadow = false;
-    for (var i = 0; i < 100; i++) {
-        h += shadowSampleStep;
-        if (h.z < getHeight(vec2u(h.xy))) {
-            isInShadow = true;
-            break;
-        }
-    }
+    textureStore(outputTexture, id.xy, vec4f(col, 1));
 
-    var shadowDarkening = 1.;
-    if (isInShadow) {shadowDarkening = 0.2;}
-
-    textureStore(outputTexture, id.xy, shadowDarkening*vec4f(col, 1));
+    // textureStore(outputTexture, id.xy, vec4f(groundHeight));
 }
 
 `
