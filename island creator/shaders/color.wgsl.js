@@ -5,8 +5,9 @@ export default /*wgsl*/ `
 @group(0) @binding(0) var<uniform> time: f32;
 @group(0) @binding(1) var distanceTexture: texture_2d<f32>;
 @group(0) @binding(2) var groundHeightTexture: texture_2d<f32>;
-@group(0) @binding(3) var noise: texture_2d<f32>;
-@group(0) @binding(4) var outputTexture: texture_storage_2d<rgba8unorm, write>;
+@group(0) @binding(3) var sunShadowsTexture: texture_2d<f32>;
+@group(0) @binding(4) var noise: texture_2d<f32>;
+@group(0) @binding(5) var outputTexture: texture_storage_2d<rgba8unorm, write>;
 
 const displayScale = _DISPLAYSCALE;
 
@@ -63,8 +64,8 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
         col = colorMix6(
             groundHeight,
             array<vec4f, 6>(
-                vec4f(1, 1, 0.7, 0.02),
-                vec4f(0.2, 0.8, 0.1, 0.06),
+                vec4f(1, 1, 0.7, 0.01),
+                vec4f(0.2, 0.8, 0.1, 0.02),
                 vec4f(0, 0.7, 0, 0.54),
                 vec4f(0.5, 0.5, 0.5, 0.61),
                 vec4f(1, 1, 1, 0.99),
@@ -99,6 +100,8 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
     textureStore(outputTexture, id.xy, vec4f(col, 1));
 
     // textureStore(outputTexture, id.xy, vec4f(groundHeight));
+
+    textureStore(outputTexture, id.xy, textureLoad(sunShadowsTexture, id.xy, 0));
 }
 
 `

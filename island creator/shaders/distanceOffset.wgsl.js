@@ -9,7 +9,7 @@ export default /*wgsl*/ `
 ) {
     const offsetAmount = 8;
     textureStore(
-        outputTexture, id.xy, 
+        outputTexture, id.xy,
         vec4f(
             textureLoad(inputTexture, id.xy, 0).r + 2*offsetAmount*(textureLoad(offsetTexture, id.xy, 0).r - 0.5)
         )

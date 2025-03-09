@@ -1,6 +1,8 @@
 const jumpFloodSize = 256
 const displayScale = 4
 
+const sunShadowSamples = 16
+
 import drawCode from "./shaders/draw.wgsl.js"
 import edgeDetectCode from "./shaders/edgeDetect.wgsl.js"
 import jumpFloodCode from "./shaders/jumpFlood.wgsl.js"
@@ -8,6 +10,8 @@ import distanceCode from "./shaders/distance.wgsl.js"
 import groundHeightCode from "./shaders/groundHeight.wgsl.js"
 import upscaleCode from "./shaders/upscale.wgsl.js"
 import distanceOffsetCode from "./shaders/distanceOffset.wgsl.js"
+import sunShadowsComputeCode from "./shaders/sunShadowsCompute.wgsl.js"
+import sunShadowsMixCode from "./shaders/sunShadowsMix.wgsl.js"
 import colorCode from "./shaders/color.wgsl.js"
 import renderCode from "./shaders/render.wgsl.js"
 
@@ -264,7 +268,7 @@ async function main() {
 
     const distanceOffsetPipeline = device.createComputePipeline({
         layout: "auto",
-        compute: {module: distanceOffsetModule}
+        compute: { module: distanceOffsetModule }
     })
 
     const distanceFinalTexture = device.createTexture({
@@ -277,9 +281,9 @@ async function main() {
     const distanceOffsetBindGroup = device.createBindGroup({
         layout: distanceOffsetPipeline.getBindGroupLayout(0),
         entries: [
-            {binding: 0, resource: distanceScaledTexture.createView()},
-            {binding: 1, resource: distanceOffsetTexture.createView()},
-            {binding: 2, resource: distanceFinalTexture.createView()}
+            { binding: 0, resource: distanceScaledTexture.createView() },
+            { binding: 1, resource: distanceOffsetTexture.createView() },
+            { binding: 2, resource: distanceFinalTexture.createView() }
         ]
     })
 
@@ -298,7 +302,7 @@ async function main() {
         label: "texture holding the ground height",
         format: "r32float",
         dimension: "2d",
-        size: [jumpFloodSize*displayScale, jumpFloodSize*displayScale],
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
@@ -307,6 +311,60 @@ async function main() {
         entries: [
             { binding: 0, resource: distanceFinalTexture.createView() },
             { binding: 1, resource: groundHeightTexture.createView() }
+        ]
+    })
+
+
+
+    const sunShadowsComputeModule = device.createShaderModule({
+        label: "get sun shadows module",
+        code: sunShadowsComputeCode
+    })
+
+    const sunShadowsComputePipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: { module: sunShadowsComputeModule }
+    })
+
+    const sunShadowsComputeTexture = device.createTexture({
+        label: "a texture containing the shadows from the sun, all hard shadows offset with a slightly different direction",
+        format: "rgba8unorm",
+        dimension: "3d",
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale, sunShadowSamples],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const sunShadowsComputeBindGroup = device.createBindGroup({
+        layout: sunShadowsComputePipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: groundHeightTexture.createView() },
+            { binding: 1, resource: sunShadowsComputeTexture.createView() }
+        ]
+    })
+
+
+
+    const sunShadowsMixModule = device.createShaderModule({
+        code: sunShadowsMixCode.replace("_SAMPLES", sunShadowSamples)
+    })
+
+    const sunShadowsMixPipeline = device.createComputePipeline({
+        layout: "auto",
+        compute: {module: sunShadowsMixModule}
+    })
+
+    const sunShadowsTexture = device.createTexture({
+        format: "rgba8unorm",
+        dimension: "2d",
+        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+    })
+
+    const sunShadowsMixBindGroup = device.createBindGroup({
+        layout: sunShadowsMixPipeline.getBindGroupLayout(0),
+        entries: [
+            {binding: 0, resource: sunShadowsComputeTexture.createView()},
+            {binding: 1, resource: sunShadowsTexture.createView()}
         ]
     })
 
@@ -345,8 +403,9 @@ async function main() {
             { binding: 0, resource: { buffer: timeBuffer } },
             { binding: 1, resource: distanceFinalTexture.createView() },
             { binding: 2, resource: groundHeightTexture.createView() },
-            { binding: 3, resource: noiseTexture.createView() },
-            { binding: 4, resource: colorTexture.createView() }
+            { binding: 3, resource: sunShadowsTexture.createView() },
+            { binding: 4, resource: noiseTexture.createView() },
+            { binding: 5, resource: colorTexture.createView() }
         ]
     })
 
@@ -504,11 +563,35 @@ async function main() {
         const groundHeightPass = groundHeightEncoder.beginComputePass()
         groundHeightPass.setPipeline(groundHeightPipeline)
         groundHeightPass.setBindGroup(0, groundHeightBindGroup)
-        groundHeightPass.dispatchWorkgroups(jumpFloodSize* displayScale, jumpFloodSize* displayScale)
+        groundHeightPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
         groundHeightPass.end()
 
         const groundHeightCommandBuffer = groundHeightEncoder.finish()
         device.queue.submit([groundHeightCommandBuffer])
+
+
+
+        const sunShadowsComputeEncoder = device.createCommandEncoder()
+        const sunShadowsComputePass = sunShadowsComputeEncoder.beginComputePass()
+        sunShadowsComputePass.setPipeline(sunShadowsComputePipeline)
+        sunShadowsComputePass.setBindGroup(0, sunShadowsComputeBindGroup)
+        sunShadowsComputePass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale, sunShadowSamples)
+        sunShadowsComputePass.end()
+
+        const sunShadowsComputeCommandBuffer = sunShadowsComputeEncoder.finish()
+        device.queue.submit([sunShadowsComputeCommandBuffer])
+
+
+
+        const sunShadowsMixEncoder = device.createCommandEncoder()
+        const sunShadowsMixPass = sunShadowsMixEncoder.beginComputePass()
+        sunShadowsMixPass.setPipeline(sunShadowsMixPipeline)
+        sunShadowsMixPass.setBindGroup(0, sunShadowsMixBindGroup)
+        sunShadowsMixPass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale)
+        sunShadowsMixPass.end()
+
+        const sunShadowsMixCommandBuffer = sunShadowsMixEncoder.finish()
+        device.queue.submit([sunShadowsMixCommandBuffer])
 
 
 
@@ -557,7 +640,7 @@ async function main() {
 }
 main()
 
-/*
+/* not up to date
 draw a shape
 ->edge detect
 ->color the edge detected pixels with their location, the rest undefined
