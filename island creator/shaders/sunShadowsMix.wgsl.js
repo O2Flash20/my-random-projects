@@ -5,18 +5,23 @@ export default /*wgsl*/ `
 
 const sunShadowSamples = _SAMPLES;
 
+const finalShadowsTextureSize = _FSIZE;
+const shadowsTextureSize = _SSIZE;
+
 @compute @workgroup_size(1) fn mixSunShadows(
     @builtin(global_invocation_id) id: vec3u
 ) {
+    let S = u32(finalShadowsTextureSize/shadowsTextureSize);
+
     let i = id.xy;
 
     var totalShadow = vec3f(0);
     for (var j: u32 = 0; j < sunShadowSamples; j++) {
-        totalShadow += textureLoad(sunShadowsComputeTexture, vec3u(i, j), 0).rgb;
+        totalShadow += textureLoad(sunShadowsComputeTexture, vec3u(i/S, j), 0).rgb;
     }
     totalShadow /= f32(sunShadowSamples);
 
-    textureStore(sunShadowsTexture, i, vec4f(totalShadow, 1));
+    textureStore(sunShadowsTexture, i, vec4f(totalShadow + 0.1, 1));
 }
 
 `

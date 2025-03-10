@@ -62,7 +62,7 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
 
     if (aboveWater) {
         col = colorMix6(
-            groundHeight,
+            groundHeight/200,
             array<vec4f, 6>(
                 vec4f(1, 1, 0.7, 0.01),
                 vec4f(0.2, 0.8, 0.1, 0.02),
@@ -97,11 +97,14 @@ fn colorMix6(v: f32, colors: array<vec4f, 6>) -> vec3f {
         col = colorMix(pow(waveCrest, 2), waterCol, vec3f(1.6));
     }
 
+    let sunLight = textureLoad(sunShadowsTexture, id.xy, 0).rgb;
+    col *= sunLight;
+
     textureStore(outputTexture, id.xy, vec4f(col, 1));
 
     // textureStore(outputTexture, id.xy, vec4f(groundHeight));
 
-    textureStore(outputTexture, id.xy, textureLoad(sunShadowsTexture, id.xy, 0));
+    // textureStore(outputTexture, id.xy, textureLoad(sunShadowsTexture, id.xy, 0));
 }
 
 `

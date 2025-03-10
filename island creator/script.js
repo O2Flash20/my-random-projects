@@ -1,7 +1,8 @@
 const jumpFloodSize = 256
 const displayScale = 4
 
-const sunShadowSamples = 16
+const sunShadowsSize = 256
+const sunShadowSamples = 8
 
 import drawCode from "./shaders/draw.wgsl.js"
 import edgeDetectCode from "./shaders/edgeDetect.wgsl.js"
@@ -92,6 +93,15 @@ async function main() {
 
     const noiseTexture = await loadTexture("textures/noise.png", device)
     const distanceOffsetTexture = await loadTexture("textures/distanceOffset.png", device)
+
+
+
+    const timeBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    const timeValue = new Float32Array(1)
+
 
 
     const drawModule = device.createShaderModule({
@@ -319,6 +329,10 @@ async function main() {
     const sunShadowsComputeModule = device.createShaderModule({
         label: "get sun shadows module",
         code: sunShadowsComputeCode
+        .replace("_NUMSAMPLES", sunShadowSamples)
+        .replace("_SUNDIR", "11, 11, 1")
+        .replace("_GSIZE", jumpFloodSize*displayScale)
+        .replace("_SSIZE", sunShadowsSize)
     })
 
     const sunShadowsComputePipeline = device.createComputePipeline({
@@ -330,7 +344,7 @@ async function main() {
         label: "a texture containing the shadows from the sun, all hard shadows offset with a slightly different direction",
         format: "rgba8unorm",
         dimension: "3d",
-        size: [jumpFloodSize * displayScale, jumpFloodSize * displayScale, sunShadowSamples],
+        size: [sunShadowsSize, sunShadowsSize, sunShadowSamples],
         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
     })
 
@@ -338,19 +352,23 @@ async function main() {
         layout: sunShadowsComputePipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: groundHeightTexture.createView() },
-            { binding: 1, resource: sunShadowsComputeTexture.createView() }
+            { binding: 1, resource: sunShadowsComputeTexture.createView() },
+            { binding: 2, resource: { buffer: timeBuffer } }
         ]
     })
 
 
 
     const sunShadowsMixModule = device.createShaderModule({
-        code: sunShadowsMixCode.replace("_SAMPLES", sunShadowSamples)
+        code: sunShadowsMixCode
+        .replace("_SAMPLES", sunShadowSamples)
+        .replace("_FSIZE", jumpFloodSize*displayScale)
+        .replace("_SSIZE", sunShadowsSize)
     })
 
     const sunShadowsMixPipeline = device.createComputePipeline({
         layout: "auto",
-        compute: {module: sunShadowsMixModule}
+        compute: { module: sunShadowsMixModule }
     })
 
     const sunShadowsTexture = device.createTexture({
@@ -363,18 +381,10 @@ async function main() {
     const sunShadowsMixBindGroup = device.createBindGroup({
         layout: sunShadowsMixPipeline.getBindGroupLayout(0),
         entries: [
-            {binding: 0, resource: sunShadowsComputeTexture.createView()},
-            {binding: 1, resource: sunShadowsTexture.createView()}
+            { binding: 0, resource: sunShadowsComputeTexture.createView() },
+            { binding: 1, resource: sunShadowsTexture.createView() }
         ]
     })
-
-
-
-    const timeBuffer = device.createBuffer({
-        size: 4,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-    const timeValue = new Float32Array(1)
 
 
 
@@ -575,7 +585,7 @@ async function main() {
         const sunShadowsComputePass = sunShadowsComputeEncoder.beginComputePass()
         sunShadowsComputePass.setPipeline(sunShadowsComputePipeline)
         sunShadowsComputePass.setBindGroup(0, sunShadowsComputeBindGroup)
-        sunShadowsComputePass.dispatchWorkgroups(jumpFloodSize * displayScale, jumpFloodSize * displayScale, sunShadowSamples)
+        sunShadowsComputePass.dispatchWorkgroups(sunShadowsSize, sunShadowsSize, sunShadowSamples)
         sunShadowsComputePass.end()
 
         const sunShadowsComputeCommandBuffer = sunShadowsComputeEncoder.finish()
@@ -647,4 +657,15 @@ draw a shape
 ->jump flooding: results in a texture where the color of each pixel is the location of the closest edge detected
 ->write the distance from each pixel to its color (which we know is the closest point)
 ->make the distance negative it the pixel was initially coloured in
+*/
+
+
+/*
+Todo:
+lighting with normals
+each if the display is 1024x1024 and the shadows are computed 256x256, make it cycle every 16 frames to update only a new pixel in the display
+then also do a running exponential decay to get mix the results of multiple cycles and make it smoother
+make sun move in sky
+include normals for trees and rocks?
+fix that water thing that's going on at the edges
 */

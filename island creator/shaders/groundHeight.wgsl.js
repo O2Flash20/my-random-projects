@@ -21,7 +21,7 @@ fn f(x: f32) -> f32 {
         height = f(d);
     }
 
-    textureStore(groundHeightTexture, id.xy, vec4f(height, 0, 0, 0));
+    textureStore(groundHeightTexture, id.xy, vec4f(200*height, 0, 0, 0));
 }
 
 `
